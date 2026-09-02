@@ -1,7 +1,7 @@
 Your real worry isn't "can AI write an article" — it's whether the output actually follows YOUR rules, or if you're back to fixing generic AI formatting by hand.
 
-Built before we agreed on anything. Live: [DEPLOY_URL]
-Source: [REPO_URL]
+Built before we agreed on anything. Live: https://wp-content-autopilot.vercel.app
+Source: https://github.com/exelentshakil/wp-content-autopilot
 
 Everything below is config, not code — change it in Settings, not by asking me:
 - Strips your dashes/HTML, wraps headings in your CSS class, drops your CTA shortcode at a set paragraph
