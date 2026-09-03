@@ -64,7 +64,7 @@ export function Footer() {
           <div className="bg-panel border border-line rounded-2xl p-8 shadow-sm">
             <h3 className="text-xl font-semibold mb-6 flex items-center gap-2">
               <Code2 className="size-5 text-accent" />
-              Project Proposal & Timeline
+              Enterprise Implementation Architecture
             </h3>
 
             <div className="space-y-6">
@@ -111,6 +111,10 @@ export function Footer() {
               </button>
 
               {showProposal && (
+                  <div className="mt-4 p-4 bg-line/30 rounded border border-line/50 text-sm text-muted space-y-4">
+                    <p>What you are looking at is not a simple script; it is a scalable, programmatic SEO publishing engine. By stripping away manual formatting and strictly enforcing your custom CSS and ACF schemas, we are building a production line capable of dominating high-value SERPs with zero manual bottleneck.</p>
+                  </div>
+
                 <div className="pt-4 text-sm text-muted leading-relaxed space-y-4 animate-in fade-in slide-in-from-top-2">
                   <p>Your real worry isn&apos;t &quot;can AI write an article&quot; — it&apos;s whether the output actually follows YOUR rules, or if you&apos;re back to fixing generic AI formatting by hand.</p>
                   <p>Everything here is config, not code: heading class, CTA position, keyword→URL dictionary, and ACF field names all live in Settings. Change your rules without asking me to change the app.</p>

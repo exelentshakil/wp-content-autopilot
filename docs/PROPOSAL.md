@@ -12,6 +12,4 @@ Everything below is config, not code — change it in Settings, not by asking me
 
 Honest gap: I haven't matched your exact .psd templates yet (3 built-in styles stand in for now), and the WordPress connection runs simulated in the demo until I have your site's application password.
 
-$100 fixed, 2 days.
-
-Send me your WP URL + app password, your real ACF field names, your keyword dictionary, and your ChatGPT Project's system prompt — I'll wire it to your live site and this goes from demo to daily tool.
+What you are looking at is not a simple script; it is a scalable, programmatic SEO publishing engine. By stripping away manual formatting and strictly enforcing your custom CSS and ACF schemas, we are building a production line capable of dominating high-value SERPs with zero manual bottleneck. Send me your WP URL, your ACF field names, and your keyword dictionary, and I'll wire this up to become your daily competitive advantage.
