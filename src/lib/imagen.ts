@@ -172,8 +172,8 @@ async function tryOpenAiImage(opts: GenerateSingleImageOptions, key: string): Pr
  * Generates an image using available AI providers, falling back gracefully to branded PNG.
  */
 async function generateSingleImage(opts: GenerateSingleImageOptions): Promise<AtoyanGeneratedImage> {
-  const geminiKey = opts.apiKey || process.env.GEMINI_API_KEY;
-  const openaiKey = opts.openaiKey || process.env.OPENAI_API_KEY;
+  const geminiKey = process.env.GEMINI_API_KEY?.trim() || opts.apiKey?.trim() || undefined;
+  const openaiKey = process.env.OPENAI_API_KEY?.trim() || opts.openaiKey?.trim() || undefined;
 
   if (geminiKey) {
     try {

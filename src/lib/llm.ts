@@ -182,7 +182,10 @@ async function generateAtoyanOpenAI(
   systemPrompt?: string,
 ): Promise<AtoyanLegalContent> {
   const prompt = `Write comprehensive, California employment law practice area content for the target topic/keyword: "${keyword}" in ${city}.\nEnsure all sections match Atoyan Law Firm's punchy, compassionate tone and include 8-10 FAQs.`;
-  const activePrompt = systemPrompt?.trim() || ATOYAN_SYSTEM_PROMPT;
+  const activePrompt =
+    systemPrompt && !systemPrompt.includes("David") && systemPrompt.includes("Atoyan")
+      ? systemPrompt.trim()
+      : ATOYAN_SYSTEM_PROMPT;
 
   for (const model of OPENAI_MODELS) {
     try {
@@ -229,7 +232,10 @@ async function generateAtoyanGemini(
   systemPrompt?: string,
 ): Promise<AtoyanLegalContent> {
   const prompt = `Target Topic: "${keyword}" in ${city}.\nWrite high-authority California employment legal practice area content for Atoyan Law Firm following all system guidelines. Output valid JSON.`;
-  const activePrompt = systemPrompt?.trim() || ATOYAN_SYSTEM_PROMPT;
+  const activePrompt =
+    systemPrompt && !systemPrompt.includes("David") && systemPrompt.includes("Atoyan")
+      ? systemPrompt.trim()
+      : ATOYAN_SYSTEM_PROMPT;
 
   for (const model of GEMINI_MODELS) {
     try {
@@ -379,15 +385,18 @@ export async function generateAtoyanContent(params: {
 }): Promise<AtoyanLegalContent> {
   const { keyword, systemPrompt } = params;
   const city = params.city || extractCity(keyword);
-  const provider = params.provider || "openai";
 
   // If simulator is explicitly chosen, skip external API calls immediately
-  if (provider === "simulator") {
+  if (params.provider === "simulator") {
     return generateAtoyanSimulated(keyword, city);
   }
 
-  const openaiKey = params.openaiKey || process.env.OPENAI_API_KEY;
-  const geminiKey = params.geminiKey || process.env.GEMINI_API_KEY;
+  const openaiKey = process.env.OPENAI_API_KEY?.trim() || params.openaiKey?.trim() || undefined;
+  const geminiKey = process.env.GEMINI_API_KEY?.trim() || params.geminiKey?.trim() || undefined;
+
+  let provider: "openai" | "gemini" = params.provider === "gemini" ? "gemini" : "openai";
+  if (openaiKey && !geminiKey) provider = "openai";
+  else if (geminiKey && !openaiKey) provider = "gemini";
 
   if (provider === "openai" && openaiKey) {
     try {

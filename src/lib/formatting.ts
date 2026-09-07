@@ -3,13 +3,13 @@ import type { Settings, FormattedArticle } from "./types";
 /**
  * The whole product lives here. Every rule maps 1:1 to a step David already
  * does by hand, and every rule reads from `settings` — nothing is hardcoded,
- * so changing his heading class or CTA text is a Settings edit, not a code
+ * so changing heading class or CTA text is a Settings edit, not a code
  * change.
  */
 export function formatArticle(raw: string, settings: Settings): FormattedArticle {
   let text = raw;
 
-  // 1. Strip long dashes (em/en dash), the way David does in his text editor.
+  // 1. Strip long dashes (em/en dash), for clean typography.
   const dashMatches = text.match(/[—–]/g);
   const dashesStripped = dashMatches?.length ?? 0;
   text = text.replace(/\s*[—–]\s*/g, ", ");

@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react";
 import { Settings } from "./types";
 
-const STORAGE_KEY = "wp_autopilot_settings";
+const STORAGE_KEY = "atoyan_autopilot_settings_v3";
+const LEGACY_STORAGE_KEYS = ["wp_autopilot_settings", "atoyan_autopilot_settings_v1", "atoyan_autopilot_settings_v2"];
 
 export function defaultSettings(): Settings {
   return Settings.parse({});
@@ -12,9 +13,23 @@ export function defaultSettings(): Settings {
 export function loadSettings(): Settings {
   if (typeof window === "undefined") return defaultSettings();
   try {
+    // Purge any old legacy keys that may contain stale demo prompts
+    for (const legacyKey of LEGACY_STORAGE_KEYS) {
+      window.localStorage.removeItem(legacyKey);
+    }
+
     const raw = window.localStorage.getItem(STORAGE_KEY);
     if (!raw) return defaultSettings();
-    return Settings.parse(JSON.parse(raw));
+
+    const parsed = Settings.parse(JSON.parse(raw));
+
+    // Ensure prompt strictly belongs to Atoyan Law Firm and has no legacy text
+    if (parsed.system_prompt?.includes("David") || !parsed.system_prompt?.includes("Atoyan")) {
+      parsed.system_prompt = defaultSettings().system_prompt;
+      saveSettings(parsed);
+    }
+
+    return parsed;
   } catch {
     return defaultSettings();
   }
@@ -22,7 +37,11 @@ export function loadSettings(): Settings {
 
 export function saveSettings(settings: Settings) {
   if (typeof window === "undefined") return;
-  window.localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
+  try {
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
+  } catch {
+    // Ignore localStorage quota errors
+  }
 }
 
 export function useSettings() {

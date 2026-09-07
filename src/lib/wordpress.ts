@@ -148,9 +148,17 @@ export async function publishAtoyanPage(params: {
   } = params;
 
   const wpSiteUrl =
-    settings?.wp_site_url || process.env.WP_SITE_URL || "https://www.atoyanlaw.com";
-  const wpUser = settings?.wp_username || process.env.WP_USER;
-  const wpPassword = settings?.wp_app_password || process.env.WP_PASSWORD;
+    process.env.WP_SITE_URL?.trim() ||
+    settings?.wp_site_url?.trim() ||
+    "https://www.atoyanlaw.com";
+  const wpUser =
+    process.env.WP_USER?.trim() ||
+    settings?.wp_username?.trim() ||
+    undefined;
+  const wpPassword =
+    process.env.WP_PASSWORD?.trim() ||
+    settings?.wp_app_password?.trim() ||
+    undefined;
 
   const cleanBase = wpSiteUrl.replace(/\/$/, "");
   const status = scheduleAt ? "future" : "publish";
@@ -345,9 +353,18 @@ export async function publishToWordPress(params: {
 }): Promise<PublishResult> {
   const { title, body, cta, image1Url, image2Url, scheduleAt, settings } = params;
 
-  const wpUser = settings.wp_username || process.env.WP_USER;
-  const wpPassword = settings.wp_app_password || process.env.WP_PASSWORD;
-  const wpSiteUrl = settings.wp_site_url || process.env.WP_SITE_URL || "https://www.atoyanlaw.com";
+  const wpUser =
+    process.env.WP_USER?.trim() ||
+    settings?.wp_username?.trim() ||
+    undefined;
+  const wpPassword =
+    process.env.WP_PASSWORD?.trim() ||
+    settings?.wp_app_password?.trim() ||
+    undefined;
+  const wpSiteUrl =
+    process.env.WP_SITE_URL?.trim() ||
+    settings?.wp_site_url?.trim() ||
+    "https://www.atoyanlaw.com";
 
   if (!wpUser || !wpPassword || settings.llm_provider === "simulator") {
     return {
