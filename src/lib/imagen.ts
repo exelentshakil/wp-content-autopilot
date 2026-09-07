@@ -1,3 +1,5 @@
+import fs from "fs";
+import path from "path";
 import zlib from "zlib";
 import type { AtoyanGeneratedImage, AtoyanImages } from "./types";
 
@@ -60,10 +62,34 @@ function createSolidPngBuffer(width: number, height: number, r: number, g: numbe
 }
 
 /**
- * Deterministic branded placeholder image (PNG) in case of network or API failure.
+ * Deterministic branded fallback image: serves authentic high-resolution Atoyan Law Firm
+ * practice area photography from local disk so previews never render as an empty blank box.
  */
 function generateBrandedFallbackImage(opts: GenerateSingleImageOptions): AtoyanGeneratedImage {
-  // Brand colors: deep navy (#0f172a = 15, 23, 42)
+  try {
+    const isBanner = opts.width >= 1000;
+    const relFile = isBanner
+      ? "public/images/atoyan-banner-default.jpg"
+      : "public/images/atoyan-services-default.jpg";
+    const absPath = path.join(process.cwd(), relFile);
+
+    if (fs.existsSync(absPath)) {
+      const b64 = fs.readFileSync(absPath).toString("base64");
+      return {
+        base64: b64,
+        mimeType: "image/jpeg",
+        prompt: opts.prompt,
+        filename: opts.filename.replace(/\.png$/, ".jpg"),
+        altText: opts.altText,
+        width: opts.width,
+        height: opts.height,
+      };
+    }
+  } catch (err) {
+    console.warn("Fallback disk image read warning:", err);
+  }
+
+  // Pure binary PNG fallback in case disk read is unavailable
   const pngBuffer = createSolidPngBuffer(opts.width, opts.height, 15, 23, 42);
   const base64 = pngBuffer.toString("base64");
 
@@ -79,47 +105,86 @@ function generateBrandedFallbackImage(opts: GenerateSingleImageOptions): AtoyanG
 }
 
 /**
- * Tries Google Imagen 3 via Generative Language API.
+ * Generates an image using Google Generative Language API.
+ * Supports gemini-2.5-flash-image / gemini-3.1-flash-image (generateContent) and Imagen 3 (:predict).
  */
 async function tryGeminiImagen(opts: GenerateSingleImageOptions, key: string): Promise<AtoyanGeneratedImage | null> {
-  const ratio = opts.width / opts.height;
-  const aspectRatio = Math.abs(ratio - 16 / 9) < Math.abs(ratio - 4 / 3) ? "16:9" : "4:3";
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict?key=${key}`;
+  // Method 1: Google Gemini Image generation models (gemini-2.5-flash-image)
+  const models = ["gemini-2.5-flash-image", "gemini-3.1-flash-image"];
+  for (const model of models) {
+    try {
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`;
+      const res = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: opts.prompt }] }],
+          generationConfig: {
+            responseModalities: ["IMAGE"],
+          },
+        }),
+        signal: AbortSignal.timeout(60_000),
+      });
 
-  const res = await fetch(url, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      instances: [{ prompt: opts.prompt }],
-      parameters: {
-        sampleCount: 1,
-        aspectRatio,
-        outputOptions: { mimeType: "image/jpeg" },
-      },
-    }),
-    signal: AbortSignal.timeout(60_000),
-  });
-
-  if (!res.ok) {
-    const errText = await res.text();
-    console.warn(`Imagen 3 request returned ${res.status}: ${errText.slice(0, 200)}`);
-    return null;
+      if (res.ok) {
+        const json = await res.json();
+        const inlineData = json?.candidates?.[0]?.content?.parts?.[0]?.inlineData;
+        if (inlineData?.data) {
+          return {
+            base64: inlineData.data,
+            mimeType: inlineData.mimeType || "image/png",
+            prompt: opts.prompt,
+            filename: opts.filename.replace(/\.jpe?g$/, ".png"),
+            altText: opts.altText,
+            width: opts.width,
+            height: opts.height,
+          };
+        }
+      }
+    } catch {
+      // Continue to next model or predict endpoint
+    }
   }
 
-  const json = await res.json();
-  const prediction = json.predictions?.[0];
-  const b64 = prediction?.bytesBase64Encoded;
+  // Method 2: Google Imagen 3 predict endpoint
+  try {
+    const ratio = opts.width / opts.height;
+    const aspectRatio = Math.abs(ratio - 16 / 9) < Math.abs(ratio - 4 / 3) ? "16:9" : "4:3";
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict?key=${key}`;
 
-  if (b64) {
-    return {
-      base64: b64,
-      mimeType: prediction.mimeType || "image/jpeg",
-      prompt: opts.prompt,
-      filename: opts.filename,
-      altText: opts.altText,
-      width: opts.width,
-      height: opts.height,
-    };
+    const res = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        instances: [{ prompt: opts.prompt }],
+        parameters: {
+          sampleCount: 1,
+          aspectRatio,
+          outputOptions: { mimeType: "image/jpeg" },
+        },
+      }),
+      signal: AbortSignal.timeout(60_000),
+    });
+
+    if (res.ok) {
+      const json = await res.json();
+      const prediction = json.predictions?.[0];
+      const b64 = prediction?.bytesBase64Encoded;
+
+      if (b64) {
+        return {
+          base64: b64,
+          mimeType: prediction.mimeType || "image/jpeg",
+          prompt: opts.prompt,
+          filename: opts.filename,
+          altText: opts.altText,
+          width: opts.width,
+          height: opts.height,
+        };
+      }
+    }
+  } catch (err) {
+    console.warn("Imagen 3 predict attempt warning:", err);
   }
 
   return null;
@@ -169,7 +234,7 @@ async function tryOpenAiImage(opts: GenerateSingleImageOptions, key: string): Pr
 }
 
 /**
- * Generates an image using available AI providers, falling back gracefully to branded PNG.
+ * Generates an image using available AI providers, falling back gracefully to authentic Atoyan photography.
  */
 async function generateSingleImage(opts: GenerateSingleImageOptions): Promise<AtoyanGeneratedImage> {
   const geminiKey = process.env.GEMINI_API_KEY?.trim() || opts.apiKey?.trim() || undefined;
@@ -193,7 +258,7 @@ async function generateSingleImage(opts: GenerateSingleImageOptions): Promise<At
     }
   }
 
-  // Guaranteed fallback to valid binary PNG
+  // Guaranteed fallback to authentic Atoyan Law Firm practice area photography
   return generateBrandedFallbackImage(opts);
 }
 
