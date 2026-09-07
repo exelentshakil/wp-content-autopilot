@@ -382,7 +382,7 @@ async function tryOpenAiImage(opts: GenerateSingleImageOptions, key: string): Pr
       model: "dall-e-3",
       prompt: opts.prompt,
       n: 1,
-      size: "1024x1024",
+      size: opts.width >= opts.height ? "1792x1024" : "1024x1024",
       response_format: "b64_json",
     }),
     signal: AbortSignal.timeout(60_000),
@@ -458,7 +458,7 @@ export async function generateAtoyanImages(params: {
 
   const bannerPrompt = `Cinematic professional 35mm photography of an empty California law firm partner office desk. Warm green banker desk lamp, stacked legal case files, leather-bound legal volumes on dark polished mahogany wood. Moody evening ambiance, soft bokeh, executive attorney aesthetic. STRICT NEGATIVE CONSTRAINT: Absolutely NO text, NO typography, NO letters, NO words, NO signs, NO watermark. 16:9 wide landscape orientation.`;
 
-  const servicesPrompt = `Professional editorial corporate photograph of two legal professionals in business attire reviewing employment documents together in a sleek modern conference room. Natural light, clean architectural background, elegant navy and slate tones. STRICT NEGATIVE CONSTRAINT: Absolutely NO text, NO typography, NO letters, NO words, NO signage, NO overlays, NO watermarks. 4:3 landscape orientation.`;
+  const servicesPrompt = `Professional editorial corporate photograph of two legal professionals in business attire reviewing employment documents together in a sleek modern conference room. Natural light, clean architectural background, elegant navy and slate tones. STRICT NEGATIVE CONSTRAINT: Absolutely NO text, NO typography, NO letters, NO words, NO signage, NO overlays, NO watermarks. 3:2 landscape orientation (600x400).`;
 
   const [rawBanner, rawServices] = await Promise.all([
     generateSingleImage({

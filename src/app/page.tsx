@@ -550,13 +550,15 @@ export default function Home() {
                     <div className="prose dark:prose-invert max-w-none text-sm leading-relaxed space-y-4">
                       {result.images.services?.dataUrl && (
                         <div className="float-left mr-6 mb-4 w-full sm:w-80 rounded-xl overflow-hidden border border-line shadow-sm">
-                          <img
-                            src={result.images.services.dataUrl}
-                            alt={result.images.services.altText}
-                            className="w-full h-auto object-cover"
-                          />
+                          <div className="aspect-[3/2] w-full overflow-hidden bg-panel-2">
+                            <img
+                              src={result.images.services.dataUrl}
+                              alt={result.images.services.altText}
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
                           <div className="p-2 bg-panel-2 text-[11px] text-muted border-t border-line">
-                            4:3 Services Editorial Graphic (class: alignleft size-full wp-image-3936)
+                            Editorial Services Graphic (600x400 class: alignleft size-full)
                           </div>
                         </div>
                       )}
@@ -589,20 +591,25 @@ export default function Home() {
 
               {/* TAB 2: DUAL AI VISUALS */}
               {activeTab === "images" && (
-                <div className="grid md:grid-cols-2 gap-6">
-                  {/* Banner Image Card */}
+                <div className="space-y-6">
+                  {/* Banner Image Card - Full Width 1920x451 Hero Banner */}
                   <div className="rounded-2xl border border-line bg-panel p-6 space-y-4">
-                    <div className="flex items-center justify-between">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                       <div>
-                        <h3 className="font-bold text-base">16:9 Banner Image</h3>
-                        <p className="text-xs text-muted">Uploaded to WP Media &amp; mapped to personal_injury_image</p>
+                        <h3 className="font-bold text-base text-text">Panoramic Hero Banner</h3>
+                        <p className="text-xs text-muted">Atoyan Law Firm custom header banner &bull; mapped to <code className="text-accent">personal_injury_image</code></p>
                       </div>
-                      <span className="text-xs font-mono px-2 py-0.5 rounded bg-panel-2 border border-line">
-                        1792 x 1024
-                      </span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-mono px-2.5 py-1 rounded-md bg-panel-2 border border-line text-accent font-semibold">
+                          1920 x 451 (4.25:1)
+                        </span>
+                        <span className="text-xs px-2 py-0.5 rounded bg-good/10 text-good border border-good/20 font-medium">
+                          Authentic Aspect
+                        </span>
+                      </div>
                     </div>
 
-                    <div className="aspect-video rounded-xl overflow-hidden border border-line bg-panel-2">
+                    <div className="w-full aspect-[1920/451] rounded-xl overflow-hidden border border-line bg-panel-2 shadow-inner">
                       <img
                         src={result.images.banner.dataUrl}
                         alt={result.images.banner.altText}
@@ -610,35 +617,86 @@ export default function Home() {
                       />
                     </div>
 
-                    <div className="text-xs space-y-1">
-                      <div className="text-muted">Alt Text:</div>
-                      <p className="font-medium text-text">{result.images.banner.altText}</p>
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between text-xs gap-2 pt-1 border-t border-line">
+                      <div className="text-muted">
+                        <span className="font-semibold text-text">Alt Text:</span> {result.images.banner.altText}
+                      </div>
+                      <div className="text-muted font-mono text-[11px]">
+                        Filename: {result.images.banner.filename}
+                      </div>
                     </div>
                   </div>
 
-                  {/* Services Image Card */}
-                  <div className="rounded-2xl border border-line bg-panel p-6 space-y-4">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h3 className="font-bold text-base">4:3 Services Graphic</h3>
-                        <p className="text-xs text-muted">Injected at top-left of services body with alignleft class</p>
+                  {/* Bottom Row: Editorial Services Graphic + Placement Specs */}
+                  <div className="grid md:grid-cols-2 gap-6 items-start">
+                    {/* Services Image Card */}
+                    <div className="rounded-2xl border border-line bg-panel p-6 space-y-4">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <h3 className="font-bold text-base text-text">Editorial Services Graphic</h3>
+                          <p className="text-xs text-muted">Injected at top-left of services body with <code className="text-accent">alignleft</code></p>
+                        </div>
+                        <span className="text-xs font-mono px-2.5 py-1 rounded-md bg-panel-2 border border-line text-accent font-semibold">
+                          600 x 400 (3:2)
+                        </span>
                       </div>
-                      <span className="text-xs font-mono px-2 py-0.5 rounded bg-panel-2 border border-line">
-                        1024 x 768
-                      </span>
+
+                      <div className="w-full aspect-[3/2] rounded-xl overflow-hidden border border-line bg-panel-2 shadow-inner">
+                        <img
+                          src={result.images.services.dataUrl}
+                          alt={result.images.services.altText}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+
+                      <div className="space-y-1 text-xs pt-1 border-t border-line">
+                        <div className="text-muted">
+                          <span className="font-semibold text-text">Alt Text:</span> {result.images.services.altText}
+                        </div>
+                        <div className="text-muted font-mono text-[11px]">
+                          Filename: {result.images.services.filename}
+                        </div>
+                      </div>
                     </div>
 
-                    <div className="aspect-[4/3] rounded-xl overflow-hidden border border-line bg-panel-2">
-                      <img
-                        src={result.images.services.dataUrl}
-                        alt={result.images.services.altText}
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
+                    {/* Visual Layout & WordPress Injection Specs */}
+                    <div className="rounded-2xl border border-line bg-panel p-6 space-y-4">
+                      <h3 className="font-bold text-base text-text">WordPress Asset Configuration</h3>
+                      <p className="text-xs text-muted leading-relaxed">
+                        Images are composited with exact production dimensions and branding overlays to match Atoyan Law Firm practice area templates.
+                      </p>
 
-                    <div className="text-xs space-y-1">
-                      <div className="text-muted">Alt Text:</div>
-                      <p className="font-medium text-text">{result.images.services.altText}</p>
+                      <div className="space-y-3 text-xs">
+                        <div className="p-3 rounded-xl border border-line bg-panel-2 space-y-1">
+                          <div className="font-semibold text-text flex items-center justify-between">
+                            <span>Hero Banner Placement</span>
+                            <span className="font-mono text-accent">1920 × 451 px</span>
+                          </div>
+                          <p className="text-muted text-[11px] leading-relaxed">
+                            Uploaded to WP Media Library, mapped to ACF field <code className="text-accent">personal_injury_image</code>, with Atoyan warm gradient and brand mark.
+                          </p>
+                        </div>
+
+                        <div className="p-3 rounded-xl border border-line bg-panel-2 space-y-1">
+                          <div className="font-semibold text-text flex items-center justify-between">
+                            <span>Services Graphic Placement</span>
+                            <span className="font-mono text-accent">600 × 400 px</span>
+                          </div>
+                          <p className="text-muted text-[11px] leading-relaxed">
+                            Embedded inside <code className="text-accent">_personal_injury_services_content</code> with <code className="text-accent">alignleft size-full</code> and 70px dark typography overlay.
+                          </p>
+                        </div>
+
+                        <div className="p-3 rounded-xl border border-line bg-panel-2 space-y-1">
+                          <div className="font-semibold text-text flex items-center justify-between">
+                            <span>Attachment ID Association</span>
+                            <span className="text-good font-medium">Automatic</span>
+                          </div>
+                          <p className="text-muted text-[11px] leading-relaxed">
+                            Uploaded media attachments are linked to the newly created page post ID upon publication for clean WordPress media library organization.
+                          </p>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>

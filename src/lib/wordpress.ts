@@ -128,6 +128,22 @@ export async function updateYoastSeo(params: {
 /**
  * Core publishing engine for Atoyan Law Firm practice area pages.
  */
+/**
+ * Formats any date string or Date object to the strict format required by WordPress REST API:
+ * 'YYYY-MM-DDTHH:MM:SS' for both local site date and date_gmt.
+ * This resolves the WordPress REST 400 rest_invalid_date error caused by missing seconds in datetime-local inputs.
+ */
+export function formatWordPressDate(dateInput: string | Date): { date: string; date_gmt: string } {
+  const d = typeof dateInput === "string" ? new Date(dateInput) : dateInput;
+  if (isNaN(d.getTime())) {
+    throw new Error(`Invalid schedule date: ${dateInput}`);
+  }
+  const pad = (n: number) => String(n).padStart(2, "0");
+  const date = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+  const date_gmt = `${d.getUTCFullYear()}-${pad(d.getUTCMonth() + 1)}-${pad(d.getUTCDate())}T${pad(d.getUTCHours())}:${pad(d.getUTCMinutes())}:${pad(d.getUTCSeconds())}`;
+  return { date, date_gmt };
+}
+
 export async function publishAtoyanPage(params: {
   content: AtoyanLegalContent;
   bannerImage?: AtoyanGeneratedImage;
@@ -191,7 +207,7 @@ export async function publishAtoyanPage(params: {
       postId: 3933,
       pageUrl: `${cleanBase}/${content.slug}/`,
       editUrl: `${cleanBase}/wp-admin/post.php?post=3933&action=edit`,
-      scheduledFor: scheduleAt,
+      scheduledFor: scheduleAt ? formatWordPressDate(scheduleAt).date : undefined,
       bannerAttachmentId,
       bannerUrl,
       servicesAttachmentId,
@@ -296,7 +312,9 @@ export async function publishAtoyanPage(params: {
   };
 
   if (scheduleAt) {
-    pagePayload.date = scheduleAt;
+    const formattedDate = formatWordPressDate(scheduleAt);
+    pagePayload.date = formattedDate.date;
+    pagePayload.date_gmt = formattedDate.date_gmt;
   }
 
   // Step 4: Create the Page via WordPress REST API
@@ -408,7 +426,7 @@ export async function publishAtoyanPage(params: {
     postId: createdPageId,
     pageUrl: pageLink,
     editUrl,
-    scheduledFor: scheduleAt,
+    scheduledFor: scheduleAt ? formatWordPressDate(scheduleAt).date : undefined,
     bannerAttachmentId,
     bannerUrl,
     servicesAttachmentId,
