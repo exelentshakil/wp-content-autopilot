@@ -286,6 +286,8 @@ export async function publishAtoyanPage(params: {
     acf: {
       personal_injury_group: finalAcfGroup,
       _inpost_head_script: headScriptMeta,
+      field_jamify_inpost_head_script: faqSchemaJsonLd,
+      field_synth_header_script: faqSchemaJsonLd,
     },
     meta: {
       _inpost_head_script: headScriptMeta,
@@ -330,6 +332,8 @@ export async function publishAtoyanPage(params: {
         acf: {
           personal_injury_group: finalAcfGroup,
           _inpost_head_script: headScriptMeta,
+          field_jamify_inpost_head_script: faqSchemaJsonLd,
+          field_synth_header_script: faqSchemaJsonLd,
         },
         meta: {
           _inpost_head_script: headScriptMeta,

@@ -1,3 +1,4 @@
+import * as opentype from "opentype.js";
 import fs from "fs";
 import path from "path";
 import zlib from "zlib";
@@ -35,6 +36,42 @@ export function deriveAtoyanCategory(keyword: string, city?: string): string {
  * Composites the official Atoyan Law Firm 'A' logo and dark gradient on the left side
  * of the 1920x451 banner image to match authentic live site banners (e.g. Burbank-Wrongful-Termination-Lawyer-bar.jpg).
  */
+
+let cachedFont: opentype.Font | null = null;
+
+function getAtoyanFont(): opentype.Font | null {
+  if (cachedFont) return cachedFont;
+  try {
+    const fontPath = path.join(process.cwd(), "public/fonts/bold.ttf");
+    if (fs.existsSync(fontPath)) {
+      const buffer = fs.readFileSync(fontPath);
+      const arrayBuffer = buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength);
+      cachedFont = opentype.parse(arrayBuffer);
+      return cachedFont;
+    }
+  } catch (err) {
+    console.warn("Could not load public/fonts/bold.ttf:", err);
+  }
+  return null;
+}
+
+export function renderTextAsSvgPath(
+  font: opentype.Font,
+  text: string,
+  x: number,
+  y: number,
+  maxFontSize: number,
+  maxWidth: number
+): { pathData: string; fontSize: number } {
+  let fontSize = maxFontSize;
+  let width = font.getAdvanceWidth(text, fontSize);
+  if (width > maxWidth) {
+    fontSize = Math.max(12, Math.floor((fontSize * maxWidth) / width));
+  }
+  const p = font.getPath(text, x, y, fontSize);
+  return { pathData: p.toPathData(2), fontSize };
+}
+
 export async function compositeAtoyanBanner(
   imageBuffer: Buffer
 ): Promise<{ buffer: Buffer; width: number; height: number }> {
@@ -60,14 +97,15 @@ export async function compositeAtoyanBanner(
   const svgOverlay = Buffer.from(`
     <svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
       <defs>
-        <linearGradient id="darkGrad" x1="0" y1="0" x2="1" y2="0">
-          <stop offset="0%" stop-color="#18120b" stop-opacity="0.95"/>
-          <stop offset="25%" stop-color="#18120b" stop-opacity="0.85"/>
-          <stop offset="45%" stop-color="#18120b" stop-opacity="0.4"/>
+        <linearGradient id="warmGrad" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0%" stop-color="#9c6941" stop-opacity="0.95"/>
+          <stop offset="20%" stop-color="#8a5732" stop-opacity="0.88"/>
+          <stop offset="38%" stop-color="#6e4222" stop-opacity="0.65"/>
+          <stop offset="52%" stop-color="#482711" stop-opacity="0.35"/>
           <stop offset="65%" stop-color="#18120b" stop-opacity="0"/>
         </linearGradient>
       </defs>
-      <rect x="0" y="0" width="${Math.round(width * 0.65)}" height="${height}" fill="url(#darkGrad)" />
+      <rect x="0" y="0" width="${Math.round(width * 0.65)}" height="${height}" fill="url(#warmGrad)" />
       ${logoElement}
     </svg>
   `);
@@ -108,24 +146,42 @@ export async function compositeAtoyanServicesImage(
       }
     });
 
-  const headline = escapeXml(params.headline.toUpperCase());
-  const category = escapeXml(params.category.toUpperCase());
+  const rawHeadline = params.headline.toUpperCase();
+  const rawCategory = params.category.toUpperCase();
 
-  // Dynamically size font so long legal titles stay legible without overflow
-  const hLen = headline.length;
-  const line1FontSize = hLen > 36 ? Math.max(14, Math.floor(580 / (hLen * 0.65))) : 20;
-  const line2FontSize = category.length > 38 ? Math.max(13, Math.floor(580 / (category.length * 0.65))) : 16;
+  const font = getAtoyanFont();
+  let textMarkup = "";
+
+  if (font) {
+    // Vector path glyph rendering - eliminates tofu glyphs [][][] entirely on Vercel
+    const line1 = renderTextAsSvgPath(font, rawHeadline, 16, barTop + 28, 20, 568);
+    const line2 = renderTextAsSvgPath(font, rawCategory, 16, barTop + 54, 16, 568);
+    textMarkup = `
+      <path d="${line1.pathData}" fill="#FFFFFF" filter="url(#shadow)" />
+      <path d="${line2.pathData}" fill="#E5C345" filter="url(#shadow)" />
+    `;
+  } else {
+    // Safe SVG text fallback
+    const headline = escapeXml(rawHeadline);
+    const category = escapeXml(rawCategory);
+    const hLen = headline.length;
+    const line1FontSize = hLen > 36 ? Math.max(14, Math.floor(580 / (hLen * 0.65))) : 20;
+    const line2FontSize = category.length > 38 ? Math.max(13, Math.floor(580 / (category.length * 0.65))) : 16;
+    textMarkup = `
+      <text x="16" y="${barTop + 28}" fill="#FFFFFF" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="${line1FontSize}" font-weight="900" letter-spacing="0.5" filter="url(#shadow)">${headline}</text>
+      <text x="16" y="${barTop + 54}" fill="#E5C345" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="${line2FontSize}" font-weight="900" letter-spacing="0.5" filter="url(#shadow)">${category}</text>
+    `;
+  }
 
   const svgOverlay = Buffer.from(`
     <svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg">
       <defs>
-        <filter id="shadow" x="-5%" y="-5%" width="110%" height="110%">
+        <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
           <feDropShadow dx="0" dy="1.5" stdDeviation="1.5" flood-color="#000000" flood-opacity="0.8"/>
         </filter>
       </defs>
       <rect x="0" y="${barTop}" width="${width}" height="${barHeight}" fill="rgba(20, 20, 20, 0.72)" />
-      <text x="16" y="${barTop + 28}" fill="#FFFFFF" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="${line1FontSize}" font-weight="900" letter-spacing="0.5" filter="url(#shadow)">${headline}</text>
-      <text x="16" y="${barTop + 54}" fill="#E5C345" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="${line2FontSize}" font-weight="900" letter-spacing="0.5" filter="url(#shadow)">${category}</text>
+      ${textMarkup}
     </svg>
   `);
 
