@@ -11,6 +11,7 @@ import {
   ATOYAN_REFERENCE_PAGE_ID,
   ATOYAN_BANNER_ATTACHMENT_ID,
   buildAcfPersonalInjuryGroup,
+  generateFaqSchemaJsonLd,
 } from "./atoyan";
 
 export interface PublishResult {
@@ -196,6 +197,7 @@ export async function publishAtoyanPage(params: {
       servicesAttachmentId,
       servicesUrl,
       yoastUpdated: true,
+      inpostHeadScript: generateFaqSchemaJsonLd(content.faqs),
       acfPayload: acfGroup as unknown as Record<string, unknown>,
     };
   }
@@ -269,6 +271,11 @@ export async function publishAtoyanPage(params: {
     baseGroup,
   );
 
+  const faqSchemaJsonLd = generateFaqSchemaJsonLd(content.faqs);
+  const headScriptMeta = {
+    synth_header_script: faqSchemaJsonLd,
+  };
+
   const pagePayload: Record<string, unknown> = {
     title: content.heroTitle,
     slug: content.slug,
@@ -278,7 +285,12 @@ export async function publishAtoyanPage(params: {
     content: finalAcfGroup._personal_injury_services_content, // Fallback post content
     acf: {
       personal_injury_group: finalAcfGroup,
+      _inpost_head_script: headScriptMeta,
     },
+    meta: {
+      _inpost_head_script: headScriptMeta,
+    },
+    _inpost_head_script: headScriptMeta,
   };
 
   if (scheduleAt) {
@@ -317,7 +329,12 @@ export async function publishAtoyanPage(params: {
       body: JSON.stringify({
         acf: {
           personal_injury_group: finalAcfGroup,
+          _inpost_head_script: headScriptMeta,
         },
+        meta: {
+          _inpost_head_script: headScriptMeta,
+        },
+        _inpost_head_script: headScriptMeta,
       }),
       signal: AbortSignal.timeout(30_000),
     });
@@ -375,6 +392,7 @@ export async function publishAtoyanPage(params: {
     servicesAttachmentId,
     servicesUrl,
     yoastUpdated,
+    inpostHeadScript: faqSchemaJsonLd,
     acfPayload: finalAcfGroup as unknown as Record<string, unknown>,
   };
 }

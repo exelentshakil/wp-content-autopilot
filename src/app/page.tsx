@@ -63,6 +63,7 @@ interface PublishResponse {
   servicesAttachmentId?: number;
   servicesUrl?: string;
   yoastUpdated: boolean;
+  inpostHeadScript?: string;
   acfPayload: Record<string, unknown>;
   error?: string;
   message?: string;
@@ -184,8 +185,9 @@ export default function Home() {
   };
 
   const copySchemaJsonLd = () => {
-    if (!result?.faqSchemaJsonLd) return;
-    navigator.clipboard.writeText(result.faqSchemaJsonLd);
+    const textToCopy = result?.faqSchemaJsonLd || publishResult?.inpostHeadScript;
+    if (!textToCopy) return;
+    navigator.clipboard.writeText(textToCopy);
     setCopiedSchema(true);
     setTimeout(() => setCopiedSchema(false), 2000);
   };
@@ -374,6 +376,30 @@ export default function Home() {
               <span className="font-semibold">#{publishResult.servicesAttachmentId || "3936"}</span>
             </div>
           </div>
+
+          {(publishResult.inpostHeadScript || result?.faqSchemaJsonLd) && (
+            <div className="rounded-xl border border-accent/30 bg-panel p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2 font-semibold text-text">
+                  <FileCode className="size-4 text-accent" />
+                  <span>Insert Script to &lt;head&gt;</span>
+                  <span className="font-mono text-[10px] px-1.5 py-0.5 rounded bg-accent/10 text-accent font-normal">
+                    _inpost_head_script
+                  </span>
+                </div>
+                <p className="text-muted">
+                  The code below will be inserted into the &lt;head&gt; section of this specific page/post.
+                </p>
+              </div>
+              <button
+                onClick={copySchemaJsonLd}
+                className="inline-flex items-center gap-1.5 rounded-lg bg-accent text-white px-3 py-1.5 text-xs font-medium hover:opacity-90 transition shrink-0"
+              >
+                {copiedSchema ? <Check className="size-3.5" /> : <Copy className="size-3.5" />}
+                {copiedSchema ? "Copied to Clipboard" : "Copy <head> Script"}
+              </button>
+            </div>
+          )}
         </section>
       )}
 
@@ -523,44 +549,44 @@ export default function Home() {
               <div className="rounded-2xl border border-line bg-panel p-5 space-y-3">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <h3 className="font-semibold text-sm">Header Banner Image (16:9)</h3>
-                    <span className="text-[11px] px-2 py-0.5 rounded-full bg-accent/10 text-accent font-medium">1200 × 675</span>
+                    <h3 className="font-semibold text-sm">Branded Header Banner (1920 × 451)</h3>
+                    <span className="text-[11px] px-2 py-0.5 rounded-full bg-accent/10 text-accent font-medium">Atoyan &quot;A&quot; Logo + Gradient</span>
                   </div>
                   <span className="text-xs text-muted font-mono">personal_injury_image</span>
                 </div>
-                <div className="relative rounded-xl overflow-hidden border border-line bg-panel-2 aspect-video group">
+                <div className="relative rounded-xl overflow-hidden border border-line bg-panel-2 aspect-[1920/451] group">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={result.images.banner.dataUrl}
                     alt={result.images.banner.altText}
-                    className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-300"
+                    className="w-full h-full object-cover group-hover:scale-[1.01] transition-transform duration-300"
                   />
                 </div>
                 <div className="flex items-center justify-between text-xs text-muted">
                   <p className="truncate max-w-[70%]">{result.images.banner.altText}</p>
-                  <span className="font-mono text-accent">Hero Section Banner</span>
+                  <span className="font-mono text-accent">1920×451 Cover Banner</span>
                 </div>
               </div>
 
               <div className="rounded-2xl border border-line bg-panel p-5 space-y-3">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <h3 className="font-semibold text-sm">Services Editorial Photo (4:3)</h3>
-                    <span className="text-[11px] px-2 py-0.5 rounded-full bg-accent/10 text-accent font-medium">800 × 600</span>
+                    <h3 className="font-semibold text-sm">Branded Services Image (600 × 400)</h3>
+                    <span className="text-[11px] px-2 py-0.5 rounded-full bg-accent/10 text-accent font-medium">Typography Overlay Bar</span>
                   </div>
                   <span className="text-xs text-muted font-mono">_personal_injury_services_content</span>
                 </div>
-                <div className="relative rounded-xl overflow-hidden border border-line bg-panel-2 aspect-[4/3] group">
+                <div className="relative rounded-xl overflow-hidden border border-line bg-panel-2 aspect-[600/400] group">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={result.images.services.dataUrl}
                     alt={result.images.services.altText}
-                    className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-300"
+                    className="w-full h-full object-cover group-hover:scale-[1.01] transition-transform duration-300"
                   />
                 </div>
                 <div className="flex items-center justify-between text-xs text-muted">
                   <p className="truncate max-w-[70%]">Embedded via <code className="text-accent">&lt;img class=&quot;alignleft&quot; /&gt;</code></p>
-                  <span className="font-mono text-accent">Practice Services Body</span>
+                  <span className="font-mono text-accent">600×400 Editorial Bar</span>
                 </div>
               </div>
             </div>
@@ -569,6 +595,42 @@ export default function Home() {
           {/* TAB 3: FAQS & SCHEMA */}
           {activeTab === "faqs" && (
             <div className="space-y-6">
+              {/* Insert Script to <head> (_inpost_head_script) Meta Box */}
+              <div className="rounded-2xl border-2 border-accent/40 bg-panel p-6 space-y-4 shadow-sm">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-line pb-3">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <FileCode className="size-5 text-accent" />
+                      <h3 className="font-bold text-lg text-text">Insert Script to &lt;head&gt;</h3>
+                      <span className="text-xs font-mono px-2 py-0.5 rounded bg-accent/10 text-accent font-semibold">
+                        custom field: _inpost_head_script
+                      </span>
+                    </div>
+                    <p className="text-xs text-muted mt-1">
+                      The code below will be inserted into the &lt;head&gt; section of this specific page/post.
+                    </p>
+                  </div>
+
+                  <button
+                    onClick={copySchemaJsonLd}
+                    className="inline-flex items-center gap-2 rounded-xl bg-accent text-white px-4 py-2.5 text-xs font-bold hover:opacity-90 transition shadow-sm self-start sm:self-auto"
+                  >
+                    {copiedSchema ? <Check className="size-4" /> : <Copy className="size-4" />}
+                    {copiedSchema ? "Copied to Clipboard!" : "Copy Script for <head>"}
+                  </button>
+                </div>
+
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between text-xs text-muted">
+                    <span>Schema.org FAQPage JSON-LD Structured Data</span>
+                    <span className="font-mono text-accent">synth_header_script</span>
+                  </div>
+                  <pre className="p-4 rounded-xl bg-panel-2 border border-line text-xs font-mono overflow-x-auto text-text max-h-72 leading-relaxed selection:bg-accent selection:text-white">
+                    {result.faqSchemaJsonLd}
+                  </pre>
+                </div>
+              </div>
+
               <div className="rounded-2xl border border-line bg-panel p-6 space-y-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
@@ -591,25 +653,6 @@ export default function Home() {
                     </details>
                   ))}
                 </div>
-              </div>
-
-              {/* Schema JSON-LD */}
-              <div className="rounded-2xl border border-line bg-panel p-6 space-y-3">
-                <div className="flex items-center justify-between">
-                  <h3 className="font-semibold text-sm flex items-center gap-2">
-                    <FileCode className="size-4 text-accent" /> Schema.org FAQPage JSON-LD
-                  </h3>
-                  <button
-                    onClick={copySchemaJsonLd}
-                    className="inline-flex items-center gap-1 text-xs text-accent hover:underline"
-                  >
-                    {copiedSchema ? <Check className="size-3.5" /> : <Copy className="size-3.5" />}
-                    {copiedSchema ? "Copied" : "Copy JSON-LD"}
-                  </button>
-                </div>
-                <pre className="p-4 rounded-xl bg-panel-2 border border-line text-xs font-mono overflow-x-auto text-muted max-h-72">
-                  {result.faqSchemaJsonLd}
-                </pre>
               </div>
             </div>
           )}

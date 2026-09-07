@@ -169,5 +169,6 @@ export interface AtoyanPublishResult {
   servicesAttachmentId?: number;
   servicesUrl?: string;
   yoastUpdated: boolean;
+  inpostHeadScript?: string;
   acfPayload: Record<string, unknown>;
 }

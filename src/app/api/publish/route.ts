@@ -117,8 +117,8 @@ export async function POST(req: Request) {
             mimeType: bannerImageData.mimeType || "image/jpeg",
             altText: bannerImageData.altText || legalContent.heroTitle,
             prompt: "",
-            width: 1200,
-            height: 675,
+            width: 1920,
+            height: 451,
           }
         : undefined,
       bannerUrl: (bodyData.banner_image_url as string) || undefined,
@@ -130,8 +130,8 @@ export async function POST(req: Request) {
             mimeType: servicesImageData.mimeType || "image/jpeg",
             altText: servicesImageData.altText || legalContent.servicesHeading,
             prompt: "",
-            width: 800,
-            height: 600,
+            width: 600,
+            height: 400,
           }
         : undefined,
       servicesUrl: (bodyData.services_image_url as string) || undefined,

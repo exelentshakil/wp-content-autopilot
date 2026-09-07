@@ -1,6 +1,7 @@
 import fs from "fs";
 import path from "path";
 import zlib from "zlib";
+import sharp from "sharp";
 import type { AtoyanGeneratedImage, AtoyanImages } from "./types";
 
 interface GenerateSingleImageOptions {
@@ -14,6 +15,130 @@ interface GenerateSingleImageOptions {
 }
 
 /**
+ * Derives the core practice area category from a keyword/city string.
+ * Example: 'Burbank Wrongful Termination Lawyer' -> 'WRONGFUL TERMINATION'
+ */
+export function deriveAtoyanCategory(keyword: string, city?: string): string {
+  let cleaned = keyword;
+  if (city) {
+    cleaned = cleaned.replace(new RegExp(city, "gi"), "");
+  }
+  cleaned = cleaned.replace(/\b(lawyer|attorney|law firm|attorneys|lawyers|legal representation|legal advocacy)\b/gi, "");
+  cleaned = cleaned.trim().replace(/^[-–—:,\s]+|[-–—:,\s]+$/g, "");
+  if (!cleaned || cleaned.length < 3) {
+    return "CALIFORNIA EMPLOYMENT LAW";
+  }
+  return cleaned;
+}
+
+/**
+ * Composites the official Atoyan Law Firm 'A' logo and dark gradient on the left side
+ * of the 1920x451 banner image to match authentic live site banners (e.g. Burbank-Wrongful-Termination-Lawyer-bar.jpg).
+ */
+export async function compositeAtoyanBanner(
+  imageBuffer: Buffer
+): Promise<{ buffer: Buffer; width: number; height: number }> {
+  const width = 1920;
+  const height = 451;
+
+  let logoB64 = "";
+  try {
+    const logoPath = path.join(process.cwd(), "public/images/atoyan-logo-icon.png");
+    if (fs.existsSync(logoPath)) {
+      logoB64 = fs.readFileSync(logoPath).toString("base64");
+    }
+  } catch (err) {
+    console.warn("Could not read atoyan-logo-icon.png:", err);
+  }
+
+  const logoElement = logoB64
+    ? `<g opacity="0.45" transform="translate(-25, 0)">
+        <image xlink:href="data:image/png;base64,${logoB64}" x="0" y="0" width="451" height="451" preserveAspectRatio="none" />
+      </g>`
+    : "";
+
+  const svgOverlay = Buffer.from(`
+    <svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+      <defs>
+        <linearGradient id="darkGrad" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0%" stop-color="#18120b" stop-opacity="0.95"/>
+          <stop offset="25%" stop-color="#18120b" stop-opacity="0.85"/>
+          <stop offset="45%" stop-color="#18120b" stop-opacity="0.4"/>
+          <stop offset="65%" stop-color="#18120b" stop-opacity="0"/>
+        </linearGradient>
+      </defs>
+      <rect x="0" y="0" width="${Math.round(width * 0.65)}" height="${height}" fill="url(#darkGrad)" />
+      ${logoElement}
+    </svg>
+  `);
+
+  const brandedBuffer = await sharp(imageBuffer)
+    .resize(width, height, { fit: "cover" })
+    .composite([{ input: svgOverlay, top: 0, left: 0 }])
+    .jpeg({ quality: 90 })
+    .toBuffer();
+
+  return { buffer: brandedBuffer, width, height };
+}
+
+/**
+ * Composites the official Atoyan Law Firm dark horizontal banner bar and typography
+ * across the top of the 600x400 services image:
+ * Line 1 (White #FFFFFF, ~20px bold): Main Practice Area / Keyword (e.g. BURBANK WRONGFUL TERMINATION LAWYER)
+ * Line 2 (Yellow/Gold #E5C345, ~17px bold): Practice category / sub-topic (e.g. WRONGFUL TERMINATION)
+ */
+export async function compositeAtoyanServicesImage(
+  imageBuffer: Buffer,
+  params: { headline: string; category: string }
+): Promise<{ buffer: Buffer; width: number; height: number }> {
+  const width = 600;
+  const height = 400;
+  const barTop = 26;
+  const barHeight = 70;
+
+  const escapeXml = (str: string) =>
+    str.replace(/[<>&'"]/g, (c) => {
+      switch (c) {
+        case "<": return "&lt;";
+        case ">": return "&gt;";
+        case "&": return "&amp;";
+        case "'": return "&apos;";
+        case '"': return "&quot;";
+        default: return c;
+      }
+    });
+
+  const headline = escapeXml(params.headline.toUpperCase());
+  const category = escapeXml(params.category.toUpperCase());
+
+  // Dynamically size font so long legal titles stay legible without overflow
+  const hLen = headline.length;
+  const line1FontSize = hLen > 36 ? Math.max(14, Math.floor(580 / (hLen * 0.65))) : 20;
+  const line2FontSize = category.length > 38 ? Math.max(13, Math.floor(580 / (category.length * 0.65))) : 16;
+
+  const svgOverlay = Buffer.from(`
+    <svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <filter id="shadow" x="-5%" y="-5%" width="110%" height="110%">
+          <feDropShadow dx="0" dy="1.5" stdDeviation="1.5" flood-color="#000000" flood-opacity="0.8"/>
+        </filter>
+      </defs>
+      <rect x="0" y="${barTop}" width="${width}" height="${barHeight}" fill="rgba(20, 20, 20, 0.72)" />
+      <text x="16" y="${barTop + 28}" fill="#FFFFFF" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="${line1FontSize}" font-weight="900" letter-spacing="0.5" filter="url(#shadow)">${headline}</text>
+      <text x="16" y="${barTop + 54}" fill="#E5C345" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="${line2FontSize}" font-weight="900" letter-spacing="0.5" filter="url(#shadow)">${category}</text>
+    </svg>
+  `);
+
+  const brandedBuffer = await sharp(imageBuffer)
+    .resize(width, height, { fit: "cover" })
+    .composite([{ input: svgOverlay, top: 0, left: 0 }])
+    .jpeg({ quality: 90 })
+    .toBuffer();
+
+  return { buffer: brandedBuffer, width, height };
+}
+
+/**
  * Creates a valid, lightweight binary PNG buffer in pure Node.js.
  * This guarantees WordPress REST media upload will never reject the fallback.
  */
@@ -23,11 +148,11 @@ function createSolidPngBuffer(width: number, height: number, r: number, g: numbe
   const ihdr = Buffer.alloc(13);
   ihdr.writeUInt32BE(width, 0);
   ihdr.writeUInt32BE(height, 4);
-  ihdr[8] = 8; // bit depth
-  ihdr[9] = 2; // color type: RGB
-  ihdr[10] = 0; // compression
-  ihdr[11] = 0; // filter
-  ihdr[12] = 0; // interlace
+  ihdr[8] = 8;
+  ihdr[9] = 2;
+  ihdr[10] = 0;
+  ihdr[11] = 0;
+  ihdr[12] = 0;
 
   function makeChunk(type: string, data: Buffer): Buffer {
     const len = data.length;
@@ -44,7 +169,7 @@ function createSolidPngBuffer(width: number, height: number, r: number, g: numbe
   const rawData = Buffer.alloc(rowLen * height);
   for (let y = 0; y < height; y++) {
     const rowOffset = y * rowLen;
-    rawData[rowOffset] = 0; // filter type None
+    rawData[rowOffset] = 0;
     for (let x = 0; x < width; x++) {
       const pxOffset = rowOffset + 1 + x * 3;
       rawData[pxOffset] = r;
@@ -89,7 +214,6 @@ function generateBrandedFallbackImage(opts: GenerateSingleImageOptions): AtoyanG
     console.warn("Fallback disk image read warning:", err);
   }
 
-  // Pure binary PNG fallback in case disk read is unavailable
   const pngBuffer = createSolidPngBuffer(opts.width, opts.height, 15, 23, 42);
   const base64 = pngBuffer.toString("base64");
 
@@ -109,7 +233,6 @@ function generateBrandedFallbackImage(opts: GenerateSingleImageOptions): AtoyanG
  * Supports gemini-2.5-flash-image / gemini-3.1-flash-image (generateContent) and Imagen 3 (:predict).
  */
 async function tryGeminiImagen(opts: GenerateSingleImageOptions, key: string): Promise<AtoyanGeneratedImage | null> {
-  // Method 1: Google Gemini Image generation models (gemini-2.5-flash-image)
   const models = ["gemini-2.5-flash-image", "gemini-3.1-flash-image"];
   for (const model of models) {
     try {
@@ -146,7 +269,6 @@ async function tryGeminiImagen(opts: GenerateSingleImageOptions, key: string): P
     }
   }
 
-  // Method 2: Google Imagen 3 predict endpoint
   try {
     const ratio = opts.width / opts.height;
     const aspectRatio = Math.abs(ratio - 16 / 9) < Math.abs(ratio - 4 / 3) ? "16:9" : "4:3";
@@ -258,36 +380,37 @@ async function generateSingleImage(opts: GenerateSingleImageOptions): Promise<At
     }
   }
 
-  // Guaranteed fallback to authentic Atoyan Law Firm practice area photography
   return generateBrandedFallbackImage(opts);
 }
 
 /**
  * Generates both Atoyan practice area images:
- * 1. Banner Image (16:9): Moody legal desk with case files and warm banker's lamp.
- * 2. Services Image (4:3): Stylized editorial depiction of workplace conflict / corporate stress.
+ * 1. Banner Image (1920x451): Moody legal desk with Atoyan 'A' brand mark & dark left gradient.
+ * 2. Services Image (600x400): Editorial corporate photo with dark horizontal overlay & bold typography.
  */
 export async function generateAtoyanImages(params: {
   keyword: string;
   city?: string;
+  category?: string;
   slug?: string;
   apiKey?: string;
   openaiKey?: string;
 }): Promise<AtoyanImages> {
-  const { keyword, city = "California", slug, apiKey, openaiKey } = params;
+  const { keyword, city = "California", category: providedCategory, slug, apiKey, openaiKey } = params;
   const safeSlug = (slug || keyword.toLowerCase().replace(/[^a-z0-9]+/g, "-")).replace(/^-|-$/g, "");
+  const category = providedCategory || deriveAtoyanCategory(keyword, city);
 
   const bannerPrompt = `Cinematic professional 35mm photography of an empty California law firm partner office desk. Warm green banker desk lamp, stacked legal case files, leather-bound legal volumes on dark polished mahogany wood. Moody evening ambiance, soft bokeh, executive attorney aesthetic. STRICT NEGATIVE CONSTRAINT: Absolutely NO text, NO typography, NO letters, NO words, NO signs, NO watermark. 16:9 wide landscape orientation.`;
 
   const servicesPrompt = `Professional editorial corporate photograph of two legal professionals in business attire reviewing employment documents together in a sleek modern conference room. Natural light, clean architectural background, elegant navy and slate tones. STRICT NEGATIVE CONSTRAINT: Absolutely NO text, NO typography, NO letters, NO words, NO signage, NO overlays, NO watermarks. 4:3 landscape orientation.`;
 
-  const [banner, services] = await Promise.all([
+  const [rawBanner, rawServices] = await Promise.all([
     generateSingleImage({
       prompt: bannerPrompt,
       filename: `${safeSlug}-banner.jpg`,
       altText: `${keyword} in ${city} - Atoyan Law Firm`,
-      width: 1200,
-      height: 675,
+      width: 1920,
+      height: 451,
       apiKey,
       openaiKey,
     }),
@@ -295,12 +418,46 @@ export async function generateAtoyanImages(params: {
       prompt: servicesPrompt,
       filename: `${safeSlug}-services.jpg`,
       altText: `${keyword} Legal Services & Representation - Atoyan Law`,
-      width: 800,
-      height: 600,
+      width: 600,
+      height: 400,
       apiKey,
       openaiKey,
     }),
   ]);
+
+  // Apply Atoyan Law Firm Branding Composites
+  let banner = rawBanner;
+  try {
+    const rawBannerBuf = Buffer.from(rawBanner.base64, "base64");
+    const { buffer: bannerBuf, width: bW, height: bH } = await compositeAtoyanBanner(rawBannerBuf);
+    banner = {
+      ...rawBanner,
+      base64: bannerBuf.toString("base64"),
+      mimeType: "image/jpeg",
+      width: bW,
+      height: bH,
+    };
+  } catch (bannerErr) {
+    console.warn("Banner branding composite warning:", bannerErr);
+  }
+
+  let services = rawServices;
+  try {
+    const rawServicesBuf = Buffer.from(rawServices.base64, "base64");
+    const { buffer: servicesBuf, width: sW, height: sH } = await compositeAtoyanServicesImage(rawServicesBuf, {
+      headline: keyword,
+      category,
+    });
+    services = {
+      ...rawServices,
+      base64: servicesBuf.toString("base64"),
+      mimeType: "image/jpeg",
+      width: sW,
+      height: sH,
+    };
+  } catch (servicesErr) {
+    console.warn("Services branding composite warning:", servicesErr);
+  }
 
   return { banner, services };
 }
