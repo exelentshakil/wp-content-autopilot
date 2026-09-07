@@ -34,6 +34,8 @@ class WP_Content_Autopilot_Bridge {
         add_action( 'wp_head', array( $this, 'render_head_script_fallback' ), 99 );
         add_action( 'wp_footer', array( $this, 'render_accordion_script' ), 99 );
         add_action( 'rest_api_init', array( $this, 'register_custom_routes' ) );
+        add_filter( 'the_content', array( $this, 'clean_faq_empty_paragraphs' ), 99 );
+        add_filter( 'acf/format_value', array( $this, 'clean_faq_empty_paragraphs' ), 99 );
     }
 
     /**
@@ -190,6 +192,24 @@ class WP_Content_Autopilot_Bridge {
         ?>
         <script id="wp-content-autopilot-accordion-js">
         (function() {
+            // Clean rogue empty paragraphs and stray breaks injected by wpautop
+            function cleanRogueFaqElements() {
+                try {
+                    var pElements = document.querySelectorAll(".atoyan-custom-faq-accordion p");
+                    pElements.forEach(function(p) {
+                        if (!p.textContent.trim() && !p.querySelector("img,a,iframe,svg")) {
+                            p.remove();
+                        }
+                    });
+                    var brElements = document.querySelectorAll(".atoyan-custom-faq-accordion .atoyan-faq-toggle br, .atoyan-custom-faq-accordion .atoyan-faq-header br, .atoyan-custom-faq-accordion .atoyan-faq-card > br");
+                    brElements.forEach(function(b) { b.remove(); });
+                } catch(e) {}
+            }
+            if (document.readyState === "loading") {
+                document.addEventListener("DOMContentLoaded", cleanRogueFaqElements);
+            } else {
+                cleanRogueFaqElements();
+            }
             function handleAccordionToggle(e) {
                 // Check for new isolated Atoyan FAQ accordion
                 var atoyanBtn = e.target.closest(".atoyan-faq-toggle, .atoyan-faq-header");
@@ -382,6 +402,32 @@ class WP_Content_Autopilot_Bridge {
             'success' => true,
             'cleared' => $cleared,
         ) );
+    }
+
+    /**
+     * 6. Clean up any empty <p></p> or stray <br> tags inserted into the FAQ accordion markup by wpautop.
+     */
+    public function clean_faq_empty_paragraphs( $content ) {
+        if ( ! is_string( $content ) || strpos( $content, 'atoyan-custom-faq-accordion' ) === false ) {
+            return $content;
+        }
+
+        // Clean empty paragraphs and stray breaks within the custom accordion block
+        return preg_replace_callback(
+            '/<div class="atoyan-faq-section atoyan-custom-faq-accordion[\s\S]*?<\/div>\s*<\/div>/i',
+            function( $matches ) {
+                $block = $matches[0];
+                // Strip empty <p></p> or <p><br></p> tags
+                $block = preg_replace( '/<p[^>]*>\s*(<br\s*\/?>)?\s*<\/p>/i', '', $block );
+                // Strip stray <br> tags inside buttons, headers, and spans
+                $block = preg_replace( '/(<button[^>]*class="[^"]*atoyan-faq-toggle[^"]*"[^>]*>)\s*<br\s*\/?>/i', '$1', $block );
+                $block = preg_replace( '/<br\s*\/?>\s*(<\/button>)/i', '$1', $block );
+                $block = preg_replace( '/(<span[^>]*class="[^"]*atoyan-faq-(?:icon|title)[^"]*"[^>]*>)\s*<br\s*\/?>/i', '$1', $block );
+                $block = preg_replace( '/<br\s*\/?>\s*(<\/span>)/i', '$1', $block );
+                return $block;
+            },
+            $content
+        );
     }
 }
 
