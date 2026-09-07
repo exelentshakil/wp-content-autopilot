@@ -640,16 +640,23 @@ export default function Home() {
                   <span className="text-xs text-muted">Embedded in compensation_content + [sp_easyaccordion id=&quot;3932&quot;]</span>
                 </div>
 
-                <div className="space-y-3">
+                <div className="space-y-2.5">
                   {(result.content?.faqs || []).map((faq, i) => (
-                    <details key={i} className="group rounded-xl border border-line bg-panel-2 p-4 text-sm" open={i === 0}>
-                      <summary className="font-semibold cursor-pointer text-text hover:text-accent transition flex items-center justify-between">
-                        <span>{faq.question}</span>
-                        <span className="text-muted group-open:rotate-180 transition-transform">▼</span>
+                    <details
+                      key={i}
+                      className="group border border-[#e2e2e2] bg-[#eee] dark:bg-[#22272e] dark:border-[#373e47] text-sm overflow-hidden transition"
+                      open={i === 0}
+                    >
+                      <summary className="font-bold cursor-pointer text-[#444] dark:text-[#adbac7] uppercase tracking-wide px-4 py-3.5 flex items-center gap-3 select-none hover:bg-[#e6e6e6] dark:hover:bg-[#2d333b] transition list-none">
+                        <span className="text-base font-bold text-[#444] dark:text-[#adbac7] w-4 text-center font-mono select-none">
+                          <span className="group-open:hidden">+</span>
+                          <span className="hidden group-open:inline">−</span>
+                        </span>
+                        <span className="text-xs sm:text-sm font-bold flex-1">{faq.question}</span>
                       </summary>
-                      <p className="mt-3 text-muted leading-relaxed pt-2 border-t border-line/60">
-                        {faq.answer}
-                      </p>
+                      <div className="p-4 sm:p-5 bg-white dark:bg-[#1c2128] border-t border-[#e2e2e2] dark:border-[#373e47] text-sm text-[#444] dark:text-[#adbac7] leading-relaxed">
+                        <p className="m-0">{faq.answer}</p>
+                      </div>
                     </details>
                   ))}
                 </div>

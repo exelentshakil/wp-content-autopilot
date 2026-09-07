@@ -145,28 +145,119 @@ export function generateEasyAccordionHtml(faqs: AtoyanFaq[], shortcodeId = 3932)
 
   const itemsHtml = faqs
     .map((faq, index) => {
+      const isFirst = index === 0;
       const collapseId = `ea-collapse-${index + 1}`;
       const headingId = `ea-heading-${index + 1}`;
+      const cleanQuestion = faq.question.trim().toUpperCase();
+      const cleanAnswer = faq.answer.trim();
+
       return `
-      <div class="ea-card sp-accordion-item mb-3" style="border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden; margin-bottom: 12px;">
-        <div class="ea-header" id="${headingId}" style="background-color: #f8fafc; padding: 14px 18px; cursor: pointer;">
-          <h4 class="ea-header-title" style="margin: 0; font-size: 16px; font-weight: 600; color: #1e293b;">
-            ${faq.question}
-          </h4>
+    <div class="ea-card ${isFirst ? "ea-expand" : ""} sp-ea-single" style="margin-bottom: 10px; border: 1px solid #e2e2e2; background: #eee; border-radius: 0; overflow: hidden;">
+      <h3 class="ea-header" id="${headingId}" style="margin: 0; padding: 0; font-size: 15px; font-weight: 700; line-height: 1.4;">
+        <a class="${isFirst ? "" : "collapsed"}" role="button" tabindex="0" aria-expanded="${isFirst ? "true" : "false"}" aria-controls="${collapseId}" style="display: flex; align-items: center; padding: 14px 18px; color: #444; text-decoration: none; font-weight: 700; text-transform: uppercase; font-size: 14px; letter-spacing: 0.5px; cursor: pointer; user-select: none;">
+          <span class="ea-expand-icon" style="float: left; margin-right: 12px; font-size: 18px; font-weight: 700; line-height: 1; color: #444; min-width: 14px; text-align: center;">${isFirst ? "−" : "+"}</span>
+          <span class="ea-header-text" style="color: #444;">${cleanQuestion}</span>
+        </a>
+      </h3>
+      <div id="${collapseId}" class="sp-collapse spcollapse ${isFirst ? "show" : "collapsed"}" aria-labelledby="${headingId}" style="display: ${isFirst ? "block" : "none"}; background: #fff; border-top: 1px solid #e2e2e2;">
+        <div class="ea-body" style="padding: 18px 22px; font-size: 15px; line-height: 1.7; color: #444; background: #fff;">
+          <p dir="auto" style="margin: 0; color: #444;">${cleanAnswer}</p>
         </div>
-        <div id="${collapseId}" class="ea-body" style="padding: 16px 18px; font-size: 15px; line-height: 1.6; color: #334155; background: #ffffff;">
-          ${faq.answer}
-        </div>
-      </div>`;
+      </div>
+    </div>`;
     })
     .join("\n");
 
+  const scopedCss = `
+<style id="atoyan-easy-accordion-custom-style">
+  .atoyan-faq-section .sp-ea-single {
+    margin-bottom: 10px !important;
+    border: 1px solid #e2e2e2 !important;
+    background: #eee !important;
+    transition: background 0.15s ease-in-out;
+  }
+  .atoyan-faq-section .sp-ea-single:hover {
+    background: #e6e6e6 !important;
+  }
+  .atoyan-faq-section .ea-header a {
+    color: #444 !important;
+    text-decoration: none !important;
+  }
+  .atoyan-faq-section .ea-header a:hover {
+    color: #000 !important;
+  }
+  .atoyan-faq-section .ea-expand-icon {
+    font-family: Arial, sans-serif !important;
+    font-weight: 700 !important;
+  }
+</style>`;
+
+  const toggleScript = `
+<script>
+(function() {
+  function initAtoyanAccordion() {
+    var cards = document.querySelectorAll('.sp-ea-single');
+    cards.forEach(function(card) {
+      var link = card.querySelector('.ea-header a');
+      var body = card.querySelector('.sp-collapse');
+      var icon = card.querySelector('.ea-expand-icon');
+      if (!link || !body || link.dataset.eaBound === 'true') return;
+      link.dataset.eaBound = 'true';
+
+      function toggle() {
+        var isOpen = body.style.display === 'block' || body.classList.contains('show');
+        if (isOpen) {
+          body.style.display = 'none';
+          body.classList.remove('show');
+          body.classList.add('collapsed');
+          link.classList.add('collapsed');
+          link.setAttribute('aria-expanded', 'false');
+          card.classList.remove('ea-expand');
+          if (icon) icon.textContent = '+';
+        } else {
+          body.style.display = 'block';
+          body.classList.add('show');
+          body.classList.remove('collapsed');
+          link.classList.remove('collapsed');
+          link.setAttribute('aria-expanded', 'true');
+          card.classList.add('ea-expand');
+          if (icon) icon.textContent = '−';
+        }
+      }
+
+      link.addEventListener('click', function(e) {
+        e.preventDefault();
+        toggle();
+      });
+
+      link.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          toggle();
+        }
+      });
+    });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initAtoyanAccordion);
+  } else {
+    initAtoyanAccordion();
+  }
+  window.addEventListener('load', initAtoyanAccordion);
+  setTimeout(initAtoyanAccordion, 300);
+  setTimeout(initAtoyanAccordion, 1000);
+})();
+</script>`;
+
   const containerHtml = `
-<div class="sp-easy-accordion-wrapper atoyan-faq-section" style="margin-top: 25px; margin-bottom: 25px;">
-  <h3 class="h3dav" style="margin-bottom: 15px;">Frequently Asked Questions</h3>
-  <div class="sp-easy-accordion">
+<div class="sp-easy-accordion-wrapper atoyan-faq-section" style="margin-top: 35px; margin-bottom: 30px;">
+  ${scopedCss}
+  <h3 class="h3dav" style="margin-bottom: 20px;">Frequently Asked Questions</h3>
+  <div class="sp-ea-one sp-easy-accordion" data-ea-active="ea-click" data-ea-mode="vertical">
     ${itemsHtml}
   </div>
+  ${toggleScript}
 </div>`;
 
   return containerHtml;
@@ -214,7 +305,9 @@ export function buildCompensationSection(
 
   const accordionHtml = generateEasyAccordionHtml(faqs);
 
-  return `${compensationIntro.trim()}\r\n\r\n${callout1}\r\n\r\n${accordionHtml}`;
+  const schemaJsonLd = generateFaqSchemaJsonLd(faqs);
+
+  return `${compensationIntro.trim()}\r\n\r\n${callout1}\r\n\r\n${accordionHtml}\r\n\r\n${schemaJsonLd}`;
 }
 
 /**
