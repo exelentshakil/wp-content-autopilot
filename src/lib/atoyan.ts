@@ -194,59 +194,51 @@ export function generateEasyAccordionHtml(faqs: AtoyanFaq[], shortcodeId = 3932)
 
   const toggleScript = `
 <script>
-(function() {
-  function initAtoyanAccordion() {
-    var cards = document.querySelectorAll('.sp-ea-single');
-    cards.forEach(function(card) {
-      var link = card.querySelector('.ea-header a');
-      var body = card.querySelector('.sp-collapse');
-      var icon = card.querySelector('.ea-expand-icon');
-      if (!link || !body || link.dataset.eaBound === 'true') return;
-      link.dataset.eaBound = 'true';
-
-      function toggle() {
-        var isOpen = body.style.display === 'block' || body.classList.contains('show');
-        if (isOpen) {
-          body.style.display = 'none';
-          body.classList.remove('show');
-          body.classList.add('collapsed');
-          link.classList.add('collapsed');
-          link.setAttribute('aria-expanded', 'false');
-          card.classList.remove('ea-expand');
-          if (icon) icon.textContent = '+';
-        } else {
-          body.style.display = 'block';
-          body.classList.add('show');
-          body.classList.remove('collapsed');
-          link.classList.remove('collapsed');
-          link.setAttribute('aria-expanded', 'true');
-          card.classList.add('ea-expand');
-          if (icon) icon.textContent = '−';
-        }
-      }
-
-      link.addEventListener('click', function(e) {
-        e.preventDefault();
-        toggle();
-      });
-
-      link.addEventListener('keydown', function(e) {
-        if (e.key === 'Enter' || e.key === ' ') {
-          e.preventDefault();
-          toggle();
-        }
-      });
-    });
-  }
-
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initAtoyanAccordion);
-  } else {
-    initAtoyanAccordion();
-  }
-  window.addEventListener('load', initAtoyanAccordion);
-  setTimeout(initAtoyanAccordion, 300);
-  setTimeout(initAtoyanAccordion, 1000);
+(function(){
+function handleAtoyanFaqClick(e){
+var header=e.target.closest(".ea-header, .sp-ea-single .ea-header a");
+if(!header)return;
+var card=header.closest(".ea-card, .sp-ea-single");
+if(!card)return;
+var body=card.querySelector(".sp-collapse, [id^='ea-collapse']");
+if(!body)return;
+var link=card.querySelector(".ea-header a, a[role='button']");
+var icon=card.querySelector(".ea-expand-icon");
+var isExpanded=card.classList.contains("ea-expand")||body.classList.contains("show")||body.style.display==="block";
+var container=card.closest(".sp-ea-one, .sp-easy-accordion");
+if(container){
+var siblings=container.querySelectorAll(".sp-ea-single, .ea-card");
+siblings.forEach(function(sib){
+if(sib!==card){
+sib.classList.remove("ea-expand");
+var sBody=sib.querySelector(".sp-collapse, [id^='ea-collapse']");
+if(sBody){sBody.style.display="none";sBody.classList.remove("show");sBody.classList.add("collapsed");}
+var sLink=sib.querySelector(".ea-header a, a[role='button']");
+if(sLink){sLink.classList.add("collapsed");sLink.setAttribute("aria-expanded","false");}
+var sIcon=sib.querySelector(".ea-expand-icon");
+if(sIcon){sIcon.textContent="+";}
+}
+});
+}
+if(isExpanded){
+body.style.display="none";
+body.classList.remove("show");
+body.classList.add("collapsed");
+card.classList.remove("ea-expand");
+if(link){link.classList.add("collapsed");link.setAttribute("aria-expanded","false");}
+if(icon){icon.textContent="+";}
+}else{
+body.style.display="block";
+body.classList.add("show");
+body.classList.remove("collapsed");
+card.classList.add("ea-expand");
+if(link){link.classList.remove("collapsed");link.setAttribute("aria-expanded","true");}
+if(icon){icon.textContent="−";}
+}
+if(e.cancelable&&e.type==="click"){e.preventDefault();}
+}
+document.addEventListener("click",handleAtoyanFaqClick,true);
+document.addEventListener("keydown",function(e){if((e.key==="Enter"||e.key===" ")&&e.target.closest(".ea-header a")){handleAtoyanFaqClick(e);}},true);
 })();
 </script>`;
 
