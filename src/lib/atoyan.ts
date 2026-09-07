@@ -146,21 +146,21 @@ export function generateEasyAccordionHtml(faqs: AtoyanFaq[], shortcodeId = 3932)
   const itemsHtml = faqs
     .map((faq, index) => {
       const isFirst = index === 0;
-      const collapseId = `ea-collapse-${index + 1}`;
-      const headingId = `ea-heading-${index + 1}`;
+      const collapseId = `atoyan-faq-collapse-${index + 1}`;
+      const headingId = `atoyan-faq-heading-${index + 1}`;
       const cleanQuestion = faq.question.trim().toUpperCase();
       const cleanAnswer = faq.answer.trim();
 
       return `
-    <div class="ea-card ${isFirst ? "ea-expand" : ""} sp-ea-single" style="margin-bottom: 10px; border: 1px solid #e2e2e2; background: #eee; border-radius: 0; overflow: hidden;">
-      <h3 class="ea-header" id="${headingId}" style="margin: 0; padding: 0; font-size: 15px; font-weight: 700; line-height: 1.4;">
-        <a class="${isFirst ? "" : "collapsed"}" role="button" tabindex="0" aria-expanded="${isFirst ? "true" : "false"}" aria-controls="${collapseId}" style="display: flex; align-items: center; padding: 14px 18px; color: #444; text-decoration: none; font-weight: 700; text-transform: uppercase; font-size: 14px; letter-spacing: 0.5px; cursor: pointer; user-select: none;">
-          <span class="ea-expand-icon" style="float: left; margin-right: 12px; font-size: 18px; font-weight: 700; line-height: 1; color: #444; min-width: 14px; text-align: center;">${isFirst ? "−" : "+"}</span>
-          <span class="ea-header-text" style="color: #444;">${cleanQuestion}</span>
-        </a>
+    <div class="atoyan-faq-card ${isFirst ? "atoyan-faq-open" : ""}" style="margin-bottom: 10px; border: 1px solid #e2e2e2; background: #eee; border-radius: 0; overflow: hidden; transition: background 0.15s ease-in-out;">
+      <h3 class="atoyan-faq-header" id="${headingId}" style="margin: 0; padding: 0; font-size: 15px; font-weight: 700; line-height: 1.4;">
+        <button type="button" class="atoyan-faq-toggle" aria-expanded="${isFirst ? "true" : "false"}" aria-controls="${collapseId}" style="width: 100%; border: none; background: transparent; text-align: left; display: flex; align-items: center; padding: 14px 18px; color: #444; font-weight: 700; text-transform: uppercase; font-size: 14px; letter-spacing: 0.5px; cursor: pointer; user-select: none; outline: none; font-family: inherit;">
+          <span class="atoyan-faq-icon" style="float: left; margin-right: 12px; font-size: 18px; font-weight: 700; line-height: 1; color: #444; min-width: 14px; text-align: center; font-family: Arial, sans-serif;">${isFirst ? "−" : "+"}</span>
+          <span class="atoyan-faq-title" style="color: #444; flex: 1;">${cleanQuestion}</span>
+        </button>
       </h3>
-      <div id="${collapseId}" class="sp-collapse spcollapse ${isFirst ? "show" : "collapsed"}" aria-labelledby="${headingId}" style="display: ${isFirst ? "block" : "none"}; background: #fff; border-top: 1px solid #e2e2e2;">
-        <div class="ea-body" style="padding: 18px 22px; font-size: 15px; line-height: 1.7; color: #444; background: #fff;">
+      <div id="${collapseId}" class="atoyan-faq-collapse" aria-labelledby="${headingId}" style="display: ${isFirst ? "block" : "none"}; background: #fff; border-top: 1px solid #e2e2e2;">
+        <div class="atoyan-faq-body" style="padding: 18px 22px; font-size: 15px; line-height: 1.7; color: #444; background: #fff;">
           <p dir="auto" style="margin: 0; color: #444;">${cleanAnswer}</p>
         </div>
       </div>
@@ -169,84 +169,124 @@ export function generateEasyAccordionHtml(faqs: AtoyanFaq[], shortcodeId = 3932)
     .join("\n");
 
   const scopedCss = `
-<style id="atoyan-easy-accordion-custom-style">
-  .atoyan-faq-section .sp-ea-single {
+<style id="atoyan-faq-custom-style">
+  .atoyan-custom-faq-accordion .atoyan-faq-card {
     margin-bottom: 10px !important;
     border: 1px solid #e2e2e2 !important;
     background: #eee !important;
     transition: background 0.15s ease-in-out;
   }
-  .atoyan-faq-section .sp-ea-single:hover {
+  .atoyan-custom-faq-accordion .atoyan-faq-card:hover {
     background: #e6e6e6 !important;
   }
-  .atoyan-faq-section .ea-header a {
+  .atoyan-custom-faq-accordion .atoyan-faq-toggle {
+    display: flex !important;
+    align-items: center !important;
+    width: 100% !important;
+    padding: 14px 18px !important;
+    border: none !important;
+    background: transparent !important;
     color: #444 !important;
     text-decoration: none !important;
+    font-weight: 700 !important;
+    text-transform: uppercase !important;
+    font-size: 14px !important;
+    letter-spacing: 0.5px !important;
+    cursor: pointer !important;
+    text-align: left !important;
   }
-  .atoyan-faq-section .ea-header a:hover {
+  .atoyan-custom-faq-accordion .atoyan-faq-toggle:hover .atoyan-faq-title {
     color: #000 !important;
   }
-  .atoyan-faq-section .ea-expand-icon {
+  .atoyan-custom-faq-accordion .atoyan-faq-icon {
     font-family: Arial, sans-serif !important;
     font-weight: 700 !important;
+    margin-right: 12px !important;
+    font-size: 18px !important;
+    min-width: 14px !important;
+    text-align: center !important;
+    color: #444 !important;
+  }
+  .atoyan-custom-faq-accordion .atoyan-faq-collapse {
+    background: #fff !important;
+    border-top: 1px solid #e2e2e2 !important;
+  }
+  .atoyan-custom-faq-accordion .atoyan-faq-body {
+    padding: 18px 22px !important;
+    font-size: 15px !important;
+    line-height: 1.7 !important;
+    color: #444 !important;
+    background: #fff !important;
+  }
+  .atoyan-custom-faq-accordion .atoyan-faq-body p {
+    margin: 0 !important;
+    color: #444 !important;
   }
 </style>`;
 
   const toggleScript = `
 <script>
 (function(){
-function handleAtoyanFaqClick(e){
-var header=e.target.closest(".ea-header, .sp-ea-single .ea-header a");
-if(!header)return;
-var card=header.closest(".ea-card, .sp-ea-single");
+function toggleAtoyanFaq(target){
+var card=target.closest(".atoyan-faq-card");
 if(!card)return;
-var body=card.querySelector(".sp-collapse, [id^='ea-collapse']");
-if(!body)return;
-var link=card.querySelector(".ea-header a, a[role='button']");
-var icon=card.querySelector(".ea-expand-icon");
-var isExpanded=card.classList.contains("ea-expand")||body.classList.contains("show")||body.style.display==="block";
-var container=card.closest(".sp-ea-one, .sp-easy-accordion");
-if(container){
-var siblings=container.querySelectorAll(".sp-ea-single, .ea-card");
-siblings.forEach(function(sib){
-if(sib!==card){
-sib.classList.remove("ea-expand");
-var sBody=sib.querySelector(".sp-collapse, [id^='ea-collapse']");
-if(sBody){sBody.style.display="none";sBody.classList.remove("show");sBody.classList.add("collapsed");}
-var sLink=sib.querySelector(".ea-header a, a[role='button']");
-if(sLink){sLink.classList.add("collapsed");sLink.setAttribute("aria-expanded","false");}
-var sIcon=sib.querySelector(".ea-expand-icon");
-if(sIcon){sIcon.textContent="+";}
+var collapse=card.querySelector(".atoyan-faq-collapse");
+if(!collapse)return;
+var toggle=card.querySelector(".atoyan-faq-toggle");
+var icon=card.querySelector(".atoyan-faq-icon");
+var isOpen=card.classList.contains("atoyan-faq-open")||collapse.style.display==="block";
+var list=card.closest(".atoyan-faq-list");
+if(list){
+var allCards=list.querySelectorAll(".atoyan-faq-card");
+allCards.forEach(function(c){
+if(c!==card){
+c.classList.remove("atoyan-faq-open");
+var cCollapse=c.querySelector(".atoyan-faq-collapse");
+if(cCollapse){cCollapse.style.display="none";}
+var cToggle=c.querySelector(".atoyan-faq-toggle");
+if(cToggle){cToggle.setAttribute("aria-expanded","false");}
+var cIcon=c.querySelector(".atoyan-faq-icon");
+if(cIcon){cIcon.textContent="+";}
 }
 });
 }
-if(isExpanded){
-body.style.display="none";
-body.classList.remove("show");
-body.classList.add("collapsed");
-card.classList.remove("ea-expand");
-if(link){link.classList.add("collapsed");link.setAttribute("aria-expanded","false");}
+if(isOpen){
+collapse.style.display="none";
+card.classList.remove("atoyan-faq-open");
+if(toggle){toggle.setAttribute("aria-expanded","false");}
 if(icon){icon.textContent="+";}
 }else{
-body.style.display="block";
-body.classList.add("show");
-body.classList.remove("collapsed");
-card.classList.add("ea-expand");
-if(link){link.classList.remove("collapsed");link.setAttribute("aria-expanded","true");}
+collapse.style.display="block";
+card.classList.add("atoyan-faq-open");
+if(toggle){toggle.setAttribute("aria-expanded","true");}
 if(icon){icon.textContent="−";}
 }
-if(e.cancelable&&e.type==="click"){e.preventDefault();}
 }
-document.addEventListener("click",handleAtoyanFaqClick,true);
-document.addEventListener("keydown",function(e){if((e.key==="Enter"||e.key===" ")&&e.target.closest(".ea-header a")){handleAtoyanFaqClick(e);}},true);
+document.addEventListener("click",function(e){
+var btn=e.target.closest(".atoyan-faq-toggle, .atoyan-faq-header");
+if(btn){
+e.preventDefault();
+e.stopPropagation();
+toggleAtoyanFaq(btn);
+}
+},true);
+document.addEventListener("keydown",function(e){
+if(e.key==="Enter"||e.key===" "){
+var btn=e.target.closest(".atoyan-faq-toggle");
+if(btn){
+e.preventDefault();
+toggleAtoyanFaq(btn);
+}
+}
+},true);
 })();
 </script>`;
 
   const containerHtml = `
-<div class="sp-easy-accordion-wrapper atoyan-faq-section" style="margin-top: 35px; margin-bottom: 30px;">
+<div class="atoyan-faq-section atoyan-custom-faq-accordion" style="margin-top: 35px; margin-bottom: 30px;">
   ${scopedCss}
   <h3 class="h3dav" style="margin-bottom: 20px;">Frequently Asked Questions</h3>
-  <div class="sp-ea-one sp-easy-accordion" data-ea-active="ea-click" data-ea-mode="vertical">
+  <div class="atoyan-faq-list" role="region" aria-label="Frequently Asked Questions">
     ${itemsHtml}
   </div>
   ${toggleScript}

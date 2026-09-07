@@ -191,72 +191,117 @@ class WP_Content_Autopilot_Bridge {
         <script id="wp-content-autopilot-accordion-js">
         (function() {
             function handleAccordionToggle(e) {
-                var header = e.target.closest('.ea-header, .sp-ea-single .ea-header a');
+                // Check for new isolated Atoyan FAQ accordion
+                var atoyanBtn = e.target.closest(".atoyan-faq-toggle, .atoyan-faq-header");
+                if (atoyanBtn) {
+                    var card = atoyanBtn.closest(".atoyan-faq-card");
+                    if (!card) return;
+                    var collapse = card.querySelector(".atoyan-faq-collapse");
+                    if (!collapse) return;
+                    var toggle = card.querySelector(".atoyan-faq-toggle");
+                    var icon = card.querySelector(".atoyan-faq-icon");
+                    var isOpen = card.classList.contains("atoyan-faq-open") || collapse.style.display === "block";
+
+                    var list = card.closest(".atoyan-faq-list, .atoyan-custom-faq-accordion");
+                    if (list) {
+                        var siblings = list.querySelectorAll(".atoyan-faq-card");
+                        siblings.forEach(function(sib) {
+                            if (sib !== card) {
+                                sib.classList.remove("atoyan-faq-open");
+                                var sCollapse = sib.querySelector(".atoyan-faq-collapse");
+                                if (sCollapse) { sCollapse.style.display = "none"; }
+                                var sToggle = sib.querySelector(".atoyan-faq-toggle");
+                                if (sToggle) { sToggle.setAttribute("aria-expanded", "false"); }
+                                var sIcon = sib.querySelector(".atoyan-faq-icon");
+                                if (sIcon) { sIcon.textContent = "+"; }
+                            }
+                        });
+                    }
+
+                    if (isOpen) {
+                        collapse.style.display = "none";
+                        card.classList.remove("atoyan-faq-open");
+                        if (toggle) { toggle.setAttribute("aria-expanded", "false"); }
+                        if (icon) { icon.textContent = "+"; }
+                    } else {
+                        collapse.style.display = "block";
+                        card.classList.add("atoyan-faq-open");
+                        if (toggle) { toggle.setAttribute("aria-expanded", "true"); }
+                        if (icon) { icon.textContent = "−"; }
+                    }
+
+                    if (e.cancelable) { e.preventDefault(); }
+                    e.stopPropagation();
+                    return;
+                }
+
+                // Fallback for legacy markup
+                var header = e.target.closest(".ea-header, .sp-ea-single .ea-header a");
                 if (!header) return;
 
-                var card = header.closest('.ea-card, .sp-ea-single');
-                if (!card) return;
+                var lCard = header.closest(".ea-card, .sp-ea-single");
+                if (!lCard) return;
 
-                var body = card.querySelector('.sp-collapse, [id^="ea-collapse"]');
-                if (!body) return;
+                var lBody = lCard.querySelector(".sp-collapse, [id^="ea-collapse"]");
+                if (!lBody) return;
 
-                var link = card.querySelector('.ea-header a, a[role="button"]');
-                var icon = card.querySelector('.ea-expand-icon');
-                var isExpanded = card.classList.contains('ea-expand') || body.classList.contains('show') || body.style.display === 'block';
+                var lLink = lCard.querySelector(".ea-header a, a[role="button"]");
+                var lIcon = lCard.querySelector(".ea-expand-icon");
+                var lIsExpanded = lCard.classList.contains("ea-expand") || lBody.classList.contains("show") || lBody.style.display === "block";
 
-                var container = card.closest('.sp-ea-one, .sp-easy-accordion');
-                if (container) {
-                    var siblings = container.querySelectorAll('.sp-ea-single, .ea-card');
-                    siblings.forEach(function(sib) {
-                        if (sib !== card) {
-                            sib.classList.remove('ea-expand');
-                            var sBody = sib.querySelector('.sp-collapse, [id^="ea-collapse"]');
+                var lContainer = lCard.closest(".sp-ea-one, .sp-easy-accordion");
+                if (lContainer) {
+                    var lSiblings = lContainer.querySelectorAll(".sp-ea-single, .ea-card");
+                    lSiblings.forEach(function(sib) {
+                        if (sib !== lCard) {
+                            sib.classList.remove("ea-expand");
+                            var sBody = sib.querySelector(".sp-collapse, [id^="ea-collapse"]");
                             if (sBody) {
-                                sBody.style.display = 'none';
-                                sBody.classList.remove('show');
-                                sBody.classList.add('collapsed');
+                                sBody.style.display = "none";
+                                sBody.classList.remove("show");
+                                sBody.classList.add("collapsed");
                             }
-                            var sLink = sib.querySelector('.ea-header a, a[role="button"]');
+                            var sLink = sib.querySelector(".ea-header a, a[role="button"]");
                             if (sLink) {
-                                sLink.classList.add('collapsed');
-                                sLink.setAttribute('aria-expanded', 'false');
+                                sLink.classList.add("collapsed");
+                                sLink.setAttribute("aria-expanded", "false");
                             }
-                            var sIcon = sib.querySelector('.ea-expand-icon');
-                            if (sIcon) { sIcon.textContent = '+'; }
+                            var sIcon = sib.querySelector(".ea-expand-icon");
+                            if (sIcon) { sIcon.textContent = "+"; }
                         }
                     });
                 }
 
-                if (isExpanded) {
-                    body.style.display = 'none';
-                    body.classList.remove('show');
-                    body.classList.add('collapsed');
-                    card.classList.remove('ea-expand');
-                    if (link) {
-                        link.classList.add('collapsed');
-                        link.setAttribute('aria-expanded', 'false');
+                if (lIsExpanded) {
+                    lBody.style.display = "none";
+                    lBody.classList.remove("show");
+                    lBody.classList.add("collapsed");
+                    lCard.classList.remove("ea-expand");
+                    if (lLink) {
+                        lLink.classList.add("collapsed");
+                        lLink.setAttribute("aria-expanded", "false");
                     }
-                    if (icon) { icon.textContent = '+'; }
+                    if (lIcon) { lIcon.textContent = "+"; }
                 } else {
-                    body.style.display = 'block';
-                    body.classList.add('show');
-                    body.classList.remove('collapsed');
-                    card.classList.add('ea-expand');
-                    if (link) {
-                        link.classList.remove('collapsed');
-                        link.setAttribute('aria-expanded', 'true');
+                    lBody.style.display = "block";
+                    lBody.classList.add("show");
+                    lBody.classList.remove("collapsed");
+                    lCard.classList.add("ea-expand");
+                    if (lLink) {
+                        lLink.classList.remove("collapsed");
+                        lLink.setAttribute("aria-expanded", "true");
                     }
-                    if (icon) { icon.textContent = '−'; }
+                    if (lIcon) { lIcon.textContent = "−"; }
                 }
 
-                if (e.cancelable && e.type === 'click') {
+                if (e.cancelable && e.type === "click") {
                     e.preventDefault();
                 }
             }
 
-            document.addEventListener('click', handleAccordionToggle, true);
-            document.addEventListener('keydown', function(e) {
-                if ((e.key === 'Enter' || e.key === ' ') && e.target.closest('.ea-header a')) {
+            document.addEventListener("click", handleAccordionToggle, true);
+            document.addEventListener("keydown", function(e) {
+                if ((e.key === "Enter" || e.key === " ") && (e.target.closest(".ea-header a") || e.target.closest(".atoyan-faq-toggle"))) {
                     handleAccordionToggle(e);
                 }
             }, true);
