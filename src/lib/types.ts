@@ -126,13 +126,13 @@ export interface TestimonialReviewItem {
 }
 
 export interface AcfPersonalInjuryGroup {
-  personal_injury_image: string;
+  personal_injury_image: string | number;
   personal_injury_title: string;
   _personal_injury_services_heading: string;
   _personal_injury_services_sub_heading: string;
   _personal_injury_services_content: string;
   _personal_injury_services_Sidebar: string[] | number[];
-  testimonials_reviews_bg_image: string;
+  testimonials_reviews_bg_image: string | number;
   testimonials_reviews_heading: string;
   testimonials_reviews_sub_heading: string;
   testimonials_reviews_repet: TestimonialReviewItem[];
@@ -145,7 +145,7 @@ export interface AcfPersonalInjuryGroup {
   how_do_content: string;
   how_do_contact_form_heading: string;
   how_do_contact_form_shortcode: string;
-  cta_bg_image: string;
+  cta_bg_image: string | number;
   cta_heading: string;
   cta_content: string;
   cta_button: {

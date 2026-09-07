@@ -4,9 +4,12 @@ import type {
   AtoyanGeneratedImage,
   AtoyanPublishResult,
 } from "./types";
+import type { AcfPersonalInjuryGroup } from "./types";
 import {
   ATOYAN_PARENT_PAGE_ID,
   ATOYAN_TEMPLATE,
+  ATOYAN_REFERENCE_PAGE_ID,
+  ATOYAN_BANNER_ATTACHMENT_ID,
   buildAcfPersonalInjuryGroup,
 } from "./atoyan";
 
@@ -199,6 +202,23 @@ export async function publishAtoyanPage(params: {
 
   const authHeader = Buffer.from(`${wpUser}:${wpPassword}`).toString("base64");
 
+  // Step 0: Fetch reference post 3898 to clone its exact verified ACF structure
+  let baseGroup: Partial<AcfPersonalInjuryGroup> = {};
+  try {
+    const refRes = await fetch(`${cleanBase}/wp-json/wp/v2/pages/${ATOYAN_REFERENCE_PAGE_ID}`, {
+      headers: { Authorization: `Basic ${authHeader}` },
+      signal: AbortSignal.timeout(15_000),
+    });
+    if (refRes.ok) {
+      const refJson = await refRes.json();
+      if (refJson?.acf?.personal_injury_group) {
+        baseGroup = refJson.acf.personal_injury_group;
+      }
+    }
+  } catch (refErr) {
+    console.warn("Could not fetch reference post 3898, falling back to static template:", refErr);
+  }
+
   // Step 1: Upload Banner Image if provided
   if (bannerImage?.base64 && !existingBannerUrl) {
     try {
@@ -239,12 +259,14 @@ export async function publishAtoyanPage(params: {
     }
   }
 
-  // Step 3: Re-build ACF Group with newly uploaded image URLs if updated
+  // Step 3: Re-build ACF Group with newly uploaded image IDs and cloned reference assets
   const finalAcfGroup = buildAcfPersonalInjuryGroup(
     content,
     bannerUrl,
     servicesUrl,
-    servicesAttachmentId,
+    newlyUploadedServicesId || servicesAttachmentId,
+    newlyUploadedBannerId || bannerAttachmentId,
+    baseGroup,
   );
 
   const pagePayload: Record<string, unknown> = {
@@ -283,6 +305,25 @@ export async function publishAtoyanPage(params: {
   const createdPageId = pageJson.id as number;
   const pageLink = (pageJson.link as string) || `${cleanBase}/?p=${createdPageId}`;
   const editUrl = `${cleanBase}/wp-admin/post.php?post=${createdPageId}&action=edit`;
+
+  // Step 4b: Explicitly patch ACF on the newly created page to guarantee 100% field persistence
+  try {
+    await fetch(`${cleanBase}/wp-json/wp/v2/pages/${createdPageId}`, {
+      method: "POST",
+      headers: {
+        Authorization: `Basic ${authHeader}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        acf: {
+          personal_injury_group: finalAcfGroup,
+        },
+      }),
+      signal: AbortSignal.timeout(30_000),
+    });
+  } catch (acfPatchErr) {
+    console.warn("ACF follow-up persistence patch error:", acfPatchErr);
+  }
 
   // Step 5: Update Yoast SEO
   const yoastUpdated = await updateYoastSeo({

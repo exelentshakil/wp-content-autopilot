@@ -277,9 +277,9 @@ export async function generateAtoyanImages(params: {
   const { keyword, city = "California", slug, apiKey, openaiKey } = params;
   const safeSlug = (slug || keyword.toLowerCase().replace(/[^a-z0-9]+/g, "-")).replace(/^-|-$/g, "");
 
-  const bannerPrompt = `High-end cinematic photography of a prestigious California law office desk at night. A warm glowing green banker's desk lamp illuminates stacked legal case files, court briefs, leather-bound California legal law books, and dark polished mahogany wood. Deep moody shadows, elegant bokeh, professional attorney firm aesthetic. 16:9 wide landscape orientation.`;
+  const bannerPrompt = `Cinematic professional 35mm photography of an empty California law firm partner office desk. Warm green banker desk lamp, stacked legal case files, leather-bound legal volumes on dark polished mahogany wood. Moody evening ambiance, soft bokeh, executive attorney aesthetic. STRICT NEGATIVE CONSTRAINT: Absolutely NO text, NO typography, NO letters, NO words, NO signs, NO watermark. 16:9 wide landscape orientation.`;
 
-  const servicesPrompt = `Editorial stylized modern illustration depicting workplace rights and employee advocacy regarding ${keyword} in ${city}. An employee consulting legal documents with confident body language in a sleek corporate office environment. Stylized professional corporate editorial art, tasteful color palette with navy blue, warm amber, and slate tones. 4:3 landscape orientation.`;
+  const servicesPrompt = `Professional editorial corporate photograph of two legal professionals in business attire reviewing employment documents together in a sleek modern conference room. Natural light, clean architectural background, elegant navy and slate tones. STRICT NEGATIVE CONSTRAINT: Absolutely NO text, NO typography, NO letters, NO words, NO signage, NO overlays, NO watermarks. 4:3 landscape orientation.`;
 
   const [banner, services] = await Promise.all([
     generateSingleImage({

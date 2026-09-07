@@ -7,6 +7,11 @@ import type {
 
 export const ATOYAN_PARENT_PAGE_ID = 750; // /practice-areas/employment-law/
 export const ATOYAN_TEMPLATE = "templates/labor-law.php";
+export const ATOYAN_REFERENCE_PAGE_ID = 3898;
+export const ATOYAN_BANNER_ATTACHMENT_ID = 3899;
+export const ATOYAN_TESTIMONIALS_BG_ATTACHMENT_ID = 72;
+export const ATOYAN_CTA_BG_ATTACHMENT_ID = 383;
+
 export const ATOYAN_PHONE = "(888) 807-0077";
 export const ATOYAN_PHONE_LINK = "tel:8888070077";
 export const ATOYAN_CONTACT_URL = "/contact/";
@@ -220,6 +225,8 @@ export function buildAcfPersonalInjuryGroup(
   bannerImageUrl: string,
   servicesImageUrl: string,
   servicesAttachmentId?: number,
+  bannerAttachmentId?: number,
+  baseGroup?: Partial<AcfPersonalInjuryGroup>,
 ): AcfPersonalInjuryGroup {
   const fullServicesContent = buildServicesContent(
     content.servicesContent,
@@ -235,25 +242,32 @@ export function buildAcfPersonalInjuryGroup(
   );
 
   return {
-    personal_injury_image: bannerImageUrl,
+    personal_injury_image: bannerAttachmentId || ATOYAN_BANNER_ATTACHMENT_ID,
     personal_injury_title: content.heroTitle,
     _personal_injury_services_heading: content.servicesHeading,
     _personal_injury_services_sub_heading: content.servicesSubHeading,
     _personal_injury_services_content: fullServicesContent,
-    _personal_injury_services_Sidebar: ATOYAN_DEFAULT_SIDEBAR_IDS,
-    testimonials_reviews_bg_image: ATOYAN_TESTIMONIALS_BG_IMAGE,
-    testimonials_reviews_heading: ATOYAN_TESTIMONIALS_HEADING,
-    testimonials_reviews_sub_heading: ATOYAN_TESTIMONIALS_SUB_HEADING,
-    testimonials_reviews_repet: ATOYAN_TESTIMONIALS_REVIEWS,
-    testimonials_reviews_button: ATOYAN_TESTIMONIALS_BUTTON,
+    _personal_injury_services_Sidebar:
+      baseGroup?._personal_injury_services_Sidebar || ATOYAN_DEFAULT_SIDEBAR_IDS,
+    testimonials_reviews_bg_image: ATOYAN_TESTIMONIALS_BG_ATTACHMENT_ID,
+    testimonials_reviews_heading:
+      baseGroup?.testimonials_reviews_heading || ATOYAN_TESTIMONIALS_HEADING,
+    testimonials_reviews_sub_heading:
+      baseGroup?.testimonials_reviews_sub_heading || ATOYAN_TESTIMONIALS_SUB_HEADING,
+    testimonials_reviews_repet:
+      baseGroup?.testimonials_reviews_repet || ATOYAN_TESTIMONIALS_REVIEWS,
+    testimonials_reviews_button:
+      baseGroup?.testimonials_reviews_button || ATOYAN_TESTIMONIALS_BUTTON,
     how_do_heading: content.howDoHeading,
     how_do_content: content.howDoContent,
-    how_do_contact_form_heading: ATOYAN_CONTACT_FORM_HEADING,
-    how_do_contact_form_shortcode: ATOYAN_CONTACT_FORM_SHORTCODE,
-    cta_bg_image: ATOYAN_CTA_BG_IMAGE,
-    cta_heading: ATOYAN_CTA_HEADING,
-    cta_content: ATOYAN_CTA_CONTENT,
-    cta_button: ATOYAN_CTA_BUTTON,
+    how_do_contact_form_heading:
+      baseGroup?.how_do_contact_form_heading || ATOYAN_CONTACT_FORM_HEADING,
+    how_do_contact_form_shortcode:
+      baseGroup?.how_do_contact_form_shortcode || ATOYAN_CONTACT_FORM_SHORTCODE,
+    cta_bg_image: ATOYAN_CTA_BG_ATTACHMENT_ID,
+    cta_heading: baseGroup?.cta_heading || ATOYAN_CTA_HEADING,
+    cta_content: baseGroup?.cta_content || ATOYAN_CTA_CONTENT,
+    cta_button: baseGroup?.cta_button || ATOYAN_CTA_BUTTON,
     compensation_heading: content.compensationHeading,
     compensation_content: fullCompensationContent,
   };

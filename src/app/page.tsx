@@ -522,41 +522,46 @@ export default function Home() {
             <div className="grid md:grid-cols-2 gap-6">
               <div className="rounded-2xl border border-line bg-panel p-5 space-y-3">
                 <div className="flex items-center justify-between">
-                  <h3 className="font-semibold text-sm">Header Banner Image (16:9)</h3>
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-semibold text-sm">Header Banner Image (16:9)</h3>
+                    <span className="text-[11px] px-2 py-0.5 rounded-full bg-accent/10 text-accent font-medium">1200 × 675</span>
+                  </div>
                   <span className="text-xs text-muted font-mono">personal_injury_image</span>
                 </div>
-                <div className="relative rounded-xl overflow-hidden border border-line bg-panel-2 aspect-video">
+                <div className="relative rounded-xl overflow-hidden border border-line bg-panel-2 aspect-video group">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={result.images.banner.dataUrl}
                     alt={result.images.banner.altText}
-                    className="w-full h-full object-cover"
+                    className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-300"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent flex items-end p-4">
-                    <p className="text-white text-sm font-semibold">{result.content.heroTitle}</p>
-                  </div>
                 </div>
-                <p className="text-xs text-muted">
-                  Moody dark mahogany law desk, banker&apos;s lamp lighting, stacked court briefs.
-                </p>
+                <div className="flex items-center justify-between text-xs text-muted">
+                  <p className="truncate max-w-[70%]">{result.images.banner.altText}</p>
+                  <span className="font-mono text-accent">Hero Section Banner</span>
+                </div>
               </div>
 
               <div className="rounded-2xl border border-line bg-panel p-5 space-y-3">
                 <div className="flex items-center justify-between">
-                  <h3 className="font-semibold text-sm">Services Editorial Illustration (4:3)</h3>
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-semibold text-sm">Services Editorial Photo (4:3)</h3>
+                    <span className="text-[11px] px-2 py-0.5 rounded-full bg-accent/10 text-accent font-medium">800 × 600</span>
+                  </div>
                   <span className="text-xs text-muted font-mono">_personal_injury_services_content</span>
                 </div>
-                <div className="relative rounded-xl overflow-hidden border border-line bg-panel-2 aspect-[4/3]">
+                <div className="relative rounded-xl overflow-hidden border border-line bg-panel-2 aspect-[4/3] group">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={result.images.services.dataUrl}
                     alt={result.images.services.altText}
-                    className="w-full h-full object-cover"
+                    className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-300"
                   />
                 </div>
-                <p className="text-xs text-muted">
-                  Stylized editorial illustration embedded in services content with <code className="text-accent">&lt;img class=&quot;alignleft&quot; /&gt;</code>.
-                </p>
+                <div className="flex items-center justify-between text-xs text-muted">
+                  <p className="truncate max-w-[70%]">Embedded via <code className="text-accent">&lt;img class=&quot;alignleft&quot; /&gt;</code></p>
+                  <span className="font-mono text-accent">Practice Services Body</span>
+                </div>
               </div>
             </div>
           )}
