@@ -1,9 +1,11 @@
 import { NextResponse } from "next/server";
-import { PublishRequest } from "@/lib/types";
-import { publishToWordPress } from "@/lib/wordpress";
+import { PublishRequest, type AtoyanLegalContent } from "@/lib/types";
+import { publishAtoyanPage } from "@/lib/wordpress";
+import { generateAtoyanContent, extractCity } from "@/lib/llm";
+import { generateAtoyanImages } from "@/lib/imagen";
 
 export const runtime = "nodejs";
-export const maxDuration = 30;
+export const maxDuration = 120;
 
 export async function POST(req: Request) {
   let raw: unknown;
@@ -21,20 +23,130 @@ export async function POST(req: Request) {
     );
   }
 
-  const { title, formatted_body, cta_block, image_url, schedule_at, settings } = parsed.data;
+  const bodyData = raw as Record<string, unknown>;
+  const { title, schedule_at, settings } = parsed.data;
 
   try {
-    const result = await publishToWordPress({
-      title,
-      body: formatted_body,
-      cta: cta_block,
-      image1Url: image_url,
-      scheduleAt: schedule_at,
+    // If atoyan_content is provided as a structured object, use it directly; handle legacy strings gracefully
+    let legalContent: AtoyanLegalContent | undefined;
+    const candidate = bodyData.atoyan_content || bodyData.content;
+    if (
+      candidate &&
+      typeof candidate === "object" &&
+      !Array.isArray(candidate) &&
+      "servicesContent" in candidate
+    ) {
+      legalContent = candidate as AtoyanLegalContent;
+    }
+
+    if (!legalContent) {
+      const city = extractCity(title);
+      legalContent = await generateAtoyanContent({
+        keyword: title,
+        city,
+        openaiKey: settings?.openai_api_key,
+        geminiKey: settings?.gemini_api_key,
+        provider: settings?.llm_provider,
+        systemPrompt: settings?.system_prompt,
+      });
+
+      // If legacy content was provided as a string, honor it inside servicesContent
+      if (typeof candidate === "string" && candidate.trim()) {
+        legalContent.servicesContent = candidate;
+      } else if (typeof bodyData.formatted_body === "string" && bodyData.formatted_body.trim()) {
+        legalContent.servicesContent = bodyData.formatted_body;
+      }
+    }
+
+    // Extract images if sent, or generate them independently if missing
+    let bannerImageData = bodyData.banner_image as {
+      base64?: string;
+      filename?: string;
+      mimeType?: string;
+      altText?: string;
+    } | undefined;
+
+    let servicesImageData = bodyData.services_image as {
+      base64?: string;
+      filename?: string;
+      mimeType?: string;
+      altText?: string;
+    } | undefined;
+
+    const needsBanner = !bannerImageData?.base64 && !bodyData.banner_image_url;
+    const needsServices = !servicesImageData?.base64 && !bodyData.services_image_url;
+
+    if (needsBanner || needsServices) {
+      try {
+        const generatedImages = await generateAtoyanImages({
+          keyword: title,
+          city: legalContent.city,
+          slug: legalContent.slug,
+          apiKey: settings?.gemini_api_key,
+          openaiKey: settings?.openai_api_key,
+        });
+
+        if (needsBanner) {
+          bannerImageData = {
+            base64: generatedImages.banner.base64,
+            filename: generatedImages.banner.filename,
+            mimeType: generatedImages.banner.mimeType,
+            altText: generatedImages.banner.altText,
+          };
+        }
+
+        if (needsServices) {
+          servicesImageData = {
+            base64: generatedImages.services.base64,
+            filename: generatedImages.services.filename,
+            mimeType: generatedImages.services.mimeType,
+            altText: generatedImages.services.altText,
+          };
+        }
+      } catch (imgErr) {
+        console.warn("Image generation during direct publish skipped:", imgErr);
+      }
+    }
+
+    const result = await publishAtoyanPage({
+      content: legalContent,
+      bannerImage: bannerImageData?.base64
+        ? {
+            base64: bannerImageData.base64,
+            filename: bannerImageData.filename || `${legalContent.slug}-banner.jpg`,
+            mimeType: bannerImageData.mimeType || "image/jpeg",
+            altText: bannerImageData.altText || legalContent.heroTitle,
+            prompt: "",
+            width: 1200,
+            height: 675,
+          }
+        : undefined,
+      bannerUrl: (bodyData.banner_image_url as string) || undefined,
+      bannerAttachmentId: (bodyData.banner_attachment_id as number) || undefined,
+      servicesImage: servicesImageData?.base64
+        ? {
+            base64: servicesImageData.base64,
+            filename: servicesImageData.filename || `${legalContent.slug}-services.jpg`,
+            mimeType: servicesImageData.mimeType || "image/jpeg",
+            altText: servicesImageData.altText || legalContent.servicesHeading,
+            prompt: "",
+            width: 800,
+            height: 600,
+          }
+        : undefined,
+      servicesUrl: (bodyData.services_image_url as string) || undefined,
+      servicesAttachmentId: (bodyData.services_attachment_id as number) || undefined,
+      scheduleAt: schedule_at || undefined,
       settings,
     });
-    return NextResponse.json(result);
+
+    return NextResponse.json({
+      success: true,
+      ...result,
+    });
   } catch (err) {
-    const message = err instanceof Error ? err.message : "publish failed";
+    console.error("Publishing error:", err);
+    const message = err instanceof Error ? err.message : "Publishing to WordPress failed";
     return NextResponse.json({ error: "publish_failed", message }, { status: 500 });
   }
 }

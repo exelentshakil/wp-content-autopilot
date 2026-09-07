@@ -1,4 +1,14 @@
-import type { Settings } from "./types";
+import type {
+  Settings,
+  AtoyanLegalContent,
+  AtoyanGeneratedImage,
+  AtoyanPublishResult,
+} from "./types";
+import {
+  ATOYAN_PARENT_PAGE_ID,
+  ATOYAN_TEMPLATE,
+  buildAcfPersonalInjuryGroup,
+} from "./atoyan";
 
 export interface PublishResult {
   mode: "live" | "simulated";
@@ -10,13 +20,320 @@ export interface PublishResult {
 }
 
 /**
- * Publishes into WordPress via the REST API. ACF fields ride along in the
- * standard `acf` object, which the ACF-to-REST-API plugin (or ACF 6's native
- * REST support) accepts directly on /wp/v2/posts.
- *
- * With no WP credentials configured, this returns a clearly-labelled
- * simulated result so the flow can be reviewed end to end with zero setup.
+ * Uploads an image buffer directly to the WordPress media library (/wp-json/wp/v2/media).
  */
+export async function uploadMediaToWordPress(params: {
+  base64Data: string;
+  filename: string;
+  mimeType: string;
+  altText: string;
+  title: string;
+  wpSiteUrl: string;
+  authHeader: string;
+  postId?: number;
+}): Promise<{ id: number; url: string }> {
+  const { base64Data, filename, mimeType, altText, title, wpSiteUrl, authHeader, postId } = params;
+  const buffer = Buffer.from(base64Data, "base64");
+  const cleanBase = wpSiteUrl.replace(/\/$/, "");
+
+  const uploadRes = await fetch(`${cleanBase}/wp-json/wp/v2/media`, {
+    method: "POST",
+    headers: {
+      Authorization: `Basic ${authHeader}`,
+      "Content-Type": mimeType,
+      "Content-Disposition": `attachment; filename="${filename}"`,
+    },
+    body: buffer,
+    signal: AbortSignal.timeout(60_000),
+  });
+
+  if (!uploadRes.ok) {
+    const errText = await uploadRes.text();
+    throw new Error(`Media upload failed (${uploadRes.status}): ${errText.slice(0, 300)}`);
+  }
+
+  const mediaJson = await uploadRes.json();
+  const mediaId = mediaJson.id as number;
+  const sourceUrl = (mediaJson.source_url || mediaJson.guid?.rendered || "") as string;
+
+  // Set alt text, title, and optional attached post
+  try {
+    const patchBody: Record<string, unknown> = {
+      title,
+      alt_text: altText,
+      description: altText,
+    };
+    if (postId) patchBody.post = postId;
+
+    await fetch(`${cleanBase}/wp-json/wp/v2/media/${mediaId}`, {
+      method: "POST",
+      headers: {
+        Authorization: `Basic ${authHeader}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(patchBody),
+      signal: AbortSignal.timeout(15_000),
+    });
+  } catch (patchErr) {
+    console.warn("Failed to patch media metadata, proceeding with upload ID:", patchErr);
+  }
+
+  return { id: mediaId, url: sourceUrl };
+}
+
+/**
+ * Updates Yoast SEO metadata via Yoast bulk editor.
+ */
+export async function updateYoastSeo(params: {
+  postId: number;
+  title: string;
+  description: string;
+  focusKeyphrase: string;
+  wpSiteUrl: string;
+  authHeader: string;
+}): Promise<boolean> {
+  const { postId, title, description, focusKeyphrase, wpSiteUrl, authHeader } = params;
+  const cleanBase = wpSiteUrl.replace(/\/$/, "");
+
+  try {
+    const res = await fetch(`${cleanBase}/wp-json/yoast/v1/bulk_editor/update_search`, {
+      method: "POST",
+      headers: {
+        Authorization: `Basic ${authHeader}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        items: [
+          {
+            id: postId,
+            seo_title: title,
+            meta_description: description,
+            focus_keyphrase: focusKeyphrase,
+          },
+        ],
+      }),
+      signal: AbortSignal.timeout(20_000),
+    });
+    return res.ok;
+  } catch (err) {
+    console.warn("Yoast REST update failed:", err);
+    return false;
+  }
+}
+
+/**
+ * Core publishing engine for Atoyan Law Firm practice area pages.
+ */
+export async function publishAtoyanPage(params: {
+  content: AtoyanLegalContent;
+  bannerImage?: AtoyanGeneratedImage;
+  bannerUrl?: string;
+  bannerAttachmentId?: number;
+  servicesImage?: AtoyanGeneratedImage;
+  servicesUrl?: string;
+  servicesAttachmentId?: number;
+  scheduleAt?: string;
+  settings?: Settings;
+}): Promise<AtoyanPublishResult> {
+  const {
+    content,
+    bannerImage,
+    bannerUrl: existingBannerUrl,
+    bannerAttachmentId: existingBannerId,
+    servicesImage,
+    servicesUrl: existingServicesUrl,
+    servicesAttachmentId: existingServicesId,
+    scheduleAt,
+    settings,
+  } = params;
+
+  const wpSiteUrl =
+    settings?.wp_site_url || process.env.WP_SITE_URL || "https://www.atoyanlaw.com";
+  const wpUser = settings?.wp_username || process.env.WP_USER;
+  const wpPassword = settings?.wp_app_password || process.env.WP_PASSWORD;
+
+  const cleanBase = wpSiteUrl.replace(/\/$/, "");
+  const status = scheduleAt ? "future" : "publish";
+
+  let bannerUrl = existingBannerUrl || "https://www.atoyanlaw.com/wp-content/uploads/2026/07/Adverse-Employment-Action-in-California.jpg";
+  let bannerAttachmentId = existingBannerId;
+  let newlyUploadedBannerId: number | undefined;
+
+  let servicesUrl = existingServicesUrl || "https://www.atoyanlaw.com/wp-content/uploads/2026/07/adverse-employment-action.jpg";
+  let servicesAttachmentId = existingServicesId;
+  let newlyUploadedServicesId: number | undefined;
+
+  // Build ACF Group
+  const acfGroup = buildAcfPersonalInjuryGroup(
+    content,
+    bannerUrl,
+    servicesUrl,
+    servicesAttachmentId,
+  );
+
+  // If credentials are not provided or simulator provider selected, return graceful simulation
+  if (!wpUser || !wpPassword || settings?.llm_provider === "simulator") {
+    return {
+      mode: "simulated",
+      status,
+      postId: 3933,
+      pageUrl: `${cleanBase}/${content.slug}/`,
+      editUrl: `${cleanBase}/wp-admin/post.php?post=3933&action=edit`,
+      scheduledFor: scheduleAt,
+      bannerAttachmentId,
+      bannerUrl,
+      servicesAttachmentId,
+      servicesUrl,
+      yoastUpdated: true,
+      acfPayload: acfGroup as unknown as Record<string, unknown>,
+    };
+  }
+
+  const authHeader = Buffer.from(`${wpUser}:${wpPassword}`).toString("base64");
+
+  // Step 1: Upload Banner Image if provided
+  if (bannerImage?.base64 && !existingBannerUrl) {
+    try {
+      const bannerUpload = await uploadMediaToWordPress({
+        base64Data: bannerImage.base64,
+        filename: bannerImage.filename,
+        mimeType: bannerImage.mimeType,
+        altText: bannerImage.altText,
+        title: bannerImage.altText,
+        wpSiteUrl: cleanBase,
+        authHeader,
+      });
+      bannerUrl = bannerUpload.url;
+      bannerAttachmentId = bannerUpload.id;
+      newlyUploadedBannerId = bannerUpload.id;
+    } catch (bannerErr) {
+      console.warn("Banner upload error, falling back to default image:", bannerErr);
+    }
+  }
+
+  // Step 2: Upload Services Image if provided
+  if (servicesImage?.base64 && !existingServicesUrl) {
+    try {
+      const servicesUpload = await uploadMediaToWordPress({
+        base64Data: servicesImage.base64,
+        filename: servicesImage.filename,
+        mimeType: servicesImage.mimeType,
+        altText: servicesImage.altText,
+        title: servicesImage.altText,
+        wpSiteUrl: cleanBase,
+        authHeader,
+      });
+      servicesUrl = servicesUpload.url;
+      servicesAttachmentId = servicesUpload.id;
+      newlyUploadedServicesId = servicesUpload.id;
+    } catch (servicesErr) {
+      console.warn("Services image upload error, falling back to default image:", servicesErr);
+    }
+  }
+
+  // Step 3: Re-build ACF Group with newly uploaded image URLs if updated
+  const finalAcfGroup = buildAcfPersonalInjuryGroup(
+    content,
+    bannerUrl,
+    servicesUrl,
+    servicesAttachmentId,
+  );
+
+  const pagePayload: Record<string, unknown> = {
+    title: content.heroTitle,
+    slug: content.slug,
+    status,
+    parent: ATOYAN_PARENT_PAGE_ID, // 750 (employment-law)
+    template: ATOYAN_TEMPLATE, // templates/labor-law.php
+    content: finalAcfGroup._personal_injury_services_content, // Fallback post content
+    acf: {
+      personal_injury_group: finalAcfGroup,
+    },
+  };
+
+  if (scheduleAt) {
+    pagePayload.date = scheduleAt;
+  }
+
+  // Step 4: Create the Page via WordPress REST API
+  const pageRes = await fetch(`${cleanBase}/wp-json/wp/v2/pages`, {
+    method: "POST",
+    headers: {
+      Authorization: `Basic ${authHeader}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(pagePayload),
+    signal: AbortSignal.timeout(60_000),
+  });
+
+  if (!pageRes.ok) {
+    const errorBody = await pageRes.text();
+    throw new Error(`WordPress page creation failed (${pageRes.status}): ${errorBody.slice(0, 300)}`);
+  }
+
+  const pageJson = await pageRes.json();
+  const createdPageId = pageJson.id as number;
+  const pageLink = (pageJson.link as string) || `${cleanBase}/?p=${createdPageId}`;
+  const editUrl = `${cleanBase}/wp-admin/post.php?post=${createdPageId}&action=edit`;
+
+  // Step 5: Update Yoast SEO
+  const yoastUpdated = await updateYoastSeo({
+    postId: createdPageId,
+    title: content.yoastTitle,
+    description: content.yoastMetaDesc,
+    focusKeyphrase: content.yoastFocusKw,
+    wpSiteUrl: cleanBase,
+    authHeader,
+  });
+
+  // Step 6: Link ONLY newly uploaded attachments to parent post (never re-parent existing assets)
+  const linkAttachmentPromises = [];
+  if (newlyUploadedBannerId) {
+    linkAttachmentPromises.push(
+      fetch(`${cleanBase}/wp-json/wp/v2/media/${newlyUploadedBannerId}`, {
+        method: "POST",
+        headers: {
+          Authorization: `Basic ${authHeader}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ post: createdPageId }),
+      }).catch(() => null),
+    );
+  }
+  if (newlyUploadedServicesId) {
+    linkAttachmentPromises.push(
+      fetch(`${cleanBase}/wp-json/wp/v2/media/${newlyUploadedServicesId}`, {
+        method: "POST",
+        headers: {
+          Authorization: `Basic ${authHeader}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ post: createdPageId }),
+      }).catch(() => null),
+    );
+  }
+  await Promise.allSettled(linkAttachmentPromises);
+
+  return {
+    mode: "live",
+    status,
+    postId: createdPageId,
+    pageUrl: pageLink,
+    editUrl,
+    scheduledFor: scheduleAt,
+    bannerAttachmentId,
+    bannerUrl,
+    servicesAttachmentId,
+    servicesUrl,
+    yoastUpdated,
+    acfPayload: finalAcfGroup as unknown as Record<string, unknown>,
+  };
+}
+
+// -----------------------------------------------------------------------------
+// LEGACY COMPATIBILITY
+// -----------------------------------------------------------------------------
+
 export async function publishToWordPress(params: {
   title: string;
   body: string;
@@ -26,57 +343,55 @@ export async function publishToWordPress(params: {
   scheduleAt?: string;
   settings: Settings;
 }): Promise<PublishResult> {
-  const { title, body, cta, image1Url, scheduleAt, settings } = params;
-  const m = settings.acf_mapping;
+  const { title, body, cta, image1Url, image2Url, scheduleAt, settings } = params;
 
-  const acf_payload: Record<string, unknown> = {
-    [m.body_field]: body,
-    [m.cta_field]: cta,
-    [m.image1_field]: image1Url ?? null,
-    [m.image2_field]: null,
-  };
+  const wpUser = settings.wp_username || process.env.WP_USER;
+  const wpPassword = settings.wp_app_password || process.env.WP_PASSWORD;
+  const wpSiteUrl = settings.wp_site_url || process.env.WP_SITE_URL || "https://www.atoyanlaw.com";
 
-  const status = scheduleAt ? "future" : "publish";
-
-  if (!settings.wp_site_url || !settings.wp_username || !settings.wp_app_password) {
+  if (!wpUser || !wpPassword || settings.llm_provider === "simulator") {
     return {
       mode: "simulated",
-      status,
+      status: scheduleAt ? "future" : "publish",
       scheduled_for: scheduleAt,
-      post_url: `${settings.wp_site_url?.replace(/\/$/, "") || "https://your-site.example"}/?p=simulated`,
-      acf_payload,
+      post_url: `${wpSiteUrl.replace(/\/$/, "")}/?p=simulated`,
+      acf_payload: {},
     };
   }
 
-  const base = settings.wp_site_url.replace(/\/$/, "");
-  const auth = Buffer.from(`${settings.wp_username}:${settings.wp_app_password}`).toString("base64");
+  // Delegate to Atoyan publisher
+  const atoyanContent: AtoyanLegalContent = {
+    keyword: title,
+    city: "California",
+    slug: title.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
+    heroTitle: title,
+    servicesHeading: `Practice Area: ${title}`,
+    servicesSubHeading: "Legal Advocacy & Employee Protection",
+    servicesContent: body,
+    howDoHeading: "How to Protect Your Rights",
+    howDoContent: "Consult an attorney before signing any severance agreements.",
+    compensationHeading: "Legal Recovery & Damages",
+    compensationIntro: cta,
+    faqs: [],
+    yoastTitle: `${title} | Atoyan Law Firm`,
+    yoastMetaDesc: `Experienced attorney for ${title}. Free confidential consultation.`,
+    yoastFocusKw: title,
+  };
 
-  const res = await fetch(`${base}/wp-json/wp/v2/posts`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Basic ${auth}`,
-    },
-    body: JSON.stringify({
-      title,
-      status,
-      date: scheduleAt,
-      acf: acf_payload,
-    }),
-    signal: AbortSignal.timeout(30_000),
+  const result = await publishAtoyanPage({
+    content: atoyanContent,
+    bannerUrl: image1Url,
+    servicesUrl: image2Url,
+    scheduleAt,
+    settings,
   });
 
-  if (!res.ok) {
-    throw new Error(`WordPress publish failed: ${res.status} ${(await res.text()).slice(0, 300)}`);
-  }
-
-  const json = await res.json();
   return {
-    mode: "live",
-    status,
-    scheduled_for: scheduleAt,
-    post_id: json.id,
-    post_url: json.link,
-    acf_payload,
+    mode: result.mode,
+    status: result.status,
+    scheduled_for: result.scheduledFor,
+    post_id: result.postId,
+    post_url: result.pageUrl,
+    acf_payload: result.acfPayload,
   };
 }
