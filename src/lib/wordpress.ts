@@ -346,6 +346,24 @@ export async function publishAtoyanPage(params: {
     console.warn("ACF follow-up persistence patch error:", acfPatchErr);
   }
 
+  // Step 4c: If WP Content Autopilot Bridge plugin is active, set the head script directly and flush WP Rocket
+  try {
+    await fetch(`${cleanBase}/wp-json/autopilot/v1/head-script`, {
+      method: "POST",
+      headers: {
+        Authorization: `Basic ${authHeader}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        post_id: createdPageId,
+        script: faqSchemaJsonLd,
+      }),
+      signal: AbortSignal.timeout(10_000),
+    });
+  } catch {
+    // Graceful fallback if bridge plugin is not yet activated
+  }
+
   // Step 5: Update Yoast SEO
   const yoastUpdated = await updateYoastSeo({
     postId: createdPageId,
