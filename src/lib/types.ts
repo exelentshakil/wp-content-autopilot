@@ -35,6 +35,8 @@ export const Settings = z.object({
   wp_site_url: z.string().default("https://www.atoyanlaw.com"),
   wp_username: z.string().optional(),
   wp_app_password: z.string().optional(),
+  supabase_url: z.string().optional(),
+  supabase_anon_key: z.string().optional(),
   acf_mapping: AcfMapping.default({
     title_field: "post_title",
     body_field: "article_body",
@@ -171,4 +173,22 @@ export interface AtoyanPublishResult {
   yoastUpdated: boolean;
   inpostHeadScript?: string;
   acfPayload: Record<string, unknown>;
+}
+
+export interface GenerationReportItem {
+  id: string;
+  timestamp: string;
+  keyword: string;
+  city: string;
+  slug: string;
+  provider: string;
+  contentWords: number;
+  tokensEstimate: number;
+  costContent: number;
+  costImages: number;
+  costTotal: number;
+  generationSeconds: number;
+  wpPostId?: number;
+  pageUrl?: string;
+  status: "published" | "scheduled" | "draft";
 }

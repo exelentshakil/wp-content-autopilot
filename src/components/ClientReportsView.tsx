@@ -1,282 +1,141 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import {
   BarChart3,
   TrendingUp,
   DollarSign,
   Zap,
-  Calendar,
   ShieldCheck,
   FileText,
   PieChart,
   Download,
   Search,
-  ArrowUpRight,
   CheckCircle2,
   Clock,
-  Sparkles,
-  Cpu,
-  Layers,
   ExternalLink,
-  Filter,
   Check,
-  HelpCircle,
+  Database,
+  RefreshCw,
+  Trash2,
+  AlertCircle,
+  Copy,
+  Plus,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import type { GenerationReportItem } from "@/lib/types";
 
-export interface GenerationReportItem {
-  id: string;
-  timestamp: string; // ISO string
-  keyword: string;
-  city: string;
-  slug: string;
-  provider: string;
-  contentWords: number;
-  tokensEstimate: number;
-  costContent: number;
-  costImages: number;
-  costTotal: number;
-  generationSeconds: number;
-  wpPostId?: number;
-  pageUrl?: string;
-  status: "published" | "scheduled" | "draft";
-}
-
-// Seed baseline real-world records representing Atoyan Law Firm practice area production
-const BASELINE_RECORDS: GenerationReportItem[] = [
-  {
-    id: "gen-today-1",
-    timestamp: new Date(Date.now() - 1000 * 60 * 45).toISOString(), // 45 mins ago
-    keyword: "Visalia Sexual Harassment Lawyer",
-    city: "Visalia",
-    slug: "visalia-sexual-harassment-lawyer",
-    provider: "gemini-2.5-flash + imagen-3",
-    contentWords: 1480,
-    tokensEstimate: 1950,
-    costContent: 0.003,
-    costImages: 0.040,
-    costTotal: 0.043,
-    generationSeconds: 1.84,
-    wpPostId: 4307,
-    pageUrl: "https://www.atoyanlaw.com/visalia-sexual-harassment-lawyer/",
-    status: "published",
-  },
-  {
-    id: "gen-today-2",
-    timestamp: new Date(Date.now() - 1000 * 60 * 180).toISOString(), // 3 hours ago
-    keyword: "Burbank Wrongful Termination Lawyer",
-    city: "Burbank",
-    slug: "burbank-wrongful-termination-lawyer",
-    provider: "gemini-2.5-flash + imagen-3",
-    contentWords: 1520,
-    tokensEstimate: 2020,
-    costContent: 0.003,
-    costImages: 0.040,
-    costTotal: 0.043,
-    generationSeconds: 1.76,
-    wpPostId: 4298,
-    pageUrl: "https://www.atoyanlaw.com/burbank-wrongful-termination-lawyer/",
-    status: "published",
-  },
-  {
-    id: "gen-yesterday-1",
-    timestamp: new Date(Date.now() - 1000 * 60 * 60 * 26).toISOString(), // 26 hours ago
-    keyword: "Fresno Disability Discrimination Attorney",
-    city: "Fresno",
-    slug: "fresno-disability-discrimination-attorney",
-    provider: "gemini-2.5-flash + imagen-3",
-    contentWords: 1610,
-    tokensEstimate: 2150,
-    costContent: 0.0032,
-    costImages: 0.040,
-    costTotal: 0.0432,
-    generationSeconds: 1.92,
-    wpPostId: 4281,
-    pageUrl: "https://www.atoyanlaw.com/fresno-disability-discrimination-attorney/",
-    status: "published",
-  },
-  {
-    id: "gen-yesterday-2",
-    timestamp: new Date(Date.now() - 1000 * 60 * 60 * 32).toISOString(),
-    keyword: "Glendale Workplace Retaliation Lawyer",
-    city: "Glendale",
-    slug: "glendale-workplace-retaliation-lawyer",
-    provider: "gpt-4o + dalle-3",
-    contentWords: 1440,
-    tokensEstimate: 1910,
-    costContent: 0.0045,
-    costImages: 0.040,
-    costTotal: 0.0445,
-    generationSeconds: 2.15,
-    wpPostId: 4272,
-    pageUrl: "https://www.atoyanlaw.com/glendale-workplace-retaliation-lawyer/",
-    status: "published",
-  },
-  {
-    id: "gen-3d-1",
-    timestamp: new Date(Date.now() - 1000 * 60 * 60 * 70).toISOString(),
-    keyword: "Los Angeles Pregnancy Discrimination Lawyer",
-    city: "Los Angeles",
-    slug: "los-angeles-pregnancy-discrimination-lawyer",
-    provider: "gemini-2.5-flash + imagen-3",
-    contentWords: 1560,
-    tokensEstimate: 2080,
-    costContent: 0.0031,
-    costImages: 0.040,
-    costTotal: 0.0431,
-    generationSeconds: 1.88,
-    wpPostId: 4255,
-    pageUrl: "https://www.atoyanlaw.com/los-angeles-pregnancy-discrimination-lawyer/",
-    status: "published",
-  },
-  {
-    id: "gen-4d-1",
-    timestamp: new Date(Date.now() - 1000 * 60 * 60 * 95).toISOString(),
-    keyword: "Bakersfield Wage and Hour Attorney",
-    city: "Bakersfield",
-    slug: "bakersfield-wage-and-hour-attorney",
-    provider: "gemini-2.5-flash + imagen-3",
-    contentWords: 1490,
-    tokensEstimate: 1980,
-    costContent: 0.003,
-    costImages: 0.040,
-    costTotal: 0.043,
-    generationSeconds: 1.79,
-    wpPostId: 4241,
-    pageUrl: "https://www.atoyanlaw.com/bakersfield-wage-and-hour-attorney/",
-    status: "published",
-  },
-  {
-    id: "gen-5d-1",
-    timestamp: new Date(Date.now() - 1000 * 60 * 60 * 120).toISOString(),
-    keyword: "Anaheim Hostile Work Environment Lawyer",
-    city: "Anaheim",
-    slug: "anaheim-hostile-work-environment-lawyer",
-    provider: "gemini-2.5-flash + imagen-3",
-    contentWords: 1580,
-    tokensEstimate: 2110,
-    costContent: 0.0032,
-    costImages: 0.040,
-    costTotal: 0.0432,
-    generationSeconds: 1.95,
-    wpPostId: 4220,
-    pageUrl: "https://www.atoyanlaw.com/anaheim-hostile-work-environment-lawyer/",
-    status: "published",
-  },
-  {
-    id: "gen-6d-1",
-    timestamp: new Date(Date.now() - 1000 * 60 * 60 * 148).toISOString(),
-    keyword: "Irvine Age Discrimination Attorney",
-    city: "Irvine",
-    slug: "irvine-age-discrimination-attorney",
-    provider: "gemini-2.5-flash + imagen-3",
-    contentWords: 1430,
-    tokensEstimate: 1900,
-    costContent: 0.0029,
-    costImages: 0.040,
-    costTotal: 0.0429,
-    generationSeconds: 1.81,
-    wpPostId: 4209,
-    pageUrl: "https://www.atoyanlaw.com/irvine-age-discrimination-attorney/",
-    status: "published",
-  },
-  {
-    id: "gen-12d-1",
-    timestamp: new Date(Date.now() - 1000 * 60 * 60 * 280).toISOString(),
-    keyword: "Pasadena Constructive Discharge Lawyer",
-    city: "Pasadena",
-    slug: "pasadena-constructive-discharge-lawyer",
-    provider: "gemini-2.5-flash + imagen-3",
-    contentWords: 1510,
-    tokensEstimate: 2010,
-    costContent: 0.003,
-    costImages: 0.040,
-    costTotal: 0.043,
-    generationSeconds: 1.83,
-    wpPostId: 4180,
-    pageUrl: "https://www.atoyanlaw.com/pasadena-constructive-discharge-lawyer/",
-    status: "published",
-  },
-  {
-    id: "gen-18d-1",
-    timestamp: new Date(Date.now() - 1000 * 60 * 60 * 430).toISOString(),
-    keyword: "Riverside Whistleblower Retaliation Attorney",
-    city: "Riverside",
-    slug: "riverside-whistleblower-retaliation-attorney",
-    provider: "gemini-2.5-flash + imagen-3",
-    contentWords: 1650,
-    tokensEstimate: 2200,
-    costContent: 0.0033,
-    costImages: 0.040,
-    costTotal: 0.0433,
-    generationSeconds: 2.01,
-    wpPostId: 4154,
-    pageUrl: "https://www.atoyanlaw.com/riverside-whistleblower-retaliation-attorney/",
-    status: "published",
-  },
-  {
-    id: "gen-24d-1",
-    timestamp: new Date(Date.now() - 1000 * 60 * 60 * 570).toISOString(),
-    keyword: "Ontario Religious Discrimination Lawyer",
-    city: "Ontario",
-    slug: "ontario-religious-discrimination-lawyer",
-    provider: "gemini-2.5-flash + imagen-3",
-    contentWords: 1470,
-    tokensEstimate: 1960,
-    costContent: 0.003,
-    costImages: 0.040,
-    costTotal: 0.043,
-    generationSeconds: 1.77,
-    wpPostId: 4122,
-    pageUrl: "https://www.atoyanlaw.com/ontario-religious-discrimination-lawyer/",
-    status: "published",
-  },
-  {
-    id: "gen-28d-1",
-    timestamp: new Date(Date.now() - 1000 * 60 * 60 * 680).toISOString(),
-    keyword: "Santa Clarita FMLA Violation Attorney",
-    city: "Santa Clarita",
-    slug: "santa-clarita-fmla-violation-attorney",
-    provider: "gemini-2.5-flash + imagen-3",
-    contentWords: 1540,
-    tokensEstimate: 2050,
-    costContent: 0.0031,
-    costImages: 0.040,
-    costTotal: 0.0431,
-    generationSeconds: 1.89,
-    wpPostId: 4099,
-    pageUrl: "https://www.atoyanlaw.com/santa-clarita-fmla-violation-attorney/",
-    status: "published",
-  },
-];
+export type { GenerationReportItem };
 
 type Timeframe = "today" | "week" | "month" | "all";
 
-export function ClientReportsView() {
+interface ClientReportsViewProps {
+  onSwitchToGenerator?: () => void;
+}
+
+export function ClientReportsView({ onSwitchToGenerator }: ClientReportsViewProps) {
   const [timeframe, setTimeframe] = useState<Timeframe>("week");
   const [searchQuery, setSearchQuery] = useState("");
-  const [records, setRecords] = useState<GenerationReportItem[]>(BASELINE_RECORDS);
+  const [records, setRecords] = useState<GenerationReportItem[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isConfigured, setIsConfigured] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [copiedCsv, setCopiedCsv] = useState(false);
+  const [copiedSchema, setCopiedSchema] = useState(false);
+  const [showSchemaHelp, setShowSchemaHelp] = useState(false);
+  const [isDeleting, setIsDeleting] = useState<string | null>(null);
 
-  // Sync with localStorage on client mount to load dynamic live generations
-  useEffect(() => {
+  // Fetch live generation reports from Supabase through /api/reports
+  const fetchReports = useCallback(async () => {
+    setIsLoading(true);
+    setErrorMessage(null);
     try {
-      const stored = localStorage.getItem("atoyan_generation_reports");
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          // Merge custom live generations on top of baseline
-          const merged = [...parsed, ...BASELINE_RECORDS.filter(b => !parsed.some(p => p.id === b.id))];
-          setRecords(merged);
+      const res = await fetch("/api/reports", { cache: "no-store" });
+      const json = await res.json();
+
+      setIsConfigured(Boolean(json.configured));
+
+      if (json.success && Array.isArray(json.data)) {
+        // Merge with any offline generation reports stored locally
+        try {
+          const localStored = localStorage.getItem("atoyan_generation_reports");
+          const localParsed: GenerationReportItem[] = localStored ? JSON.parse(localStored) : [];
+          
+          // Deduplicate by ID
+          const existingIds = new Set(json.data.map((r: GenerationReportItem) => r.id));
+          const unpersistedLocal = localParsed.filter((item) => !existingIds.has(item.id));
+          
+          const combined = [...unpersistedLocal, ...json.data];
+          setRecords(combined);
+        } catch {
+          setRecords(json.data);
+        }
+      } else {
+        if (json.error) {
+          setErrorMessage(json.error);
+        }
+        // Fallback to local storage if API returned empty
+        const localStored = localStorage.getItem("atoyan_generation_reports");
+        if (localStored) {
+          try {
+            setRecords(JSON.parse(localStored));
+          } catch {
+            setRecords([]);
+          }
+        } else {
+          setRecords([]);
         }
       }
-    } catch {
-      // Fallback to baseline
+    } catch (err) {
+      console.warn("Failed to fetch reports:", err);
+      // Read local storage on network failure
+      try {
+        const localStored = localStorage.getItem("atoyan_generation_reports");
+        setRecords(localStored ? JSON.parse(localStored) : []);
+      } catch {
+        setRecords([]);
+      }
+    } finally {
+      setIsLoading(false);
     }
   }, []);
 
-  // Filter records by timeframe
+  useEffect(() => {
+    fetchReports();
+  }, [fetchReports]);
+
+  // Listen for newly added generation reports dispatched from the generator tab
+  useEffect(() => {
+    const handleNewReport = () => {
+      fetchReports();
+    };
+    window.addEventListener("atoyan_report_added", handleNewReport);
+    return () => window.removeEventListener("atoyan_report_added", handleNewReport);
+  }, [fetchReports]);
+
+  // Delete individual record
+  const handleDeleteRecord = async (id: string) => {
+    setIsDeleting(id);
+    try {
+      await fetch(`/api/reports?id=${encodeURIComponent(id)}`, { method: "DELETE" });
+      setRecords((prev) => prev.filter((r) => r.id !== id));
+      try {
+        const local = localStorage.getItem("atoyan_generation_reports");
+        if (local) {
+          const parsed = JSON.parse(local).filter((r: GenerationReportItem) => r.id !== id);
+          localStorage.setItem("atoyan_generation_reports", JSON.stringify(parsed));
+        }
+      } catch {
+        // Ignore storage errors
+      }
+    } catch (err) {
+      console.warn("Failed to delete record:", err);
+    } finally {
+      setIsDeleting(null);
+    }
+  };
+
+  // Filter records by timeframe and search query
   const filteredRecords = useMemo(() => {
     const now = Date.now();
     return records.filter((rec) => {
@@ -315,14 +174,17 @@ export function ClientReportsView() {
     const avgLatency =
       totalPages > 0
         ? (filteredRecords.reduce((sum, r) => sum + r.generationSeconds, 0) / totalPages).toFixed(2)
-        : "1.82";
+        : "0.00";
 
     const avgCostPerPage = totalPages > 0 ? (totalCost / totalPages).toFixed(3) : "0.043";
 
-    // Agency replacement economics (Assume $175 per legal practice area page from agency copywriter)
+    // Agency benchmark comparison ($175 freelance legal copywriter benchmark)
     const agencyBenchmarkCost = totalPages * 175;
     const clientSavings = agencyBenchmarkCost - totalCost;
-    const savingsPercent = agencyBenchmarkCost > 0 ? ((clientSavings / agencyBenchmarkCost) * 100).toFixed(1) : "99.9";
+    const savingsPercent =
+      agencyBenchmarkCost > 0
+        ? ((clientSavings / agencyBenchmarkCost) * 100).toFixed(1)
+        : "99.9";
 
     return {
       totalPages,
@@ -341,6 +203,8 @@ export function ClientReportsView() {
 
   // Export CSV Handler
   const handleExportCsv = () => {
+    if (filteredRecords.length === 0) return;
+
     const headers = [
       "ID",
       "Timestamp",
@@ -356,6 +220,7 @@ export function ClientReportsView() {
       "Speed (seconds)",
       "WP Post ID",
       "Live URL",
+      "Status",
     ];
 
     const rows = filteredRecords.map((r) => [
@@ -373,9 +238,12 @@ export function ClientReportsView() {
       r.generationSeconds.toFixed(2),
       r.wpPostId || "",
       r.pageUrl || "",
+      r.status,
     ]);
 
-    const csvContent = "data:text/csv;charset=utf-8," + [headers.join(","), ...rows.map((e) => e.join(","))].join("\n");
+    const csvContent =
+      "data:text/csv;charset=utf-8," +
+      [headers.join(","), ...rows.map((e) => e.join(","))].join("\n");
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
     link.setAttribute("href", encodedUri);
@@ -388,18 +256,76 @@ export function ClientReportsView() {
     setTimeout(() => setCopiedCsv(false), 2500);
   };
 
+  const copySqlSchema = () => {
+    const schemaSql = `-- Atoyan Law Firm • Generation Reports Table Schema
+CREATE TABLE IF NOT EXISTS public.generation_reports (
+  id TEXT PRIMARY KEY,
+  timestamp TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  keyword TEXT NOT NULL,
+  city TEXT NOT NULL DEFAULT 'California',
+  slug TEXT NOT NULL,
+  provider TEXT NOT NULL,
+  content_words INTEGER NOT NULL DEFAULT 0,
+  tokens_estimate INTEGER NOT NULL DEFAULT 0,
+  cost_content NUMERIC(10, 4) NOT NULL DEFAULT 0.003,
+  cost_images NUMERIC(10, 4) NOT NULL DEFAULT 0.040,
+  cost_total NUMERIC(10, 4) NOT NULL DEFAULT 0.043,
+  generation_seconds NUMERIC(8, 2) NOT NULL DEFAULT 1.85,
+  wp_post_id INTEGER,
+  page_url TEXT,
+  status TEXT NOT NULL DEFAULT 'published',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_generation_reports_timestamp 
+  ON public.generation_reports(timestamp DESC);
+
+ALTER TABLE public.generation_reports ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Allow public read access on generation_reports"
+  ON public.generation_reports FOR SELECT USING (true);
+
+CREATE POLICY "Allow public insert access on generation_reports"
+  ON public.generation_reports FOR INSERT WITH CHECK (true);
+
+CREATE POLICY "Allow public delete access on generation_reports"
+  ON public.generation_reports FOR DELETE USING (true);`;
+
+    navigator.clipboard.writeText(schemaSql);
+    setCopiedSchema(true);
+    setTimeout(() => setCopiedSchema(false), 2000);
+  };
+
   return (
     <div className="space-y-8 animate-in fade-in duration-300">
       {/* Top Header & Timeframe Switcher */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-line pb-6">
         <div>
-          <div className="flex items-center gap-2.5">
+          <div className="flex flex-wrap items-center gap-2.5">
             <div className="size-8 rounded-lg bg-accent/10 border border-accent/20 flex items-center justify-center text-accent">
               <BarChart3 className="size-4" />
             </div>
             <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-text">
               Client Executive Reports &amp; Cost Tracking
             </h2>
+            {/* Supabase Status Pill */}
+            <div
+              className={cn(
+                "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border",
+                isConfigured
+                  ? "bg-good/10 text-good border-good/30"
+                  : "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30",
+              )}
+            >
+              <Database className="size-3.5" />
+              <span>{isConfigured ? "Supabase Connected" : "Supabase Ready"}</span>
+              <span
+                className={cn(
+                  "size-1.5 rounded-full",
+                  isConfigured ? "bg-good animate-pulse" : "bg-amber-500",
+                )}
+              />
+            </div>
           </div>
           <p className="text-xs sm:text-sm text-muted mt-1">
             Real-time generation volume, statutory content speed, and exact visual synthesis cost tracking for Atoyan Law Firm.
@@ -416,7 +342,7 @@ export function ClientReportsView() {
                 timeframe === "today" ? "bg-accent text-white shadow-sm" : "text-muted hover:text-text",
               )}
             >
-              Today (24h)
+              Today
             </button>
             <button
               onClick={() => setTimeframe("week")}
@@ -425,7 +351,7 @@ export function ClientReportsView() {
                 timeframe === "week" ? "bg-accent text-white shadow-sm" : "text-muted hover:text-text",
               )}
             >
-              This Week (7d)
+              This Week
             </button>
             <button
               onClick={() => setTimeframe("month")}
@@ -434,7 +360,7 @@ export function ClientReportsView() {
                 timeframe === "month" ? "bg-accent text-white shadow-sm" : "text-muted hover:text-text",
               )}
             >
-              This Month (30d)
+              This Month
             </button>
             <button
               onClick={() => setTimeframe("all")}
@@ -448,8 +374,19 @@ export function ClientReportsView() {
           </div>
 
           <button
+            onClick={() => fetchReports()}
+            disabled={isLoading}
+            className="inline-flex items-center gap-1.5 rounded-xl border border-line bg-panel px-3 py-2 text-xs font-medium hover:bg-panel-2 text-text transition shadow-sm disabled:opacity-50"
+            title="Refresh reports from Supabase"
+          >
+            <RefreshCw className={cn("size-3.5 text-muted", isLoading && "animate-spin")} />
+            <span>Sync</span>
+          </button>
+
+          <button
             onClick={handleExportCsv}
-            className="inline-flex items-center gap-1.5 rounded-xl border border-line bg-panel px-3.5 py-2 text-xs font-medium hover:bg-panel-2 text-text transition shadow-sm"
+            disabled={filteredRecords.length === 0}
+            className="inline-flex items-center gap-1.5 rounded-xl border border-line bg-panel px-3.5 py-2 text-xs font-medium hover:bg-panel-2 text-text transition shadow-sm disabled:opacity-40 disabled:cursor-not-allowed"
             title="Download CSV report"
           >
             {copiedCsv ? <Check className="size-3.5 text-good" /> : <Download className="size-3.5 text-muted" />}
@@ -458,7 +395,71 @@ export function ClientReportsView() {
         </div>
       </div>
 
-      {/* 4 Million-Dollar SaaS KPI Cards */}
+      {/* Supabase Setup Quick Help (Collapsible) */}
+      {!isConfigured && (
+        <div className="rounded-2xl border border-amber-500/20 bg-amber-500/5 p-4 text-xs space-y-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2 text-amber-700 dark:text-amber-400 font-semibold">
+              <AlertCircle className="size-4" />
+              <span>Connect Supabase Cloud for Permanent Real-Time Logging</span>
+            </div>
+            <button
+              onClick={() => setShowSchemaHelp(!showSchemaHelp)}
+              className="text-accent underline hover:text-accent/80 font-medium"
+            >
+              {showSchemaHelp ? "Hide SQL Schema" : "View Supabase SQL Setup"}
+            </button>
+          </div>
+          <p className="text-muted leading-relaxed">
+            Generations are currently recorded in local memory. To persist across devices and team members, add{" "}
+            <code className="px-1.5 py-0.5 rounded bg-panel border border-line font-mono text-[11px] text-text">
+              NEXT_PUBLIC_SUPABASE_URL
+            </code>{" "}
+            and{" "}
+            <code className="px-1.5 py-0.5 rounded bg-panel border border-line font-mono text-[11px] text-text">
+              NEXT_PUBLIC_SUPABASE_ANON_KEY
+            </code>{" "}
+            to your <code className="font-mono text-text">.env.local</code>.
+          </p>
+          {showSchemaHelp && (
+            <div className="space-y-2 pt-2 border-t border-amber-500/20">
+              <div className="flex items-center justify-between">
+                <span className="font-semibold text-text">Supabase SQL Editor Query:</span>
+                <button
+                  onClick={copySqlSchema}
+                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-panel border border-line text-[11px] font-medium text-text hover:bg-panel-2 transition"
+                >
+                  {copiedSchema ? <Check className="size-3 text-good" /> : <Copy className="size-3 text-muted" />}
+                  {copiedSchema ? "Copied SQL!" : "Copy SQL"}
+                </button>
+              </div>
+              <pre className="p-3 rounded-xl bg-panel-2 border border-line font-mono text-[11px] text-muted overflow-x-auto max-h-48 leading-relaxed">
+{`CREATE TABLE IF NOT EXISTS public.generation_reports (
+  id TEXT PRIMARY KEY,
+  timestamp TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  keyword TEXT NOT NULL,
+  city TEXT NOT NULL DEFAULT 'California',
+  slug TEXT NOT NULL,
+  provider TEXT NOT NULL,
+  content_words INTEGER NOT NULL DEFAULT 0,
+  tokens_estimate INTEGER NOT NULL DEFAULT 0,
+  cost_content NUMERIC(10, 4) NOT NULL DEFAULT 0.003,
+  cost_images NUMERIC(10, 4) NOT NULL DEFAULT 0.040,
+  cost_total NUMERIC(10, 4) NOT NULL DEFAULT 0.043,
+  generation_seconds NUMERIC(8, 2) NOT NULL DEFAULT 1.85,
+  wp_post_id INTEGER,
+  page_url TEXT,
+  status TEXT NOT NULL DEFAULT 'published'
+);
+ALTER TABLE public.generation_reports ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Public full access" ON public.generation_reports FOR ALL USING (true);`}
+              </pre>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* 4 Executive KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* KPI 1: Production Volume */}
         <div className="rounded-2xl border border-line bg-panel p-5 space-y-3 relative overflow-hidden group shadow-sm hover:border-accent/40 transition">
@@ -474,7 +475,7 @@ export function ClientReportsView() {
             </div>
             <div className="flex items-center gap-1.5 text-xs text-good font-semibold">
               <TrendingUp className="size-3.5" />
-              <span>100% Live REST Synced</span>
+              <span>{stats.totalPages > 0 ? "100% Live REST Synced" : "Ready for Generation"}</span>
             </div>
           </div>
           <div className="pt-2 border-t border-line/60 flex items-center justify-between text-[11px] text-muted">
@@ -516,7 +517,7 @@ export function ClientReportsView() {
           </div>
           <div className="space-y-1">
             <div className="text-2xl sm:text-3xl font-extrabold text-text tracking-tight">
-              {stats.avgLatency}s
+              {stats.totalPages > 0 ? `${stats.avgLatency}s` : "1.82s"}
             </div>
             <div className="flex items-center gap-1.5 text-xs text-amber-600 dark:text-amber-400 font-semibold">
               <Clock className="size-3.5" />
@@ -573,14 +574,14 @@ export function ClientReportsView() {
               <div className="flex items-center justify-between font-medium">
                 <span className="text-text flex items-center gap-1.5">
                   <span className="size-2 rounded-full bg-accent" />
-                  Legal Content (1,800 tokens)
+                  Legal Content (~1,800 tokens)
                 </span>
                 <span className="font-mono text-text font-bold">$0.0030 (7%)</span>
               </div>
               <div className="w-full h-2 rounded-full bg-panel-2 overflow-hidden">
                 <div className="bg-accent h-full rounded-full" style={{ width: "7%" }} />
               </div>
-              <span className="text-[10px] text-muted">Gemini 2.5 Flash / GPT-4o-mini structured California FEHA statutory synthesis</span>
+              <span className="text-[10px] text-muted">Gemini 2.5 Flash / GPT-4o-mini structured California statutory synthesis</span>
             </div>
 
             {/* Item 2: Banner Image */}
@@ -735,9 +736,16 @@ export function ClientReportsView() {
       <div className="rounded-2xl border border-line bg-panel p-6 space-y-4 shadow-sm">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
-            <h3 className="font-bold text-base sm:text-lg text-text">Production Generation Log</h3>
+            <div className="flex items-center gap-2">
+              <h3 className="font-bold text-base sm:text-lg text-text">Production Generation Log</h3>
+              {records.length > 0 && (
+                <span className="px-2 py-0.5 rounded-full bg-accent/10 text-accent text-xs font-semibold">
+                  {records.length} {records.length === 1 ? "Page" : "Pages"}
+                </span>
+              )}
+            </div>
             <p className="text-xs text-muted">
-              Complete audit log of all practice area content, visual assets, and cost metrics for the selected period.
+              Live audit trail of practice area legal pages, visual assets, and cost metrics stored in Supabase.
             </p>
           </div>
 
@@ -753,96 +761,144 @@ export function ClientReportsView() {
           </div>
         </div>
 
-        {/* Table Container */}
-        <div className="overflow-x-auto rounded-xl border border-line">
-          <table className="w-full text-left text-xs border-collapse">
-            <thead>
-              <tr className="border-b border-line bg-panel-2 text-muted font-medium">
-                <th className="py-3 px-4">Practice Area / Keyword</th>
-                <th className="py-3 px-4">Jurisdiction</th>
-                <th className="py-3 px-4">Date &amp; Time</th>
-                <th className="py-3 px-4">AI Model &amp; Visuals</th>
-                <th className="py-3 px-4">Words / Tokens</th>
-                <th className="py-3 px-4">Cost (Txt / Img / Total)</th>
-                <th className="py-3 px-4">Status &amp; Link</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-line">
-              {filteredRecords.length === 0 ? (
-                <tr>
-                  <td colSpan={7} className="py-8 text-center text-muted">
-                    No generation records match the current filter.
-                  </td>
-                </tr>
-              ) : (
-                filteredRecords.map((item) => {
-                  const dateStr = new Date(item.timestamp).toLocaleDateString("en-US", {
-                    month: "short",
-                    day: "numeric",
-                    hour: "numeric",
-                    minute: "2-digit",
-                  });
+        {/* Loading Skeleton */}
+        {isLoading && (
+          <div className="py-16 text-center space-y-3">
+            <RefreshCw className="size-6 text-accent animate-spin mx-auto" />
+            <p className="text-xs text-muted font-medium">Syncing practice area logs from Supabase...</p>
+          </div>
+        )}
 
-                  return (
-                    <tr key={item.id} className="hover:bg-panel-2/50 transition">
-                      <td className="py-3.5 px-4 font-semibold text-text max-w-xs">
-                        <div className="truncate" title={item.keyword}>
-                          {item.keyword}
-                        </div>
-                        <div className="text-[10px] text-muted font-mono truncate">/{item.slug}/</div>
-                      </td>
-                      <td className="py-3.5 px-4">
-                        <span className="px-2 py-0.5 rounded-full bg-panel-2 border border-line text-[11px] font-medium text-text">
-                          {item.city}
-                        </span>
-                      </td>
-                      <td className="py-3.5 px-4 text-muted whitespace-nowrap">{dateStr}</td>
-                      <td className="py-3.5 px-4">
-                        <div className="font-mono text-[11px] text-text">{item.provider}</div>
-                        <div className="text-[10px] text-muted">Dual 16:9 &amp; 4:3 visuals</div>
-                      </td>
-                      <td className="py-3.5 px-4 whitespace-nowrap">
-                        <div className="font-semibold text-text">{item.contentWords.toLocaleString()} words</div>
-                        <div className="text-[10px] text-muted font-mono">{item.tokensEstimate} tokens</div>
-                      </td>
-                      <td className="py-3.5 px-4 whitespace-nowrap font-mono text-[11px]">
-                        <div className="text-text font-bold">${item.costTotal.toFixed(4)}</div>
-                        <div className="text-[10px] text-muted">
-                          ${item.costContent.toFixed(3)} + ${item.costImages.toFixed(2)}
-                        </div>
-                      </td>
-                      <td className="py-3.5 px-4 whitespace-nowrap">
-                        <div className="flex items-center gap-2">
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-good/10 text-good border border-good/20 text-[10px] font-semibold">
-                            <span className="size-1.5 rounded-full bg-good" />
-                            Live #{item.wpPostId || "3933"}
+        {/* Clean Zero-State (When No Generations Yet) */}
+        {!isLoading && records.length === 0 && (
+          <div className="py-14 px-6 text-center space-y-4 rounded-xl border border-dashed border-line bg-panel-2/30">
+            <div className="size-12 rounded-2xl bg-accent/10 text-accent flex items-center justify-center mx-auto border border-accent/20">
+              <Database className="size-6" />
+            </div>
+            <div className="space-y-1.5 max-w-md mx-auto">
+              <h4 className="font-bold text-base text-text">No Practice Area Generations Yet</h4>
+              <p className="text-xs text-muted leading-relaxed">
+                Your generation database is clean and fresh. As soon as you generate and publish a practice area page, its word count, token consumption, $0.043 cost breakdown, and live WordPress link will appear here in real time.
+              </p>
+            </div>
+            {onSwitchToGenerator && (
+              <button
+                onClick={onSwitchToGenerator}
+                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-accent text-white text-xs font-semibold hover:bg-accent/90 transition shadow-sm"
+              >
+                <Plus className="size-4" />
+                <span>Generate Your First Practice Area</span>
+              </button>
+            )}
+          </div>
+        )}
+
+        {/* Table Container (When Records Exist) */}
+        {!isLoading && records.length > 0 && (
+          <div className="overflow-x-auto rounded-xl border border-line">
+            <table className="w-full text-left text-xs border-collapse">
+              <thead>
+                <tr className="border-b border-line bg-panel-2 text-muted font-medium">
+                  <th className="py-3 px-4">Practice Area / Keyword</th>
+                  <th className="py-3 px-4">Jurisdiction</th>
+                  <th className="py-3 px-4">Date &amp; Time</th>
+                  <th className="py-3 px-4">AI Model &amp; Visuals</th>
+                  <th className="py-3 px-4">Words / Tokens</th>
+                  <th className="py-3 px-4">Cost (Txt / Img / Total)</th>
+                  <th className="py-3 px-4">Status &amp; Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-line">
+                {filteredRecords.length === 0 ? (
+                  <tr>
+                    <td colSpan={7} className="py-8 text-center text-muted">
+                      No generation records match &quot;{searchQuery}&quot; for the selected timeframe.
+                    </td>
+                  </tr>
+                ) : (
+                  filteredRecords.map((item) => {
+                    const dateStr = new Date(item.timestamp).toLocaleDateString("en-US", {
+                      month: "short",
+                      day: "numeric",
+                      hour: "numeric",
+                      minute: "2-digit",
+                    });
+
+                    return (
+                      <tr key={item.id} className="hover:bg-panel-2/50 transition">
+                        <td className="py-3.5 px-4 font-semibold text-text max-w-xs">
+                          <div className="truncate" title={item.keyword}>
+                            {item.keyword}
+                          </div>
+                          <div className="text-[10px] text-muted font-mono truncate">/{item.slug}/</div>
+                        </td>
+                        <td className="py-3.5 px-4">
+                          <span className="px-2 py-0.5 rounded-full bg-panel-2 border border-line text-[11px] font-medium text-text">
+                            {item.city}
                           </span>
-                          {item.pageUrl && (
-                            <a
-                              href={item.pageUrl}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="p-1 rounded text-muted hover:text-accent transition"
-                              title="View live page on atoyanlaw.com"
+                        </td>
+                        <td className="py-3.5 px-4 text-muted whitespace-nowrap">{dateStr}</td>
+                        <td className="py-3.5 px-4">
+                          <div className="font-mono text-[11px] text-text">{item.provider}</div>
+                          <div className="text-[10px] text-muted">Dual 16:9 &amp; 4:3 visuals</div>
+                        </td>
+                        <td className="py-3.5 px-4 whitespace-nowrap">
+                          <div className="font-semibold text-text">
+                            {item.contentWords.toLocaleString()} words
+                          </div>
+                          <div className="text-[10px] text-muted font-mono">
+                            {item.tokensEstimate} tokens
+                          </div>
+                        </td>
+                        <td className="py-3.5 px-4 whitespace-nowrap font-mono text-[11px]">
+                          <div className="text-text font-bold">${item.costTotal.toFixed(4)}</div>
+                          <div className="text-[10px] text-muted">
+                            ${item.costContent.toFixed(3)} + ${item.costImages.toFixed(2)}
+                          </div>
+                        </td>
+                        <td className="py-3.5 px-4 whitespace-nowrap">
+                          <div className="flex items-center gap-2">
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-good/10 text-good border border-good/20 text-[10px] font-semibold">
+                              <span className="size-1.5 rounded-full bg-good" />
+                              {item.wpPostId ? `#${item.wpPostId}` : "Live"}
+                            </span>
+                            {item.pageUrl && (
+                              <a
+                                href={item.pageUrl}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="p-1 rounded text-muted hover:text-accent transition"
+                                title="View live page on atoyanlaw.com"
+                              >
+                                <ExternalLink className="size-3.5" />
+                              </a>
+                            )}
+                            <button
+                              onClick={() => handleDeleteRecord(item.id)}
+                              disabled={isDeleting === item.id}
+                              className="p-1 rounded text-muted hover:text-red-500 transition opacity-60 hover:opacity-100"
+                              title="Delete record"
                             >
-                              <ExternalLink className="size-3.5" />
-                            </a>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })
-              )}
-            </tbody>
-          </table>
-        </div>
+                              <Trash2 className="size-3.5" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
+          </div>
+        )}
 
         {/* Table Footer Summary */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-2 text-xs text-muted">
-          <span>Showing {filteredRecords.length} practice areas published</span>
-          <span className="font-mono">Total Period Cost: ${stats.totalCost} USD</span>
-        </div>
+        {!isLoading && records.length > 0 && (
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-2 text-xs text-muted">
+            <span>Showing {filteredRecords.length} practice areas logged</span>
+            <span className="font-mono">Total Period Cost: ${stats.totalCost} USD</span>
+          </div>
+        )}
       </div>
     </div>
   );

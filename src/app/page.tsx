@@ -175,6 +175,14 @@ export default function Home() {
         };
         const prev = JSON.parse(localStorage.getItem("atoyan_generation_reports") || "[]");
         localStorage.setItem("atoyan_generation_reports", JSON.stringify([reportItem, ...prev]));
+        // Persist to Supabase via server route
+        fetch("/api/reports", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(reportItem),
+        }).catch(() => null);
+        // Signal live report view
+        window.dispatchEvent(new CustomEvent("atoyan_report_added", { detail: reportItem }));
       } catch {
         // Silently ignore storage errors
       }
@@ -278,7 +286,7 @@ export default function Home() {
       </nav>
 
       {/* RENDER VIEW 1: EXECUTIVE REPORTS & ANALYTICS */}
-      {mainView === "reports" && <ClientReportsView />}
+      {mainView === "reports" && <ClientReportsView onSwitchToGenerator={() => setMainView("generator")} />}
 
       {/* RENDER VIEW 2: CONTENT GENERATOR */}
       {mainView === "generator" && (

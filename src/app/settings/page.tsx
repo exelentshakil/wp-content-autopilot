@@ -14,6 +14,7 @@ import {
   CheckCircle2,
   RotateCcw,
   Sliders,
+  Database,
 } from "lucide-react";
 import { useSettings } from "@/lib/useSettings";
 import { cn } from "@/lib/utils";
@@ -228,6 +229,42 @@ export default function SettingsPage() {
           >
             <FileCode className="size-3.5" /> View ACF Field Group 348 Schema Export
           </a>
+        </div>
+      </section>
+
+      {/* Supabase Analytics Database */}
+      <section className="rounded-2xl border border-line bg-panel-2 p-6 space-y-5">
+        <div className="flex items-center justify-between">
+          <h2 className="font-semibold flex items-center gap-2 text-text">
+            <Database className="size-4 text-accent" /> Supabase Real-Time Reporting Database
+          </h2>
+          <span className="text-xs px-2.5 py-0.5 rounded-full bg-accent/10 text-accent border border-accent/20 font-medium">
+            PostgreSQL Logs
+          </span>
+        </div>
+
+        <p className="text-xs text-muted leading-relaxed">
+          Stores executive generation metrics, word counts, token estimation, and exact $0.043/page cost breakdowns in real-time. Can be configured here or via <code className="font-mono text-text">NEXT_PUBLIC_SUPABASE_URL</code> and <code className="font-mono text-text">NEXT_PUBLIC_SUPABASE_ANON_KEY</code> in <code className="font-mono text-text">.env.local</code>.
+        </p>
+
+        <div className="grid sm:grid-cols-2 gap-4">
+          <Field label="Supabase Project URL" hint="https://[project-id].supabase.co">
+            <input
+              className={inputCls}
+              placeholder="https://xyzcompany.supabase.co"
+              value={settings.supabase_url ?? ""}
+              onChange={(e) => update({ supabase_url: e.target.value })}
+            />
+          </Field>
+          <Field label="Supabase Anon Key" hint="Public anonymous API key (or env default)">
+            <input
+              type="password"
+              className={inputCls}
+              placeholder={settings.supabase_anon_key ? "••••••••••••" : "eyJhbGciOi..."}
+              value={settings.supabase_anon_key ?? ""}
+              onChange={(e) => update({ supabase_anon_key: e.target.value })}
+            />
+          </Field>
         </div>
       </section>
 

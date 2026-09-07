@@ -102,6 +102,10 @@ GEMINI_API_KEY=AIzaSy...
 # Optional Model Overrides
 OPENAI_MODEL=gpt-4o,gpt-4o-mini
 GEMINI_MODEL=gemini-2.5-flash,gemini-2.0-flash
+
+# Supabase Persistence & Executive Reporting Database
+NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
 ```
 
 > **Note**: To generate an Application Password in WordPress:
@@ -148,6 +152,15 @@ Content-Type: application/json
 GET /api/health
 ```
 Returns JSON status of OpenAI, Gemini, WordPress REST connectivity, and ACF Field Group 348 configuration.
+
+---
+
+### 4. Generation Reports & Analytics
+```http
+GET /api/reports
+POST /api/reports
+```
+Fetches or stores persistent generation logs (word counts, tokens, exact $0.043 cost breakdown, generation duration, and live WordPress URLs) in Supabase.
 
 ---
 
