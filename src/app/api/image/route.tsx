@@ -1,6 +1,6 @@
 import { ImageResponse } from "next/og";
 
-export const runtime = "edge";
+export const runtime = "nodejs";
 
 const TEMPLATES: Record<string, { bg: string; accent: string; label: string }> = {
   sunset: { bg: "linear-gradient(135deg,#ff5f6d,#ffc371)", accent: "#7a1f2b", label: "Sunset" },

@@ -1,96 +1,109 @@
 "use client";
 
-import { CheckCircle2, ChevronDown, Code2, Database, Layout, Sparkles, Wand2 } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { CheckCircle2, ShieldCheck, Scale, Image as ImageIcon, Layers, FileText } from "lucide-react";
 
-const FEATURES = [
+const PIPELINE_PILLARS = [
   {
-    icon: Wand2,
-    title: "Zero-Touch Formatting",
-    body: "Strips markdown artifacts, wraps elements in your exact CSS classes, and drops CTAs exactly where you want them.",
+    icon: Scale,
+    title: "California Legal Depth",
+    body: "Strictly aligns with Atoyan Law Firm standards, citing FEHA, CRD regulations, Labor Code §§ 98.6 & 1102.5, and SB 497 rebuttable presumption.",
   },
   {
-    icon: Layout,
-    title: "ACF Schema Mapping",
-    body: "Maps the generated content directly into your Advanced Custom Fields payload, not just a big text blob.",
+    icon: Layers,
+    title: "ACF Field Group 348",
+    body: "Maps all 27 subfields across 6 tabs. Clones 8 verified client reviews and 27 practice area sidebar navigation links directly from Page 3933.",
   },
   {
-    icon: Database,
-    title: "Keyword Auto-Linking",
-    body: "Automatically links terms against your custom dictionary to build internal SEO structure on the fly.",
+    icon: ImageIcon,
+    title: "Dual AI Visual Pair",
+    body: "Synthesizes 16:9 header banners (moody mahogany law desk) and 4:3 editorial illustrations with pure binary PNG fallback guarantee.",
   },
   {
-    icon: Sparkles,
-    title: "Generative Covers",
-    body: "Builds a featured topic image with the title baked in. Zero Photoshop required before publishing.",
+    icon: ShieldCheck,
+    title: "WordPress & Yoast REST",
+    body: "Publishes under parent page #750 (Employment Law) with templates/labor-law.php, linking media and syncing Yoast SEO titles & descriptions.",
   },
 ];
 
 export function Footer() {
   return (
     <footer className="border-t border-line bg-panel-2 mt-20">
-      <div className="max-w-7xl mx-auto px-6 py-16">
-        <div className="grid lg:grid-cols-2 gap-12 lg:gap-24">
-          
-          <div className="space-y-8">
+      <div className="max-w-6xl mx-auto px-6 py-14 space-y-12">
+        <div className="grid lg:grid-cols-[1.2fr_0.8fr] gap-12 items-start">
+          <div className="space-y-6">
             <div>
-              <h3 className="text-xl font-semibold tracking-tight">Programmatic SEO Publishing</h3>
-              <p className="mt-3 text-sm text-muted leading-relaxed">
-                The real worry isn't "can AI write an article" — it's whether the output actually follows YOUR rules, or if you're back to fixing generic AI formatting by hand. Everything here is config, not code.
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-accent/10 border border-accent/20 text-accent text-xs font-semibold uppercase tracking-wider mb-3">
+                <FileText className="size-3.5" /> Production Publishing Engine
+              </div>
+              <h3 className="text-xl font-bold tracking-tight text-text">
+                Atoyan Law Firm • Practice Area Automation
+              </h3>
+              <p className="mt-2 text-sm text-muted leading-relaxed max-w-xl">
+                End-to-end programmatic publishing platform engineered specifically for Atoyan Law Firm (atoyanlaw.com). Automates deep legal research, conversational client tone, visual asset generation, and full WordPress REST API deployment.
               </p>
             </div>
 
-            <div className="grid sm:grid-cols-2 gap-6">
-              {FEATURES.map((f) => (
-                <div key={f.title} className="flex gap-4">
-                  <div className="mt-0.5 size-8 shrink-0 rounded-lg bg-accent/10 flex items-center justify-center">
-                    <f.icon className="size-4 text-accent" />
+            <div className="grid sm:grid-cols-2 gap-5 pt-2">
+              {PIPELINE_PILLARS.map((item) => (
+                <div key={item.title} className="flex gap-3.5">
+                  <div className="mt-0.5 size-8 shrink-0 rounded-lg bg-accent/10 border border-accent/20 flex items-center justify-center text-accent">
+                    <item.icon className="size-4" />
                   </div>
                   <div>
-                    <h4 className="text-sm font-medium">{f.title}</h4>
-                    <p className="mt-1 text-xs text-muted leading-relaxed">{f.body}</p>
+                    <h4 className="text-sm font-semibold text-text">{item.title}</h4>
+                    <p className="mt-1 text-xs text-muted leading-relaxed">{item.body}</p>
                   </div>
                 </div>
               ))}
             </div>
           </div>
 
-          <div className="card p-8 bg-panel shadow-sm">
-            <h3 className="text-lg font-semibold flex items-center gap-2">
-              <Code2 className="size-5 text-accent" />
-              Enterprise Implementation Architecture
-            </h3>
-
-            <div className="mt-6 space-y-6">
-              <div className="text-sm text-muted leading-relaxed space-y-4">
-                <p>What you are looking at is not a simple script; it is a scalable, programmatic SEO publishing engine. By stripping away manual formatting and strictly enforcing your custom CSS and ACF schemas, we are building a production line capable of dominating high-value SERPs with zero manual bottleneck.</p>
-                
-                <p>This pipeline connects directly to your WordPress installation via application passwords, maps directly to your custom post types, and can run on a cron schedule to publish completely hands-free.</p>
+          <div className="rounded-2xl border border-line bg-panel p-6 space-y-5 shadow-sm">
+            <h4 className="font-semibold text-sm text-text flex items-center gap-2">
+              <ShieldCheck className="size-4 text-good" /> Verified Target Architecture
+            </h4>
+            <div className="space-y-2.5 text-xs">
+              <div className="flex items-center justify-between p-2.5 rounded-lg bg-panel-2 border border-line">
+                <span className="text-muted">Target Domain:</span>
+                <span className="font-semibold text-text font-mono">atoyanlaw.com</span>
               </div>
-
-              <div className="pt-5 border-t border-line space-y-3">
-                <div className="flex items-center text-xs">
-                  <span className="text-muted flex items-center gap-2"><CheckCircle2 className="size-3.5 text-good"/> Architecture & Payload Mapping</span>
-                </div>
-                <div className="flex items-center text-xs">
-                  <span className="text-muted flex items-center gap-2"><CheckCircle2 className="size-3.5 text-good"/> Formatting Engine (CSS/CTA logic)</span>
-                </div>
-                <div className="flex items-center text-xs">
-                  <span className="text-muted flex items-center gap-2"><CheckCircle2 className="size-3.5 text-good"/> Auto-Linking & Media Gen</span>
-                </div>
-                <div className="flex items-center text-xs">
-                  <span className="text-muted flex items-center gap-2"><CheckCircle2 className="size-3.5 text-good"/> WordPress REST API Integration</span>
-                </div>
+              <div className="flex items-center justify-between p-2.5 rounded-lg bg-panel-2 border border-line">
+                <span className="text-muted">Parent Post:</span>
+                <span className="font-semibold text-text font-mono">#750 (Employment Law)</span>
               </div>
+              <div className="flex items-center justify-between p-2.5 rounded-lg bg-panel-2 border border-line">
+                <span className="text-muted">Page Template:</span>
+                <span className="font-semibold text-text font-mono">templates/labor-law.php</span>
+              </div>
+              <div className="flex items-center justify-between p-2.5 rounded-lg bg-panel-2 border border-line">
+                <span className="text-muted">Field Group:</span>
+                <span className="font-semibold text-text font-mono">SCF Group 348</span>
+              </div>
+            </div>
+
+            <div className="pt-3 border-t border-line text-xs text-muted space-y-1.5">
+              <div className="flex items-center gap-2 text-good font-medium">
+                <CheckCircle2 className="size-3.5" /> Ready for Immediate Client Publishing
+              </div>
+              <p className="text-[11px] text-muted">
+                Generates complete, verified WordPress pages with 100% theme fidelity.
+              </p>
             </div>
           </div>
         </div>
 
-        <div className="mt-16 pt-8 border-t border-line flex flex-col md:flex-row justify-between items-center gap-4 text-xs text-muted">
-          <div>Built as an enterprise proof-of-concept.</div>
-          <div className="flex items-center gap-6">
-            <a href="https://github.com/exelentshakil/wp-content-autopilot" target="_blank" rel="noreferrer" className="hover:text-text transition-colors">View Source on GitHub</a>
-            <a href="https://shakilhq.com" target="_blank" rel="noreferrer" className="hover:text-text transition-colors">shakilhq.com Portfolio</a>
+        <div className="pt-8 border-t border-line flex flex-col sm:flex-row justify-between items-center gap-4 text-xs text-muted">
+          <div>
+            &copy; {new Date().getFullYear()} <strong>Atoyan Law Firm</strong>. All rights reserved.
+          </div>
+          <div className="flex items-center gap-4 font-medium">
+            <span className="flex items-center gap-1.5 text-good">
+              <span className="size-2 rounded-full bg-good animate-pulse" /> Production Ready
+            </span>
+            <span>•</span>
+            <span>WordPress REST API</span>
+            <span>•</span>
+            <span>SCF / ACF 348</span>
           </div>
         </div>
       </div>

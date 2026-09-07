@@ -8,8 +8,9 @@ import { Footer } from "@/components/Footer";
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 
 export const metadata: Metadata = {
-  title: "WP Content Autopilot",
-  description: "Title in, formatted article + composited image + ACF-mapped WordPress post out.",
+  title: "Atoyan Law Firm • Practice Area Content Autopilot",
+  description:
+    "Automated California employment law content generation, ACF Field Group 348 payload mapping, visual asset synthesis, and WordPress REST publishing.",
 };
 
 export default function RootLayout({
@@ -21,14 +22,6 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body className={cn(inter.variable, "font-sans antialiased min-h-screen flex flex-col")}>
         <ThemeProvider attribute="class" defaultTheme="dark" enableSystem disableTransitionOnChange>
-          {/* traffic hub pixel -- see exelentshakil/demo-traffic */}
-          <img
-            src="https://demo-traffic.vercel.app/api/px?p=wp-content-autopilot"
-            alt=""
-            width={1}
-            height={1}
-            style={{ position: "absolute", width: 1, height: 1, opacity: 0 }}
-          />
           <div className="flex-1">{children}</div>
           <Footer />
         </ThemeProvider>
