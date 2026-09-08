@@ -95,6 +95,9 @@ WP_SITE_URL=https://www.atoyanlaw.com
 WP_USER=your_wp_username
 WP_PASSWORD=xxxx xxxx xxxx xxxx xxxx xxxx  # Application Password
 
+# Live Site Publishing Security Protection
+WP_SUPER_ADMIN=your_super_admin_password   # Protects 1-Click Publish & live WordPress site
+
 # AI Generation Engine API Keys
 OPENAI_API_KEY=sk-proj-...
 GEMINI_API_KEY=AIzaSy...
@@ -107,6 +110,14 @@ GEMINI_MODEL=gemini-2.5-flash,gemini-2.0-flash
 NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
 ```
+
+### 🔒 Live Site Publishing Protection (`WP_SUPER_ADMIN`)
+
+Because the application is connected directly to the live production site ([atoyanlaw.com](https://www.atoyanlaw.com)), live publishing is protected by the `WP_SUPER_ADMIN` environment variable:
+
+- **Server Enforcement**: When `WP_SUPER_ADMIN` is set in Vercel environment variables, all publish requests (`POST /api/publish`) require authorization. Unauthorized or missing passwords return `401 Unauthorized` with a constant-time comparison check.
+- **UI Modal & Memory**: The UI detects when publishing is protected. Clicking **1-Click Publish Now** or **Publish Previewed Page** prompts with an Admin Authorization modal. You can optionally check *"Remember password on this device"* to store it in your browser.
+- **Lock / Reset**: An admin badge in the top navigation bar displays authorization status and provides an instant *"Lock / Reset"* button to clear stored credentials anytime.
 
 > **Note**: To generate an Application Password in WordPress:
 > Go to **WP Admin → Users → Profile → Application Passwords**, type a name (e.g. `Content Autopilot`), and click **Add New Application Password**.

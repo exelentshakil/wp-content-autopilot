@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import {
   Sparkles,
@@ -19,6 +19,13 @@ import {
   Check,
   BarChart3,
   Zap,
+  Lock,
+  Unlock,
+  KeyRound,
+  Eye,
+  EyeOff,
+  AlertTriangle,
+  X,
 } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { useSettings } from "@/lib/useSettings";
@@ -85,6 +92,36 @@ export default function Home() {
   const [copiedSchema, setCopiedSchema] = useState(false);
   const [activeTab, setActiveTab] = useState<"content" | "images" | "faqs" | "acf">("content");
 
+  // Admin password protection for live publishing
+  const [adminPassword, setAdminPassword] = useState("");
+  const [isSuperAdminProtected, setIsSuperAdminProtected] = useState(false);
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [modalPasswordInput, setModalPasswordInput] = useState("");
+  const [showPasswordText, setShowPasswordText] = useState(false);
+  const [rememberPassword, setRememberPassword] = useState(true);
+  const [authError, setAuthError] = useState<string | null>(null);
+  const [pendingPublishAction, setPendingPublishAction] = useState<
+    ((pwd: string) => Promise<void>) | null
+  >(null);
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem("wp_super_admin_pass");
+      if (saved) setAdminPassword(saved);
+    } catch {
+      // Ignore localStorage read errors
+    }
+
+    fetch("/api/publish")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data && typeof data.protected === "boolean") {
+          setIsSuperAdminProtected(data.protected);
+        }
+      })
+      .catch(() => null);
+  }, []);
+
   const sampleKeywords = [
     "Burbank Wrongful Termination Lawyer",
     "Visalia Sexual Harassment Lawyer",
@@ -116,8 +153,21 @@ export default function Home() {
     }
   };
 
-  const handlePublish = async (existingData?: GenerateResponse) => {
+  const handlePublish = async (existingData?: GenerateResponse, overridePassword?: string) => {
     const targetData = existingData || result;
+    const effectivePassword = overridePassword !== undefined ? overridePassword : adminPassword;
+
+    // Intercept if protected and no password available
+    if (isSuperAdminProtected && !effectivePassword) {
+      setPendingPublishAction(() => async (pwd: string) => {
+        await handlePublish(existingData, pwd);
+      });
+      setModalPasswordInput("");
+      setAuthError(null);
+      setShowAuthModal(true);
+      return;
+    }
+
     setPublishing(true);
     setError(null);
 
@@ -126,6 +176,7 @@ export default function Home() {
         title: targetData ? targetData.content.heroTitle : keyword,
         schedule_at: scheduleAt || undefined,
         settings,
+        admin_password: effectivePassword || undefined,
       };
 
       if (targetData) {
@@ -144,14 +195,34 @@ export default function Home() {
         };
       }
 
+      const headers: Record<string, string> = { "Content-Type": "application/json" };
+      if (effectivePassword) {
+        headers["x-admin-password"] = effectivePassword;
+      }
+
       const res = await fetch("/api/publish", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers,
         body: JSON.stringify(payload),
       });
 
       const data = await res.json();
-      if (!res.ok) throw new Error(data.message || data.error || "Publish failed");
+      if (!res.ok) {
+        if (res.status === 401) {
+          setIsSuperAdminProtected(true);
+          setAdminPassword("");
+          try {
+            localStorage.removeItem("wp_super_admin_pass");
+          } catch {}
+          setAuthError(data.message || "Invalid admin password. Live WordPress publishing is protected.");
+          setPendingPublishAction(() => async (pwd: string) => {
+            await handlePublish(existingData, pwd);
+          });
+          setShowAuthModal(true);
+          throw new Error(data.message || "Invalid admin password (401 Unauthorized)");
+        }
+        throw new Error(data.message || data.error || "Publish failed");
+      }
       setPublishResult(data);
 
       // Record generation in client audit reports storage
@@ -193,7 +264,19 @@ export default function Home() {
     }
   };
 
-  const handleGenerateAndPublish = async () => {
+  const handleGenerateAndPublish = async (overridePassword?: string) => {
+    const effectivePassword = overridePassword !== undefined ? overridePassword : adminPassword;
+
+    if (isSuperAdminProtected && !effectivePassword) {
+      setPendingPublishAction(() => async (pwd: string) => {
+        await handleGenerateAndPublish(pwd);
+      });
+      setModalPasswordInput("");
+      setAuthError(null);
+      setShowAuthModal(true);
+      return;
+    }
+
     setLoading(true);
     setError(null);
     setPublishResult(null);
@@ -213,12 +296,55 @@ export default function Home() {
       setResult(genData);
 
       // Step 2: Publish immediately
-      await handlePublish(genData);
+      await handlePublish(genData, effectivePassword);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed full automated workflow");
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleConfirmAuth = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    const cleanPass = modalPasswordInput.trim();
+    if (!cleanPass) {
+      setAuthError("Please enter the admin password.");
+      return;
+    }
+
+    setAdminPassword(cleanPass);
+    if (rememberPassword) {
+      try {
+        localStorage.setItem("wp_super_admin_pass", cleanPass);
+      } catch {}
+    } else {
+      try {
+        localStorage.removeItem("wp_super_admin_pass");
+      } catch {}
+    }
+
+    setShowAuthModal(false);
+    setAuthError(null);
+
+    if (pendingPublishAction) {
+      const action = pendingPublishAction;
+      setPendingPublishAction(null);
+      await action(cleanPass);
+    }
+  };
+
+  const handleLockAdmin = () => {
+    setAdminPassword("");
+    try {
+      localStorage.removeItem("wp_super_admin_pass");
+    } catch {}
+  };
+
+  const openAuthModalManually = () => {
+    setModalPasswordInput(adminPassword);
+    setAuthError(null);
+    setPendingPublishAction(null);
+    setShowAuthModal(true);
   };
 
   const copySchemaJsonLd = () => {
@@ -240,11 +366,37 @@ export default function Home() {
             <Building2 className="size-5" />
           </div>
           <div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               <span className="font-semibold text-text">Atoyan Law Firm</span>
               <span className="text-xs px-2 py-0.5 rounded-full bg-good/10 text-good border border-good/20">
                 Live WP REST Connected
               </span>
+              {isSuperAdminProtected && (
+                adminPassword ? (
+                  <div className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-500/10 text-amber-500 border border-amber-500/20 text-xs font-medium">
+                    <Unlock className="size-3" />
+                    <span>Admin Unlocked</span>
+                    <button
+                      type="button"
+                      onClick={handleLockAdmin}
+                      className="ml-1 text-[11px] underline hover:text-amber-400 cursor-pointer"
+                      title="Lock and clear stored admin password"
+                    >
+                      Lock
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={openAuthModalManually}
+                    className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-red-500/10 text-red-500 border border-red-500/20 text-xs font-medium hover:bg-red-500/20 transition cursor-pointer"
+                    title="Publishing is protected by WP_SUPER_ADMIN. Click to authorize"
+                  >
+                    <Lock className="size-3" />
+                    <span>Publish Protected</span>
+                  </button>
+                )
+              )}
             </div>
             <p className="text-xs text-muted">Practice Area Autopilot • SCF Field Group 348 • Gemini Imagen 3</p>
           </div>
@@ -323,13 +475,15 @@ export default function Home() {
                       Generate Preview
                     </button>
                     <button
-                      onClick={handleGenerateAndPublish}
+                      onClick={() => handleGenerateAndPublish()}
                       disabled={loading || publishing || keyword.trim().length < 3}
                       className="inline-flex items-center gap-2 rounded-xl bg-accent text-white px-5 py-3 text-sm font-medium hover:opacity-90 transition disabled:opacity-50 shadow-sm"
                       title="Generate content and publish straight to WordPress"
                     >
                       {publishing || loading ? (
                         <Loader2 className="size-4 animate-spin" />
+                      ) : isSuperAdminProtected && !adminPassword ? (
+                        <Lock className="size-4" />
                       ) : (
                         <Send className="size-4" />
                       )}
@@ -493,7 +647,13 @@ export default function Home() {
                     disabled={publishing}
                     className="inline-flex items-center gap-2 rounded-xl bg-accent text-white px-4 py-2 text-xs font-semibold hover:opacity-90 transition disabled:opacity-50 shadow-sm"
                   >
-                    {publishing ? <Loader2 className="size-3.5 animate-spin" /> : <Send className="size-3.5" />}
+                    {publishing ? (
+                      <Loader2 className="size-3.5 animate-spin" />
+                    ) : isSuperAdminProtected && !adminPassword ? (
+                      <Lock className="size-3.5" />
+                    ) : (
+                      <Send className="size-3.5" />
+                    )}
                     Publish Previewed Page
                   </button>
                 </div>
@@ -820,6 +980,114 @@ export default function Home() {
               )}
             </section>
           )}
+        </div>
+      )}
+      {/* Admin Authorization Modal for Live Publishing */}
+      {showAuthModal && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-150">
+          <div className="w-full max-w-md rounded-2xl border border-line bg-panel p-6 shadow-2xl space-y-5 animate-in zoom-in-95 duration-150">
+            <div className="flex items-start justify-between">
+              <div className="flex items-center gap-3">
+                <div className="size-10 rounded-xl bg-accent/10 border border-accent/20 text-accent flex items-center justify-center">
+                  <KeyRound className="size-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-text">Admin Authorization</h3>
+                  <p className="text-xs text-muted">Protecting live WordPress publishing</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowAuthModal(false);
+                  setPendingPublishAction(null);
+                }}
+                className="text-muted hover:text-text transition p-1 rounded-lg hover:bg-panel-2 cursor-pointer"
+              >
+                <X className="size-4" />
+              </button>
+            </div>
+
+            <p className="text-xs text-muted leading-relaxed">
+              This action publishes directly to the live site at{" "}
+              <strong className="text-text">atoyanlaw.com</strong>. Enter the{" "}
+              <code className="text-accent bg-accent/10 px-1 py-0.5 rounded text-[11px]">WP_SUPER_ADMIN</code>{" "}
+              password to authorize.
+            </p>
+
+            <form onSubmit={handleConfirmAuth} className="space-y-4">
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between text-xs font-semibold text-text">
+                  <span>Admin Password</span>
+                  {showPasswordText ? (
+                    <button
+                      type="button"
+                      onClick={() => setShowPasswordText(false)}
+                      className="text-muted hover:text-text flex items-center gap-1 text-[11px] cursor-pointer"
+                    >
+                      <EyeOff className="size-3" /> Hide
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => setShowPasswordText(true)}
+                      className="text-muted hover:text-text flex items-center gap-1 text-[11px] cursor-pointer"
+                    >
+                      <Eye className="size-3" /> Show
+                    </button>
+                  )}
+                </div>
+                <input
+                  type={showPasswordText ? "text" : "password"}
+                  value={modalPasswordInput}
+                  onChange={(e) => {
+                    setModalPasswordInput(e.target.value);
+                    if (authError) setAuthError(null);
+                  }}
+                  placeholder="Enter WP_SUPER_ADMIN password"
+                  autoFocus
+                  className="w-full rounded-xl border border-line bg-panel px-3.5 py-2.5 text-sm text-text placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-accent/40"
+                />
+                {authError && (
+                  <p className="text-xs text-red-500 font-medium flex items-center gap-1 mt-1">
+                    <AlertTriangle className="size-3 shrink-0" />
+                    <span>{authError}</span>
+                  </p>
+                )}
+              </div>
+
+              <label className="flex items-center gap-2 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={rememberPassword}
+                  onChange={(e) => setRememberPassword(e.target.checked)}
+                  className="rounded border-line text-accent focus:ring-accent/40"
+                />
+                <span className="text-xs text-muted">Remember password on this device</span>
+              </label>
+
+              <div className="flex items-center justify-end gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowAuthModal(false);
+                    setPendingPublishAction(null);
+                  }}
+                  className="px-4 py-2 text-xs font-medium text-muted hover:text-text rounded-xl border border-line hover:bg-panel-2 transition cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={!modalPasswordInput.trim()}
+                  className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-white bg-accent hover:opacity-90 rounded-xl transition disabled:opacity-50 shadow-sm cursor-pointer"
+                >
+                  <Lock className="size-3.5" />
+                  <span>Authorize &amp; Continue</span>
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
     </div>

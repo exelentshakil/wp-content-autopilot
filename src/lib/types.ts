@@ -66,6 +66,7 @@ export const PublishRequest = z.object({
   banner_attachment_id: z.number().optional(),
   services_image_url: z.string().optional(),
   services_attachment_id: z.number().optional(),
+  admin_password: z.string().optional(),
 });
 export type PublishRequest = z.infer<typeof PublishRequest>;
 

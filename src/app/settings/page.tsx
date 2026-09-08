@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import {
   ArrowLeft,
@@ -15,6 +15,11 @@ import {
   RotateCcw,
   Sliders,
   Database,
+  Lock,
+  Unlock,
+  Trash2,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 import { useSettings } from "@/lib/useSettings";
 import { cn } from "@/lib/utils";
@@ -43,6 +48,56 @@ const inputCls =
 export default function SettingsPage() {
   const { settings, update, ready } = useSettings();
   const [savedFlash, setSavedFlash] = useState(false);
+
+  // Admin password state
+  const [adminPassword, setAdminPassword] = useState("");
+  const [isSuperAdminProtected, setIsSuperAdminProtected] = useState(false);
+  const [adminPassInput, setAdminPassInput] = useState("");
+  const [showAdminPass, setShowAdminPass] = useState(false);
+  const [adminFlashSaved, setAdminFlashSaved] = useState(false);
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem("wp_super_admin_pass");
+      if (saved) {
+        setAdminPassword(saved);
+        setAdminPassInput(saved);
+      }
+    } catch {}
+
+    fetch("/api/publish")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data && typeof data.protected === "boolean") {
+          setIsSuperAdminProtected(data.protected);
+        }
+      })
+      .catch(() => null);
+  }, []);
+
+  const saveAdminPassword = () => {
+    const clean = adminPassInput.trim();
+    setAdminPassword(clean);
+    try {
+      if (clean) {
+        localStorage.setItem("wp_super_admin_pass", clean);
+      } else {
+        localStorage.removeItem("wp_super_admin_pass");
+      }
+    } catch {}
+    setAdminFlashSaved(true);
+    setTimeout(() => setAdminFlashSaved(false), 1500);
+  };
+
+  const clearAdminPassword = () => {
+    setAdminPassword("");
+    setAdminPassInput("");
+    try {
+      localStorage.removeItem("wp_super_admin_pass");
+    } catch {}
+    setAdminFlashSaved(true);
+    setTimeout(() => setAdminFlashSaved(false), 1500);
+  };
 
   if (!ready) return null;
 
@@ -142,6 +197,75 @@ export default function SettingsPage() {
             <div>Parent Page: <strong className="text-text font-sans">#750 (Employment Law)</strong></div>
             <div>Page Template: <strong className="text-text font-sans">templates/labor-law.php</strong></div>
             <div>REST Endpoint: <strong className="text-text font-sans">/wp-json/wp/v2/pages</strong></div>
+          </div>
+        </div>
+      </section>
+
+      {/* Live Site Publishing Protection (WP_SUPER_ADMIN) */}
+      <section className="rounded-2xl border border-line bg-panel-2 p-6 space-y-5">
+        <div className="flex items-center justify-between flex-wrap gap-2">
+          <h2 className="font-semibold flex items-center gap-2 text-text">
+            <Lock className="size-4 text-accent" /> Live Site Publishing Protection (WP_SUPER_ADMIN)
+          </h2>
+          {isSuperAdminProtected ? (
+            <span className="text-xs px-2.5 py-0.5 rounded-full bg-red-500/10 text-red-500 border border-red-500/20 inline-flex items-center gap-1 font-medium">
+              <ShieldCheck className="size-3" /> Server Protection Enforced
+            </span>
+          ) : (
+            <span className="text-xs px-2.5 py-0.5 rounded-full bg-panel text-muted border border-line inline-flex items-center gap-1 font-medium">
+              WP_SUPER_ADMIN Unset (Development Mode)
+            </span>
+          )}
+        </div>
+
+        <p className="text-xs text-muted leading-relaxed">
+          Protects the <strong>1-Click Publish Now</strong> and <strong>Publish Previewed Page</strong> buttons from accidentally publishing unverified articles to the live WordPress site (<strong>atoyanlaw.com</strong>).
+          When configured on Vercel environment variables as <code className="text-accent bg-accent/10 px-1 py-0.5 rounded font-mono text-[11px]">WP_SUPER_ADMIN</code>, all publish API calls require this password.
+        </p>
+
+        <div className="grid sm:grid-cols-2 gap-4 items-end">
+          <Field
+            label="Super Admin Password (Saved in Browser)"
+            hint="Stored securely in your local browser storage and attached to publish requests"
+          >
+            <div className="relative">
+              <input
+                type={showAdminPass ? "text" : "password"}
+                className={cn(inputCls, "pr-20")}
+                placeholder="Enter WP_SUPER_ADMIN password"
+                value={adminPassInput}
+                onChange={(e) => setAdminPassInput(e.target.value)}
+              />
+              <button
+                type="button"
+                onClick={() => setShowAdminPass(!showAdminPass)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted hover:text-text cursor-pointer"
+              >
+                {showAdminPass ? "Hide" : "Show"}
+              </button>
+            </div>
+          </Field>
+
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={saveAdminPassword}
+              className="inline-flex items-center gap-1.5 px-4 py-2.5 text-xs font-semibold text-white bg-accent hover:opacity-90 rounded-xl transition cursor-pointer"
+            >
+              <Save className="size-3.5" />
+              <span>{adminFlashSaved ? "Saved!" : "Save Password"}</span>
+            </button>
+            {adminPassword && (
+              <button
+                type="button"
+                onClick={clearAdminPassword}
+                className="inline-flex items-center gap-1.5 px-4 py-2.5 text-xs font-medium text-muted hover:text-bad border border-line hover:bg-panel rounded-xl transition cursor-pointer"
+                title="Clear saved admin password"
+              >
+                <Trash2 className="size-3.5" />
+                <span>Clear / Lock</span>
+              </button>
+            )}
           </div>
         </div>
       </section>

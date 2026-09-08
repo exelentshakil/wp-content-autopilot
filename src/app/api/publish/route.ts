@@ -1,3 +1,4 @@
+import crypto from "crypto";
 import { NextResponse } from "next/server";
 import { PublishRequest, type AtoyanLegalContent } from "@/lib/types";
 import { publishAtoyanPage } from "@/lib/wordpress";
@@ -6,6 +7,20 @@ import { generateAtoyanImages } from "@/lib/imagen";
 
 export const runtime = "nodejs";
 export const maxDuration = 120;
+
+
+function isPasswordValid(provided: string, expected: string): boolean {
+  const bufA = Buffer.from(provided);
+  const bufB = Buffer.from(expected);
+  if (bufA.length !== bufB.length) return false;
+  return crypto.timingSafeEqual(bufA, bufB);
+}
+
+export async function GET() {
+  return NextResponse.json({
+    protected: Boolean(process.env.WP_SUPER_ADMIN?.trim()),
+  });
+}
 
 export async function POST(req: Request) {
   let raw: unknown;
@@ -23,7 +38,31 @@ export async function POST(req: Request) {
     );
   }
 
+  // Verify WP_SUPER_ADMIN if configured on environment
+  const configuredSuperAdmin = process.env.WP_SUPER_ADMIN?.trim();
   const bodyData = raw as Record<string, unknown>;
+
+  if (configuredSuperAdmin) {
+    const headerPassword = req.headers.get("x-admin-password")?.trim();
+    const bodyPassword =
+      typeof parsed.data.admin_password === "string"
+        ? parsed.data.admin_password.trim()
+        : typeof bodyData.admin_password === "string"
+        ? (bodyData.admin_password as string).trim()
+        : undefined;
+    const providedPassword = headerPassword || bodyPassword;
+
+    if (!providedPassword || !isPasswordValid(providedPassword, configuredSuperAdmin)) {
+      return NextResponse.json(
+        {
+          error: "unauthorized",
+          message: "Invalid or missing admin password. Publishing to live WordPress is protected by WP_SUPER_ADMIN.",
+        },
+        { status: 401 },
+      );
+    }
+  }
+
   const { title, schedule_at, settings } = parsed.data;
 
   try {
