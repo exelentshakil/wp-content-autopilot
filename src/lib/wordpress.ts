@@ -287,28 +287,18 @@ export async function publishAtoyanPage(params: {
     baseGroup,
   );
 
-  const faqSchemaJsonLd = generateFaqSchemaJsonLd(content.faqs);
-  const headScriptMeta = {
-    synth_header_script: faqSchemaJsonLd,
-  };
-
+  // Client Requirement: standard post_content must strictly remain empty ("")
+  // and extra head script fields (_inpost_head_script, synth_header_script) must NOT be sent.
   const pagePayload: Record<string, unknown> = {
     title: content.heroTitle,
     slug: content.slug,
     status,
     parent: ATOYAN_PARENT_PAGE_ID, // 750 (employment-law)
     template: ATOYAN_TEMPLATE, // templates/labor-law.php
-    content: finalAcfGroup._personal_injury_services_content, // Fallback post content
+    content: "", // Post content must remain strictly empty per client requirement
     acf: {
       personal_injury_group: finalAcfGroup,
-      _inpost_head_script: headScriptMeta,
-      field_jamify_inpost_head_script: faqSchemaJsonLd,
-      field_synth_header_script: faqSchemaJsonLd,
     },
-    meta: {
-      _inpost_head_script: headScriptMeta,
-    },
-    _inpost_head_script: headScriptMeta,
   };
 
   if (scheduleAt) {
@@ -347,16 +337,10 @@ export async function publishAtoyanPage(params: {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
+        content: "",
         acf: {
           personal_injury_group: finalAcfGroup,
-          _inpost_head_script: headScriptMeta,
-          field_jamify_inpost_head_script: faqSchemaJsonLd,
-          field_synth_header_script: faqSchemaJsonLd,
         },
-        meta: {
-          _inpost_head_script: headScriptMeta,
-        },
-        _inpost_head_script: headScriptMeta,
       }),
       signal: AbortSignal.timeout(30_000),
     });
@@ -364,9 +348,9 @@ export async function publishAtoyanPage(params: {
     console.warn("ACF follow-up persistence patch error:", acfPatchErr);
   }
 
-  // Step 4c: If WP Content Autopilot Bridge plugin is active, set the head script directly and flush WP Rocket
+  // Step 4c: Purge WP Rocket cache for the newly created page if bridge plugin is active
   try {
-    await fetch(`${cleanBase}/wp-json/autopilot/v1/head-script`, {
+    await fetch(`${cleanBase}/wp-json/autopilot/v1/purge-cache`, {
       method: "POST",
       headers: {
         Authorization: `Basic ${authHeader}`,
@@ -374,7 +358,6 @@ export async function publishAtoyanPage(params: {
       },
       body: JSON.stringify({
         post_id: createdPageId,
-        script: faqSchemaJsonLd,
       }),
       signal: AbortSignal.timeout(10_000),
     });
@@ -432,7 +415,7 @@ export async function publishAtoyanPage(params: {
     servicesAttachmentId,
     servicesUrl,
     yoastUpdated,
-    inpostHeadScript: faqSchemaJsonLd,
+    
     acfPayload: finalAcfGroup as unknown as Record<string, unknown>,
   };
 }

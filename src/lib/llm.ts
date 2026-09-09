@@ -1,4 +1,6 @@
+import { generateAtoyanSimulated } from "./llm-simulated";
 import type { Settings, AtoyanLegalContent, AtoyanFaq } from "./types";
+import { resolveDefaultAccordionShortcode, ATOYAN_PHONE, ATOYAN_TOLL_FREE } from "./atoyan";
 
 export interface ArticleResult {
   title: string;
@@ -19,36 +21,71 @@ const OPENAI_MODELS = (process.env.OPENAI_MODEL ?? "gpt-4o,gpt-4o-mini")
 
 const ATOYAN_SYSTEM_PROMPT = `
 You are the senior legal content strategist and employment litigation attorney at Atoyan Law Firm (atoyanlaw.com).
-Your job is to generate authoritative, deeply compelling California employment practice area content matching the exact conversational, punchy tone used by Atoyan Law.
+Your job is to generate authoritative, deeply compelling California employment practice area content matching the exact conversational, punchy tone and structure used by Atoyan Law.
 
-CRITICAL TONE & FORMAT RULES:
-1. PUNCHY PARAGRAPHS: Keep paragraphs very short (1 to 3 sentences max). Do not write dense walls of text.
-2. SUBHEADINGS: Format subheadings as direct, relatable questions using <h2 class="h2dav"> and <h3 class="h3dav">.
-3. EMPHASIS: Bold key phrases to guide the reader (e.g. <strong>That timeline matters.</strong>, <strong>First</strong>, <strong>Second</strong>).
-4. CALIFORNIA LEGAL DEPTH: Mention specific California protections:
-   - Fair Employment and Housing Act (FEHA)
-   - California Civil Rights Department (CRD)
-   - California Labor Code (e.g., § 98.6, § 1102.5 whistleblowing, § 203 waiting time penalties)
-   - SB 497 (90-day rebuttable presumption of retaliation)
-   - Yanowitz v. L'Oreal (broad totality of circumstances standard for adverse actions)
-5. CALLOUT BOXES: In the servicesContent, include 2-3 signature Atoyan callout boxes formatted exactly as:
-   <p class="txt-hlt bg-bx ulk-bg pd_v-30 pd_h-30" style="text-align:center;"><em><strong>Facing workplace retaliation or wrongful termination? That's not just unfair - it's illegal. Call Atoyan Law at <a href="tel:8888070077">(888) 807-0077</a> or <a href="/contact/">contact us online</a> for a confidential consultation.</strong></em></p>
-6. COMPREHENSIVE FAQS: Produce 8 to 10 practical, highly relevant FAQs answering real questions California employees have regarding this specific topic.
-7. SEO METADATA: Provide optimized Yoast SEO title (under 60 chars), meta description (under 160 chars), focus keyword, and clean URL slug.
+CRITICAL CLIENT RULES (CLIENT DAVID - ATOYAN LAW FIRM):
+
+1. TITLE FORMULA:
+   Hero title MUST follow this exact formula:
+   "[City] [Topic] Employment Lawyers - [Subtopic/Action]"
+   Examples:
+   - "Burbank Wrongful Termination Employment Lawyers - Unlawful Firing"
+   - "Burbank Race Discrimination Employment Lawyers - Workplace Bias"
+   - "Burbank Sexual Harassment Employment Lawyers - Hostile Work Environment"
+   - "Burbank Wage Theft Employment Lawyers - Unpaid Wages & Overtime"
+   - "Visalia Meal and Rest Break Employment Lawyers - Labor Violations"
+
+2. THREE UNIQUE CONTENT SECTIONS (ACF TABS 2, 4, 6):
+   - 1ST: SERVICES CONTENT (Tab 2 - servicesContent):
+     Must be 2,000+ words of deep, high-authority California employment legal analysis.
+     Analyze the exact topic under California law with thorough real-world scenarios, legal standards, employer tactics, employee rights, and evidence gathering.
+     Structure with:
+       * Short punchy paragraphs (1-3 sentences max). No dense walls of text.
+       * Question-based subheadings formatted with <h2 class="h2dav"> and <h3 class="h3dav">.
+       * Bold key phrases for readability (e.g. <strong>That timeline matters.</strong>, <strong>First</strong>, <strong>Second</strong>).
+       * Bullet lists (<ul><li>...</li></ul>).
+       * 2-3 topic-specific callout boxes (see rule 3 below).
+       * California statutory depth (FEHA, CRD, Labor Code §§ 98.6, 203, 226.7, 510, 512, 1102.5, SB 497 90-day presumption, Gov Code § 12940, case law).
+   - 2ND: HOW DO SECTION (Tab 4 - howDoHeading & howDoContent):
+     Unique heading (e.g., "How Can a [City] [Topic] Lawyer at Atoyan Law Help?") and actionable guidance:
+     Specific steps for an employee facing this exact issue (e.g. do not sign severance or releases without counsel, do not quit prematurely, how to preserve evidence, what damages are recoverable).
+   - 3RD: COMPENSATION SECTION (Tab 6 - compensationHeading & compensationIntro):
+     Unique heading (e.g., "What Results and Compensation Can I Expect from a California [Topic] Claim?")
+     and compensation intro composed of:
+     Paragraph 1: Employee rights regarding this topic with an internal link (e.g. You have the right to work in an environment free from unlawful discrimination. You have the right to <a href="https://www.atoyanlaw.com/practice-areas/employment-law/what-is-employment-discrimination/">report discrimination</a> without losing your job...).
+     Paragraph 2: Impact statement and topic-tailored CTA:
+       "[Topic] takes a toll on everything. Your career. Your income. Your dignity. Your family. But California law gives you tools to fight back. If you experienced [topic] in [City], call us. Atoyan Law offers confidential consultations. No pressure. Real answers. Call <a href=\"tel:747888-0077\">(747) 888-0077</a> or contact us online to schedule a free consultation with our <b>[City] [topic] lawyers</b>."
+
+3. STRICT TOPIC-SPECIFIC CTAs & CALLOUT BOXES:
+   CTAs and Callout Boxes must be 100% relevant to the specific practice area.
+   DO NOT use generic wrongful termination copy if the topic is race discrimination, wage theft, sexual harassment, meal breaks, or disability.
+   Format callout boxes as:
+   <p class="txt-hlt bg-bx ulk-bg pd_v-30 pd_h-30" style="text-align:center;"><em><strong>[Topic-specific problem in City]? That's not just unfair - it's illegal. Call Atoyan Law at <a href="tel:747888-0077">(747) 888-0077</a> or <a href="/contact/">contact us online</a> to schedule a confidential legal consultation.</strong></em></p>
+
+4. COMPREHENSIVE TOPIC-SPECIFIC FAQS:
+   Produce 8 to 10 practical, in-depth FAQs directly addressing real employee questions about this EXACT topic.
+   No generic filler FAQs.
+
+5. EASY ACCORDION SHORTCODE:
+   Set accordionShortcode to the appropriate WordPress shortcode matching the topic, e.g. [sp_easyaccordion id="4355"] for race discrimination, [sp_easyaccordion id="4200"] for hostile work environment, [sp_easyaccordion id="4176"] for wrongful termination, [sp_easyaccordion id="4167"] for wage theft, [sp_easyaccordion id="4119"] for meal/rest breaks, [sp_easyaccordion id="3894"] for disability, etc.
+
+6. SEO METADATA:
+   Yoast title (< 60 chars), meta description (< 160 chars), focus keyword, clean URL slug.
 
 OUTPUT MUST BE VALID JSON with this exact schema:
 {
   "keyword": "string",
   "city": "string",
   "slug": "string",
-  "heroTitle": "string (Punchy title, e.g. Burbank Wrongful Termination Lawyer)",
-  "servicesHeading": "string (e.g. What counts as an adverse employment action in California?)",
-  "servicesSubHeading": "string (e.g. Proving Wrongful Termination & Retaliation)",
-  "servicesContent": "string (Complete HTML body with <h2 class=\"h2dav\">, <h3 class=\"h3dav\">, <p>, <strong>, bullet points, and callout boxes)",
-  "howDoHeading": "string (e.g. How to Stand Up for Your Rights After Unlawful Workplace Action)",
-  "howDoContent": "string (Actionable HTML guidance: don't sign severance without advice, don't quit prematurely, save evidence)",
-  "compensationHeading": "string (e.g. What Compensation Can You Recover in a California Employment Claim?)",
-  "compensationIntro": "string (Detailed HTML explanation of lost wages, front pay, emotional distress, punitive damages, and attorney fee recovery)",
+  "heroTitle": "string ([City] [Topic] Employment Lawyers - [Subtopic])",
+  "servicesHeading": "string",
+  "servicesSubHeading": "string",
+  "servicesContent": "string (2,000+ words HTML with <h2 class=\"h2dav\">, <h3 class=\"h3dav\">, <p>, <strong>, <ul><li>, and topic-specific callout boxes)",
+  "howDoHeading": "string",
+  "howDoContent": "string",
+  "compensationHeading": "string",
+  "compensationIntro": "string (Rights intro and topic CTA with (747) 888-0077)",
+  "accordionShortcode": "string (e.g. [sp_easyaccordion id=\"4355\"])",
   "faqs": [
     {
       "question": "string",
@@ -169,6 +206,10 @@ function validateAndNormalizeAtoyanContent(
       typeof obj.yoastFocusKw === "string" && obj.yoastFocusKw
         ? obj.yoastFocusKw
         : sim.yoastFocusKw,
+    accordionShortcode:
+      typeof obj.accordionShortcode === "string" && obj.accordionShortcode
+        ? obj.accordionShortcode
+        : sim.accordionShortcode,
   };
 }
 
@@ -269,108 +310,7 @@ async function generateAtoyanGemini(
   throw new Error("Gemini generation failed");
 }
 
-/**
- * Deterministic fallback content generator ensuring zero crashes if APIs are unavailable.
- */
-function generateAtoyanSimulated(keyword: string, city: string): AtoyanLegalContent {
-  const safeSlug = keyword.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
-  const heroTitle = `${keyword} | Atoyan Law Firm`;
-
-  const faqs: AtoyanFaq[] = [
-    {
-      question: `What qualifies as unlawful workplace action in ${city}?`,
-      answer:
-        "Under California's Fair Employment and Housing Act (FEHA) and the Labor Code, an unlawful workplace action includes any adverse employment decision—such as termination, demotion, pay reduction, or retaliation—motivated by protected traits or protected employee activities.",
-    },
-    {
-      question: "How long do I have to file an employment claim in California?",
-      answer:
-        "In California, employees generally have three years from the date of the unlawful conduct to file an administrative complaint with the Civil Rights Department (CRD). For wage claims with the Labor Commissioner (DLSE), statutes of limitations range from one to four years.",
-    },
-    {
-      question: "Can an employer in California fire you for complaining about harassment?",
-      answer:
-        "No. California Labor Code § 1102.5 and FEHA explicitly prohibit retaliatory termination. Under California SB 497, if an adverse action occurs within 90 days of speaking out, the law creates a rebuttable presumption of retaliation.",
-    },
-    {
-      question: "What is an 'adverse employment action' under California law?",
-      answer:
-        "As established in Yanowitz v. L'Oreal USA, an adverse employment action is any conduct that materially affects the terms, conditions, or privileges of employment, including schedule cuts, undesirable transfers, and unwarranted disciplinary warnings.",
-    },
-    {
-      question: "What compensation can be recovered in a wrongful termination case?",
-      answer:
-        "Damages can include back pay, front pay, lost employee benefits, compensation for emotional distress, statutory penalties, and attorney fees under California Government Code § 12965.",
-    },
-    {
-      question: "Should I sign a severance agreement if I was recently terminated?",
-      answer:
-        "Never sign a severance agreement or release of claims before having an employment attorney review it. Employers often offer severance to lock you out of substantial discrimination or retaliation claims.",
-    },
-    {
-      question: "What evidence should I save if I suspect retaliation?",
-      answer:
-        "Save all performance reviews, emails, text messages, schedules, write-ups, and HR complaints. Keep personal notes documenting dates, witnesses, and changes in how management treated you.",
-    },
-    {
-      question: "Does Atoyan Law Firm handle cases on a contingency fee basis?",
-      answer:
-        "Yes. Atoyan Law Firm handles employee rights and wrongful termination claims on contingency, meaning you pay zero upfront attorney fees unless we recover compensation for you.",
-    },
-  ];
-
-  return {
-    keyword,
-    city,
-    slug: safeSlug,
-    heroTitle,
-    servicesHeading: `What Counts as Unlawful Employment Action in ${city}?`,
-    servicesSubHeading: `Proving Wrongful Termination & Retaliation Under California Law`,
-    servicesContent: `
-When employees in ${city} call an employment lawyer, they often know something feels wrong. They know their employer treated them differently. They know things changed after they complained, asked for medical accommodation, or stood up for their rights.
-
-<h3 class="h3dav">Did your employer take an adverse employment action?</h3>
-
-An adverse employment action is a negative job decision that harms your employment in a real way. It can affect your pay, title, schedule, duties, benefits, reputation, or working conditions.
-
-It does not always mean termination. Getting fired is the clearest example, but many employees suffer damage long before they are let go. Hours get cut. Overtime disappears. Supervisors begin creating unfair write-ups.
-
-<p class="txt-hlt bg-bx ulk-bg pd_v-30 pd_h-30" style="text-align:center;"><em><strong>If you experienced retaliation, discrimination, or wrongful termination in ${city}, call Atoyan Law at <a href="tel:8888070077">(888) 807-0077</a> or <a href="/contact/">contact us online</a> to schedule a confidential legal consultation.</strong></em></p>
-
-<h2 class="h2dav">Proving Unlawful Employment Practices in California</h2>
-
-Proving unlawful employment action starts with showing what changed.
-
-Before your protected activity, your record may have been clean. After speaking up, discipline began. Before you requested leave, your schedule was steady. After you asked, hours dropped.
-
-<strong>That timeline matters.</strong>
-
-In California employment cases, proof rarely comes from an email where an employer admits bad intent. It comes from patterns, timing, differential treatment, and inconsistent explanations. Under California SB 497, adverse action taken within 90 days of protected activity creates a rebuttable presumption of unlawful retaliation.
-
-<p class="txt-hlt bg-bx ulk-bg pd_v-30 pd_h-30" style="text-align:center;"><em><strong>Toxic workplace? Constant discrimination or retaliation? That's not just unfair - it's illegal. Atoyan Law Firm is ready to fight for you. <a href="tel:8888070077">Reach out now</a> to discuss your case.</strong></em></p>
-`.trim(),
-    howDoHeading: "How to Stand Up for Your Rights",
-    howDoContent: `
-<strong>Do not sign a severance agreement without legal advice</strong>. Employers may offer money quickly in exchange for a release of claims. Once you sign, you forfeit valuable legal rights.
-
-<strong>Do not quit prematurely without legal consultation</strong>. If you resign too early, the employer will argue you left voluntarily. An attorney can assess whether the facts satisfy California's strict constructive discharge standard.
-
-Most importantly, <strong>do not assume you have no case simply because you were not fired</strong>. Substantial reductions in hours, demotions, and retaliatory discipline are all actionable under California law.
-`.trim(),
-    compensationHeading: `How an Employment Lawyer Helps Recover Compensation in ${city}`,
-    compensationIntro: `
-A lawyer helps turn a confusing workplace story into a clear, compelling legal case.
-
-At Atoyan Law Firm, we examine the full timeline. We identify the protected activity or protected trait, analyze what changed, review pay stubs, schedules, and personnel records, and aggressively pursue the maximum compensation available under California law.
-
-Damages in California employment claims often include past and future lost earnings, compensation for emotional distress, statutory penalties, and attorney fees.
-`.trim(),
-    faqs,
-    yoastTitle: `${keyword} | Atoyan Law Firm`,
-    yoastMetaDesc: `Experienced ${keyword} fighting for California workers. Wrongful termination, retaliation & discrimination. Call (888) 807-0077 for a free consultation.`,
-    yoastFocusKw: keyword,
-  };
-}
+export { generateAtoyanSimulated } from "./llm-simulated";
 
 /**
  * Main legal content generation function with automatic provider hierarchy.

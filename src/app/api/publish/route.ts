@@ -97,6 +97,12 @@ export async function POST(req: Request) {
       }
     }
 
+    if (parsed.data.accordion_shortcode || bodyData.accordion_shortcode) {
+      legalContent.accordionShortcode = String(
+        parsed.data.accordion_shortcode || bodyData.accordion_shortcode,
+      ).trim();
+    }
+
     // Extract images if sent, or generate them independently if missing
     let bannerImageData = bodyData.banner_image as {
       base64?: string;

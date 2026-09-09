@@ -51,6 +51,7 @@ export const GenerateRequest = z.object({
   title: z.string().min(3),
   settings: Settings.optional(),
   schedule_at: z.string().optional(),
+  accordion_shortcode: z.string().optional(),
 });
 export type GenerateRequest = z.infer<typeof GenerateRequest>;
 
@@ -67,6 +68,7 @@ export const PublishRequest = z.object({
   services_image_url: z.string().optional(),
   services_attachment_id: z.number().optional(),
   admin_password: z.string().optional(),
+  accordion_shortcode: z.string().optional(),
 });
 export type PublishRequest = z.infer<typeof PublishRequest>;
 
@@ -105,6 +107,7 @@ export interface AtoyanLegalContent {
   yoastTitle: string;
   yoastMetaDesc: string;
   yoastFocusKw: string;
+  accordionShortcode?: string;
 }
 
 export interface AtoyanGeneratedImage {

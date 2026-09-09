@@ -120,78 +120,22 @@ export async function compositeAtoyanBanner(
 }
 
 /**
- * Composites the official Atoyan Law Firm dark horizontal banner bar and typography
- * across the top of the 600x400 services image:
- * Line 1 (White #FFFFFF, ~20px bold): Main Practice Area / Keyword (e.g. BURBANK WRONGFUL TERMINATION LAWYER)
- * Line 2 (Yellow/Gold #E5C345, ~17px bold): Practice category / sub-topic (e.g. WRONGFUL TERMINATION)
+ * Formats the 600x400 services editorial image.
+ * Per client specification (David): Clean image without text overlays or dark bars.
  */
 export async function compositeAtoyanServicesImage(
   imageBuffer: Buffer,
-  params: { headline: string; category: string }
+  _params?: { headline: string; category: string }
 ): Promise<{ buffer: Buffer; width: number; height: number }> {
   const width = 600;
   const height = 400;
-  const barTop = 26;
-  const barHeight = 70;
 
-  const escapeXml = (str: string) =>
-    str.replace(/[<>&'"]/g, (c) => {
-      switch (c) {
-        case "<": return "&lt;";
-        case ">": return "&gt;";
-        case "&": return "&amp;";
-        case "'": return "&apos;";
-        case '"': return "&quot;";
-        default: return c;
-      }
-    });
-
-  const rawHeadline = params.headline.toUpperCase();
-  const rawCategory = params.category.toUpperCase();
-
-  const font = getAtoyanFont();
-  let textMarkup = "";
-
-  if (font) {
-    // Vector path glyph rendering - eliminates tofu glyphs [][][] entirely on Vercel
-    const line1 = renderTextAsSvgPath(font, rawHeadline, 16, barTop + 28, 20, 568);
-    const line2 = renderTextAsSvgPath(font, rawCategory, 16, barTop + 54, 16, 568);
-    textMarkup = `
-      <path d="${line1.pathData}" fill="#FFFFFF" filter="url(#shadow)" />
-      <path d="${line2.pathData}" fill="#E5C345" filter="url(#shadow)" />
-    `;
-  } else {
-    // Safe SVG text fallback
-    const headline = escapeXml(rawHeadline);
-    const category = escapeXml(rawCategory);
-    const hLen = headline.length;
-    const line1FontSize = hLen > 36 ? Math.max(14, Math.floor(580 / (hLen * 0.65))) : 20;
-    const line2FontSize = category.length > 38 ? Math.max(13, Math.floor(580 / (category.length * 0.65))) : 16;
-    textMarkup = `
-      <text x="16" y="${barTop + 28}" fill="#FFFFFF" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="${line1FontSize}" font-weight="900" letter-spacing="0.5" filter="url(#shadow)">${headline}</text>
-      <text x="16" y="${barTop + 54}" fill="#E5C345" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="${line2FontSize}" font-weight="900" letter-spacing="0.5" filter="url(#shadow)">${category}</text>
-    `;
-  }
-
-  const svgOverlay = Buffer.from(`
-    <svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg">
-      <defs>
-        <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
-          <feDropShadow dx="0" dy="1.5" stdDeviation="1.5" flood-color="#000000" flood-opacity="0.8"/>
-        </filter>
-      </defs>
-      <rect x="0" y="${barTop}" width="${width}" height="${barHeight}" fill="rgba(20, 20, 20, 0.72)" />
-      ${textMarkup}
-    </svg>
-  `);
-
-  const brandedBuffer = await sharp(imageBuffer)
+  const cleanBuffer = await sharp(imageBuffer)
     .resize(width, height, { fit: "cover" })
-    .composite([{ input: svgOverlay, top: 0, left: 0 }])
     .jpeg({ quality: 90 })
     .toBuffer();
 
-  return { buffer: brandedBuffer, width, height };
+  return { buffer: cleanBuffer, width, height };
 }
 
 /**

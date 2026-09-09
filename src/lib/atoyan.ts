@@ -12,9 +12,10 @@ export const ATOYAN_BANNER_ATTACHMENT_ID = 3899;
 export const ATOYAN_TESTIMONIALS_BG_ATTACHMENT_ID = 72;
 export const ATOYAN_CTA_BG_ATTACHMENT_ID = 383;
 
-export const ATOYAN_PHONE = "(888) 807-0077";
-export const ATOYAN_PHONE_LINK = "tel:8888070077";
-export const ATOYAN_CONTACT_URL = "/contact/";
+export const ATOYAN_PHONE = "(747) 888-0077";
+export const ATOYAN_TOLL_FREE = "(888) 807-0077";
+export const ATOYAN_PHONE_LINK = "tel:747888-0077";
+export const ATOYAN_CONTACT_URL = "https://www.atoyanlaw.com/contact/";
 
 /**
  * Cloned sidebar practice area page IDs from Page 3933.
@@ -349,27 +350,107 @@ export function buildServicesContent(
 }
 
 /**
- * Builds the complete dynamic compensation section containing:
- * 1. Legal compensation explanation
- * 2. Signature callout box
- * 3. Easy Accordion HTML & shortcode
- * 4. Schema.org FAQPage JSON-LD
+ * Maps practice area keywords and cities to existing Easy Accordion IDs on atoyanlaw.com.
+ */
+export function resolveDefaultAccordionShortcode(keyword: string, city = "California"): string {
+  const kw = (keyword + " " + city).toLowerCase();
+
+  // Burbank specific
+  if (kw.includes("burbank")) {
+    if (kw.includes("race") || kw.includes("racial") || kw.includes("ethnic") || kw.includes("national origin") || kw.includes("color")) {
+      return '[sp_easyaccordion id="4355"]';
+    }
+    if (kw.includes("hostile") || kw.includes("harassment") || kw.includes("environment")) {
+      return '[sp_easyaccordion id="4200"]';
+    }
+    if (kw.includes("wrongful") || kw.includes("termination") || kw.includes("firing") || kw.includes("fired")) {
+      return '[sp_easyaccordion id="4176"]';
+    }
+    if (kw.includes("wage") || kw.includes("theft") || kw.includes("unpaid") || kw.includes("pay") || kw.includes("overtime")) {
+      return '[sp_easyaccordion id="4167"]';
+    }
+  }
+
+  // Topic specific
+  if (kw.includes("race") || kw.includes("racial") || kw.includes("color") || kw.includes("ethnic")) {
+    return '[sp_easyaccordion id="4355"]';
+  }
+  if (kw.includes("hostile") || kw.includes("toxic")) {
+    return '[sp_easyaccordion id="4200"]';
+  }
+  if (kw.includes("meal") || kw.includes("rest break") || kw.includes("lunch")) {
+    if (kw.includes("fresno")) return '[sp_easyaccordion id="4095"]';
+    return '[sp_easyaccordion id="4119"]';
+  }
+  if (kw.includes("wage") || kw.includes("unpaid") || kw.includes("minimum wage")) {
+    if (kw.includes("fresno")) return '[sp_easyaccordion id="4086"]';
+    return '[sp_easyaccordion id="4167"]';
+  }
+  if (kw.includes("overtime")) {
+    if (kw.includes("fresno")) return '[sp_easyaccordion id="3619"]';
+    return '[sp_easyaccordion id="3719"]';
+  }
+  if (kw.includes("disability") || kw.includes("accommodation") || kw.includes("medical condition")) {
+    return '[sp_easyaccordion id="3894"]';
+  }
+  if (kw.includes("gender") || kw.includes("sex") || kw.includes("pregnancy") || kw.includes("maternity")) {
+    return '[sp_easyaccordion id="3877"]';
+  }
+  if (kw.includes("sexual harassment")) {
+    return '[sp_easyaccordion id="3464"]';
+  }
+  if (kw.includes("leave") || kw.includes("fmla") || kw.includes("cfra") || kw.includes("family")) {
+    return '[sp_easyaccordion id="3788"]';
+  }
+  if (kw.includes("retaliat") || kw.includes("whistleblower")) {
+    return '[sp_easyaccordion id="3740"]';
+  }
+  if (kw.includes("adverse")) {
+    return '[sp_easyaccordion id="3932"]';
+  }
+  if (kw.includes("wrongful") || kw.includes("termination") || kw.includes("firing")) {
+    return '[sp_easyaccordion id="4176"]';
+  }
+
+  return '[sp_easyaccordion id="4176"]';
+}
+
+/**
+ * Builds the clean compensation section containing:
+ * 1. Legal compensation explanation and employee rights
+ * 2. Topic-specific CTA linking to phone (747) 888-0077 and consultation
+ * 3. Native Easy Accordion shortcode [sp_easyaccordion id="..."]
+ *
+ * CRITICAL CLIENT REQUIREMENT:
+ * Absolutely NO inline <style> CSS, NO <script> JavaScript, and NO JSON-LD schema
+ * inside this ACF field.
  */
 export function buildCompensationSection(
   compensationIntro: string,
-  faqs: AtoyanFaq[],
+  faqs: AtoyanFaq[] = [],
   city = "California",
+  keyword = "Employment Law",
+  accordionShortcode?: string,
 ): string {
-  const callout1 = formatCalloutBox(
-    `Toxic workplace, retaliation, or wrongful termination in ${city}? That's not just unfair - it's illegal. Atoyan Law Firm is ready to fight for you.`,
-    "Contact our employment lawyers today",
-  );
+  let shortcode = (accordionShortcode || "").trim();
+  if (shortcode && !shortcode.startsWith("[")) {
+    shortcode = `[sp_easyaccordion id="${shortcode}"]`;
+  }
 
-  const accordionHtml = generateEasyAccordionHtml(faqs);
+  if (!shortcode) {
+    const match = compensationIntro.match(/\[sp_easyaccordion\s+id=["']?(\d+)["']?\]/i);
+    if (match) {
+      shortcode = match[0];
+    } else {
+      shortcode = resolveDefaultAccordionShortcode(keyword, city);
+    }
+  }
 
-  const schemaJsonLd = generateFaqSchemaJsonLd(faqs);
+  const cleanIntro = compensationIntro
+    .replace(/\[sp_easyaccordion\s+id=["']?\d+["']?\]/gi, "")
+    .trim();
 
-  return `${compensationIntro.trim()}\r\n\r\n${callout1}\r\n\r\n${accordionHtml}\r\n\r\n${schemaJsonLd}`;
+  return `${cleanIntro}\r\n\r\n${shortcode}`;
 }
 
 /**
@@ -394,6 +475,8 @@ export function buildAcfPersonalInjuryGroup(
     content.compensationIntro,
     content.faqs,
     content.city,
+    content.keyword,
+    content.accordionShortcode,
   );
 
   return {

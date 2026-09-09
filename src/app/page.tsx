@@ -91,6 +91,11 @@ export default function Home() {
   const [error, setError] = useState<string | null>(null);
   const [copiedSchema, setCopiedSchema] = useState(false);
   const [activeTab, setActiveTab] = useState<"content" | "images" | "faqs" | "acf">("content");
+  const [accordionShortcode, setAccordionShortcode] = useState("");
+  const [accordionsList, setAccordionsList] = useState<
+    Array<{ id: number; title: string; shortcode: string; topic?: string }>
+  >([]);
+  const [copiedShortcode, setCopiedShortcode] = useState(false);
 
   // Admin password protection for live publishing
   const [adminPassword, setAdminPassword] = useState("");
@@ -120,13 +125,24 @@ export default function Home() {
         }
       })
       .catch(() => null);
+
+    fetch("/api/accordions")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data?.accordions && Array.isArray(data.accordions)) {
+          setAccordionsList(data.accordions);
+        }
+      })
+      .catch(() => null);
   }, []);
 
   const sampleKeywords = [
-    "Burbank Wrongful Termination Lawyer",
-    "Visalia Sexual Harassment Lawyer",
-    "Fresno Disability Discrimination Attorney",
-    "Glendale Workplace Retaliation Lawyer",
+    { title: "Burbank Race Discrimination Attorney", code: '[sp_easyaccordion id="4355"]' },
+    { title: "Burbank Wrongful Termination Lawyer", code: '[sp_easyaccordion id="4176"]' },
+    { title: "Burbank Wage Theft Attorney", code: '[sp_easyaccordion id="4167"]' },
+    { title: "Burbank Sexual Harassment Lawyer", code: '[sp_easyaccordion id="3464"]' },
+    { title: "Fresno Meal and Rest Break Violations", code: '[sp_easyaccordion id="4095"]' },
+    { title: "Burbank Disability Discrimination Lawyer", code: '[sp_easyaccordion id="3894"]' },
   ];
 
   const handleGenerate = async () => {
@@ -140,12 +156,16 @@ export default function Home() {
         body: JSON.stringify({
           title: keyword,
           schedule_at: scheduleAt || undefined,
+          accordion_shortcode: accordionShortcode || undefined,
           settings,
         }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || data.error || "Generation failed");
       setResult(data);
+      if (data.content?.accordionShortcode) {
+        setAccordionShortcode(data.content.accordionShortcode);
+      }
     } catch (e) {
       setError(e instanceof Error ? e.message : "Generation failed");
     } finally {
@@ -175,6 +195,7 @@ export default function Home() {
       const payload: Record<string, unknown> = {
         title: targetData ? targetData.content.heroTitle : keyword,
         schedule_at: scheduleAt || undefined,
+        accordion_shortcode: accordionShortcode || targetData?.content?.accordionShortcode || undefined,
         settings,
         admin_password: effectivePassword || undefined,
       };
@@ -288,6 +309,7 @@ export default function Home() {
         body: JSON.stringify({
           title: keyword,
           schedule_at: scheduleAt || undefined,
+          accordion_shortcode: accordionShortcode || undefined,
           settings,
         }),
       });
@@ -493,31 +515,83 @@ export default function Home() {
                 </div>
               </div>
 
-              {/* Quick Keywords & Scheduling */}
-              <div className="flex flex-wrap items-center justify-between gap-4 pt-2 border-t border-line/50 text-xs">
+              {/* Practice Area Presets */}
+              <div className="space-y-3 pt-2 border-t border-line/50 text-xs">
                 <div className="flex flex-wrap items-center gap-2">
-                  <span className="text-muted">Quick ideas:</span>
+                  <span className="text-muted font-medium">Practice Area Presets:</span>
                   {sampleKeywords.map((k) => (
                     <button
-                      key={k}
+                      key={k.title}
                       type="button"
-                      onClick={() => setKeyword(k)}
-                      className="px-2.5 py-1 rounded-lg border border-line bg-panel-2 hover:bg-panel text-muted hover:text-text transition"
+                      onClick={() => {
+                        setKeyword(k.title);
+                        setAccordionShortcode(k.code);
+                      }}
+                      className="px-2.5 py-1 rounded-lg border border-line bg-panel-2 hover:bg-panel text-muted hover:text-text transition flex items-center gap-1.5"
                     >
-                      {k}
+                      <span>{k.title}</span>
+                      <span className="font-mono text-[10px] text-accent/80 bg-panel px-1 rounded">{k.code.replace('[sp_easyaccordion id="', '#').replace('"]', '')}</span>
                     </button>
                   ))}
                 </div>
 
-                <div className="flex items-center gap-2 text-muted">
-                  <Clock className="size-3.5" />
-                  <span>Optional Schedule:</span>
-                  <input
-                    type="datetime-local"
-                    value={scheduleAt}
-                    onChange={(e) => setScheduleAt(e.target.value)}
-                    className="rounded-lg border border-line bg-panel-2 px-2 py-1 text-xs text-text focus:outline-none focus:ring-1 focus:ring-accent"
-                  />
+                {/* Accordion Shortcode & Schedule Controls */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2 border-t border-line/40">
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <label className="text-muted font-medium flex items-center gap-1.5">
+                        <Layers className="size-3.5 text-accent" />
+                        <span>Easy Accordion Shortcode (Tab 6 Compensation):</span>
+                      </label>
+                      {accordionShortcode && (
+                        <span className="text-[11px] font-mono text-accent font-semibold">{accordionShortcode}</span>
+                      )}
+                    </div>
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        placeholder='e.g. [sp_easyaccordion id="4355"]'
+                        value={accordionShortcode}
+                        onChange={(e) => setAccordionShortcode(e.target.value)}
+                        className="flex-1 rounded-lg border border-line bg-panel-2 px-3 py-1.5 text-xs text-text font-mono focus:outline-none focus:ring-1 focus:ring-accent"
+                      />
+                      {accordionsList.length > 0 && (
+                        <select
+                          onChange={(e) => {
+                            if (e.target.value) setAccordionShortcode(e.target.value);
+                          }}
+                          value={accordionsList.some((a) => a.shortcode === accordionShortcode) ? accordionShortcode : ""}
+                          className="rounded-lg border border-line bg-panel-2 px-2 py-1.5 text-xs text-text focus:outline-none focus:ring-1 focus:ring-accent max-w-[210px] truncate"
+                        >
+                          <option value="">Choose WP Accordion...</option>
+                          {accordionsList.map((acc) => (
+                            <option key={acc.id} value={acc.shortcode}>
+                              {acc.title} (#{acc.id})
+                            </option>
+                          ))}
+                        </select>
+                      )}
+                    </div>
+                    <p className="text-[11px] text-muted">
+                      Auto-mapped to practice area or pick from {accordionsList.length || 45} live Easy Accordion posts. Embedded into Compensation Section.
+                    </p>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <div className="flex items-center gap-1.5 text-muted font-medium">
+                      <Clock className="size-3.5 text-accent" />
+                      <span>Optional Schedule Publication:</span>
+                    </div>
+                    <input
+                      type="datetime-local"
+                      value={scheduleAt}
+                      onChange={(e) => setScheduleAt(e.target.value)}
+                      className="w-full rounded-lg border border-line bg-panel-2 px-3 py-1.5 text-xs text-text focus:outline-none focus:ring-1 focus:ring-accent"
+                    />
+                    <p className="text-[11px] text-muted">
+                      Leave blank for instant publication, or set future date/time to queue on WordPress.
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>
@@ -589,9 +663,9 @@ export default function Home() {
                   <span className="font-semibold">#{publishResult.bannerAttachmentId || "Default"}</span>
                 </div>
                 <div className="bg-panel p-3 rounded-lg border border-line">
-                  <span className="text-muted block">Schema.org JSON-LD:</span>
+                  <span className="text-muted block">ACF Labor Law Content:</span>
                   <span className="font-semibold text-good flex items-center gap-1">
-                    <CheckCircle2 className="size-3 text-good" /> Auto-Injected
+                    <CheckCircle2 className="size-3 text-good" /> 3 Unique Sections
                   </span>
                 </div>
               </div>
@@ -610,7 +684,7 @@ export default function Home() {
                       activeTab === "content" ? "bg-accent text-white" : "text-muted hover:text-text bg-panel-2 border border-line",
                     )}
                   >
-                    Article Content
+                    3 Content Sections
                   </button>
                   <button
                     onClick={() => setActiveTab("images")}
@@ -628,7 +702,7 @@ export default function Home() {
                       activeTab === "faqs" ? "bg-accent text-white" : "text-muted hover:text-text bg-panel-2 border border-line",
                     )}
                   >
-                    FAQs &amp; Schema
+                    Easy Accordion &amp; FAQs
                   </button>
                   <button
                     onClick={() => setActiveTab("acf")}
@@ -659,7 +733,7 @@ export default function Home() {
                 </div>
               </div>
 
-              {/* TAB 1: ARTICLE CONTENT */}
+              {/* TAB 1: 3 UNIQUE CONTENT SECTIONS */}
               {activeTab === "content" && (
                 <div className="space-y-6">
                   {/* Yoast SEO Preview Header */}
@@ -687,13 +761,21 @@ export default function Home() {
                     </div>
                   </div>
 
-                  {/* Body Content Preview with Services Image */}
+                  {/* Section 1: Services Content (Tab 2) */}
                   <div className="rounded-2xl border border-line bg-panel p-6 sm:p-8 space-y-6">
-                    <div className="border-b border-line pb-4">
-                      <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-text">
-                        {result.content.heroTitle}
-                      </h1>
-                      <p className="text-xs text-muted mt-1">H1 Top Title mapped to personal_injury_title</p>
+                    <div className="flex items-center justify-between border-b border-line pb-4">
+                      <div>
+                        <span className="text-xs font-semibold uppercase tracking-wider text-accent bg-accent/10 px-2 py-0.5 rounded border border-accent/20">
+                          1st Section &bull; ACF Tab 2 (Services Content)
+                        </span>
+                        <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-text mt-2">
+                          {result.content.heroTitle}
+                        </h1>
+                        <p className="text-xs text-muted mt-1">H1 Title mapped to personal_injury_title (Formula: [City] [Topic] Employment Lawyers - [Subtopic])</p>
+                      </div>
+                      <span className="text-xs px-3 py-1 rounded-full bg-panel-2 border border-line text-muted font-mono">
+                        2,000+ Words Depth
+                      </span>
                     </div>
 
                     {/* Services Heading */}
@@ -706,7 +788,7 @@ export default function Home() {
                       </h3>
                     </div>
 
-                    {/* Dynamic Legal Body with Injected 4:3 Image */}
+                    {/* Dynamic Legal Body with Injected Clean 600x400 Services Image */}
                     <div className="prose dark:prose-invert max-w-none text-sm leading-relaxed space-y-4">
                       {result.images.services?.dataUrl && (
                         <div className="float-left mr-6 mb-4 w-full sm:w-80 rounded-xl overflow-hidden border border-line shadow-sm">
@@ -718,7 +800,7 @@ export default function Home() {
                             />
                           </div>
                           <div className="p-2 bg-panel-2 text-[11px] text-muted border-t border-line">
-                            Editorial Services Graphic (600x400 class: alignleft size-full)
+                            Clean Services Photo (600x400, no text overlays or dark bars)
                           </div>
                         </div>
                       )}
@@ -727,23 +809,52 @@ export default function Home() {
                         dangerouslySetInnerHTML={{ __html: result.content.servicesContent }}
                       />
                     </div>
+                  </div>
 
-                    {/* How Do We Stand Section */}
-                    <div className="p-5 rounded-xl border border-line bg-panel-2 space-y-3">
-                      <h3 className="text-lg font-bold text-text">{result.content.howDoHeading}</h3>
-                      <p className="text-sm text-muted leading-relaxed">{result.content.howDoContent}</p>
+                  {/* Section 2: How Do Section (Tab 4) */}
+                  <div className="rounded-2xl border border-line bg-panel p-6 sm:p-8 space-y-4">
+                    <div className="border-b border-line pb-3">
+                      <span className="text-xs font-semibold uppercase tracking-wider text-accent bg-accent/10 px-2 py-0.5 rounded border border-accent/20">
+                        2nd Section &bull; ACF Tab 4 (How Do We Stand Section)
+                      </span>
+                      <h3 className="text-xl font-bold text-text mt-2">{result.content.howDoHeading}</h3>
                     </div>
+                    <p className="text-sm text-muted leading-relaxed whitespace-pre-line">{result.content.howDoContent}</p>
+                    <div className="p-3.5 rounded-xl border border-line bg-panel-2 flex items-center justify-between text-xs">
+                      <span className="text-muted">Contact Form 7 Shortcode:</span>
+                      <code className="text-accent font-mono font-semibold">[contact-form-7 id="2701763" title="Labor Law Form"]</code>
+                    </div>
+                  </div>
 
-                    {/* Compensation Section */}
-                    <div className="p-5 rounded-xl border border-accent/20 bg-accent/5 space-y-4">
-                      <h3 className="text-lg font-bold text-accent">{result.content.compensationHeading}</h3>
-                      <p className="text-sm text-text leading-relaxed">{result.content.compensationIntro}</p>
+                  {/* Section 3: Compensation Section (Tab 6) */}
+                  <div className="rounded-2xl border border-accent/30 bg-accent/5 p-6 sm:p-8 space-y-5">
+                    <div className="border-b border-accent/20 pb-3">
+                      <span className="text-xs font-semibold uppercase tracking-wider text-accent bg-accent/10 px-2 py-0.5 rounded border border-accent/20">
+                        3rd Section &bull; ACF Tab 6 (Compensation &amp; Remedies)
+                      </span>
+                      <h3 className="text-xl font-bold text-accent mt-2">{result.content.compensationHeading}</h3>
+                    </div>
+                    <div
+                      className="text-sm text-text leading-relaxed whitespace-pre-line"
+                      dangerouslySetInnerHTML={{ __html: result.content.compensationIntro }}
+                    />
 
-                      {/* Signature Atoyan Callout Box */}
-                      <div className="p-4 rounded-xl border border-line bg-panel text-center font-medium text-xs sm:text-sm text-text italic">
-                        Toxic workplace, retaliation, or wrongful termination in {result.city}? That&apos;s not just unfair - it&apos;s illegal. Atoyan Law Firm is ready to fight for you.{" "}
-                        <span className="font-bold text-accent not-italic underline">Call (888) 807-0077</span> or contact us online to schedule a confidential legal consultation.
+                    {/* Clean Easy Accordion Embed Card */}
+                    <div className="p-4 rounded-xl border border-line bg-panel space-y-2.5 shadow-xs">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                        <div className="flex items-center gap-2">
+                          <Layers className="size-4 text-accent" />
+                          <span className="text-xs font-semibold text-text uppercase tracking-wider">
+                            Embedded Easy Accordion Shortcode:
+                          </span>
+                        </div>
+                        <span className="text-xs font-mono font-bold text-accent bg-accent/10 px-3 py-1 rounded border border-accent/20 self-start sm:self-auto">
+                          {result.content.accordionShortcode || accordionShortcode || '[sp_easyaccordion id="4176"]'}
+                        </span>
                       </div>
+                      <p className="text-xs text-muted leading-relaxed">
+                        Cleanly parsed into <code className="text-accent">compensation_content</code> right below the legal damages guidance. Triggers the native interactive FAQ accordion on <code className="text-accent">templates/labor-law.php</code> without inserting raw styles or scripts into WordPress.
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -756,15 +867,15 @@ export default function Home() {
                   <div className="rounded-2xl border border-line bg-panel p-6 space-y-4">
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                       <div>
-                        <h3 className="font-bold text-base text-text">Panoramic Hero Banner</h3>
-                        <p className="text-xs text-muted">Atoyan Law Firm custom header banner &bull; mapped to <code className="text-accent">personal_injury_image</code></p>
+                        <h3 className="font-bold text-base text-text">Panoramic Hero Banner (Tab 1)</h3>
+                        <p className="text-xs text-muted">Atoyan Law Firm header banner &bull; mapped to <code className="text-accent">personal_injury_image</code></p>
                       </div>
                       <div className="flex items-center gap-2">
                         <span className="text-xs font-mono px-2.5 py-1 rounded-md bg-panel-2 border border-line text-accent font-semibold">
                           1920 x 451 (4.25:1)
                         </span>
                         <span className="text-xs px-2 py-0.5 rounded bg-good/10 text-good border border-good/20 font-medium">
-                          Authentic Aspect
+                          Warm Gradient &bull; Atoyan Watermark
                         </span>
                       </div>
                     </div>
@@ -787,13 +898,13 @@ export default function Home() {
                     </div>
                   </div>
 
-                  {/* Bottom Row: Editorial Services Graphic + Placement Specs */}
+                  {/* Bottom Row: Clean Editorial Services Graphic + Placement Specs */}
                   <div className="grid md:grid-cols-2 gap-6 items-start">
                     {/* Services Image Card */}
                     <div className="rounded-2xl border border-line bg-panel p-6 space-y-4">
                       <div className="flex items-center justify-between">
                         <div>
-                          <h3 className="font-bold text-base text-text">Editorial Services Graphic</h3>
+                          <h3 className="font-bold text-base text-text">Clean Services Graphic (Tab 2)</h3>
                           <p className="text-xs text-muted">Injected at top-left of services body with <code className="text-accent">alignleft</code></p>
                         </div>
                         <span className="text-xs font-mono px-2.5 py-1 rounded-md bg-panel-2 border border-line text-accent font-semibold">
@@ -814,7 +925,7 @@ export default function Home() {
                           <span className="font-semibold text-text">Alt Text:</span> {result.images.services.altText}
                         </div>
                         <div className="text-muted font-mono text-[11px]">
-                          Filename: {result.images.services.filename}
+                          Filename: {result.images.services.filename} &bull; <span className="text-good font-semibold">No text overlay / Clean photo</span>
                         </div>
                       </div>
                     </div>
@@ -823,7 +934,7 @@ export default function Home() {
                     <div className="rounded-2xl border border-line bg-panel p-6 space-y-4">
                       <h3 className="font-bold text-base text-text">WordPress Asset Configuration</h3>
                       <p className="text-xs text-muted leading-relaxed">
-                        Images are composited with exact production dimensions and branding overlays to match Atoyan Law Firm practice area templates.
+                        Images are composited with exact production dimensions and branding to match Atoyan Law Firm labor law templates.
                       </p>
 
                       <div className="space-y-3 text-xs">
@@ -833,7 +944,7 @@ export default function Home() {
                             <span className="font-mono text-accent">1920 × 451 px</span>
                           </div>
                           <p className="text-muted text-[11px] leading-relaxed">
-                            Uploaded to WP Media Library, mapped to ACF field <code className="text-accent">personal_injury_image</code>, with Atoyan warm gradient and brand mark.
+                            Uploaded to WP Media Library, mapped to ACF field <code className="text-accent">personal_injury_image</code>, with Atoyan warm gradient (#9c6941) and brand watermark.
                           </p>
                         </div>
 
@@ -843,7 +954,7 @@ export default function Home() {
                             <span className="font-mono text-accent">600 × 400 px</span>
                           </div>
                           <p className="text-muted text-[11px] leading-relaxed">
-                            Embedded inside <code className="text-accent">_personal_injury_services_content</code> with <code className="text-accent">alignleft size-full</code> and 70px dark typography overlay.
+                            Embedded inside <code className="text-accent">_personal_injury_services_content</code> with <code className="text-accent">alignleft size-full</code>. Clean image without text overlays or dark bars.
                           </p>
                         </div>
 
@@ -862,64 +973,87 @@ export default function Home() {
                 </div>
               )}
 
-              {/* TAB 3: FAQS & SCHEMA */}
+              {/* TAB 3: EASY ACCORDION & FAQS */}
               {activeTab === "faqs" && (
                 <div className="space-y-6">
-                  {/* Automated Schema.org FAQPage JSON-LD Status Box */}
-                  <div className="rounded-2xl border border-good/30 bg-panel p-5 space-y-3 shadow-sm">
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  {/* Easy Accordion Integration Card */}
+                  <div className="rounded-2xl border border-line bg-panel p-6 space-y-4 shadow-sm">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                       <div className="flex items-center gap-2.5">
-                        <ShieldCheck className="size-5 text-good" />
+                        <Layers className="size-5 text-accent" />
                         <div>
-                          <h3 className="font-bold text-base text-text">Schema.org FAQPage JSON-LD Structured Data</h3>
+                          <h3 className="font-bold text-base text-text">Easy Accordion Shortcode Integration</h3>
                           <p className="text-xs text-muted">
-                            Automatically saved into <code className="text-accent">_inpost_head_script</code> and rendered inside <code className="text-accent">&lt;head&gt;</code> by the companion plugin.
+                            Cleanly embedded in Tab 6 (Compensation Section) to render native WordPress FAQ accordions without database script bloat.
                           </p>
                         </div>
                       </div>
-                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-good/10 text-good border border-good/20 text-xs font-semibold self-start sm:self-auto">
-                        <CheckCircle2 className="size-3.5" />
-                        Automated In-Head Injection
-                      </span>
+
+                      <div className="flex items-center gap-2">
+                        <a
+                          href="https://www.atoyanlaw.com/wp-admin/edit.php?post_type=sp_easy_accordion"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-line bg-panel-2 hover:bg-panel text-xs text-muted hover:text-text transition"
+                        >
+                          <ExternalLink className="size-3.5" /> Manage WP Accordions
+                        </a>
+                      </div>
                     </div>
 
-                    <details className="text-xs group pt-1">
-                      <summary className="cursor-pointer text-muted hover:text-text font-medium select-none flex items-center gap-1.5">
-                        <span className="group-open:rotate-90 transition-transform">▸</span>
-                        <span>View Generated Schema JSON-LD Code</span>
-                      </summary>
-                      <pre className="mt-2 p-4 rounded-xl bg-panel-2 border border-line text-xs font-mono overflow-x-auto text-text max-h-60 leading-relaxed">
-                        {result.faqSchemaJsonLd}
-                      </pre>
-                    </details>
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-3 p-4 rounded-xl bg-panel-2 border border-line">
+                      <span className="text-xs text-muted font-medium">Active Shortcode:</span>
+                      <code className="text-accent font-mono font-bold text-sm bg-panel px-3 py-1 rounded border border-line">
+                        {result.content.accordionShortcode || accordionShortcode || '[sp_easyaccordion id="4176"]'}
+                      </code>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          navigator.clipboard.writeText(result.content.accordionShortcode || accordionShortcode || '[sp_easyaccordion id="4176"]');
+                          setCopiedShortcode(true);
+                          setTimeout(() => setCopiedShortcode(false), 2000);
+                        }}
+                        className="inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded border border-line bg-panel hover:bg-panel-2 text-text font-medium transition sm:ml-auto"
+                      >
+                        {copiedShortcode ? <Check className="size-3 text-good" /> : <Copy className="size-3 text-muted" />}
+                        {copiedShortcode ? "Copied!" : "Copy Shortcode"}
+                      </button>
+                    </div>
+
+                    <div className="p-3.5 rounded-xl border border-good/30 bg-good/5 text-xs text-muted space-y-1">
+                      <span className="font-semibold text-good block">Zero Script Injection Policy (David Feedback):</span>
+                      <p>
+                        WordPress standard editor body (<code className="text-text font-mono">post_content</code>) strictly remains empty (<code className="text-text font-mono">""</code>). Extra head script fields (<code className="text-text font-mono">_inpost_head_script</code>, <code className="text-text font-mono">synth_header_script</code>) and raw CSS/JavaScript are completely excluded from content fields.
+                      </p>
+                    </div>
                   </div>
 
-                  {/* Interactive FAQ Accordion Preview with Isolated Custom Styling */}
+                  {/* Topic-Specific FAQs Generated for this Practice Area */}
                   <div className="rounded-2xl border border-line bg-panel p-6 space-y-4">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <HelpCircle className="size-5 text-accent" />
-                        <h3 className="font-semibold text-lg">Interactive FAQ Accordion Preview (Isolated Custom Styling)</h3>
+                        <h3 className="font-semibold text-lg">Topic-Specific Legal FAQs ({result.content.faqs?.length || 0})</h3>
                       </div>
-                      <span className="text-xs text-muted">Atoyan Custom Accordion Classes (Immune to Plugin Conflicts)</span>
+                      <span className="text-xs text-muted">100% relevant to {result.content.keyword}</span>
                     </div>
 
                     <div className="space-y-2.5">
                       {(result.content?.faqs || []).map((faq, i) => (
                         <details
                           key={i}
-                          className="group border border-[#e2e2e2] bg-[#eee] dark:bg-[#22272e] dark:border-[#373e47] text-sm overflow-hidden transition"
+                          className="group border border-line bg-panel-2 rounded-xl text-sm overflow-hidden transition"
                           open={i === 0}
                         >
-                          <summary className="font-bold cursor-pointer text-[#444] dark:text-[#adbac7] uppercase tracking-wide px-4 py-3.5 flex items-center gap-3 select-none hover:bg-[#e6e6e6] dark:hover:bg-[#2d333b] transition list-none">
-                            <span className="text-base font-bold text-[#444] dark:text-[#adbac7] w-4 text-center font-mono select-none">
+                          <summary className="font-bold cursor-pointer text-text px-4 py-3 flex items-center gap-3 select-none hover:bg-panel transition list-none">
+                            <span className="text-base font-bold text-accent w-4 text-center font-mono select-none">
                               <span className="group-open:hidden">+</span>
                               <span className="hidden group-open:inline">−</span>
                             </span>
-                            <span className="text-xs sm:text-sm font-bold flex-1">{faq.question}</span>
+                            <span className="text-xs sm:text-sm font-semibold flex-1">{faq.question}</span>
                           </summary>
-                          <div className="p-4 sm:p-5 bg-white dark:bg-[#1c2128] border-t border-[#e2e2e2] dark:border-[#373e47] text-sm text-[#444] dark:text-[#adbac7] leading-relaxed">
-                            <p className="m-0">{faq.answer}</p>
+                          <div className="p-4 sm:p-5 bg-panel border-t border-line text-xs sm:text-sm text-muted leading-relaxed">
+                            <p className="m-0 text-text">{faq.answer}</p>
                           </div>
                         </details>
                       ))}
@@ -930,50 +1064,58 @@ export default function Home() {
 
               {/* TAB 4: ACF FIELD MAPPING */}
               {activeTab === "acf" && (
-                <div className="rounded-2xl border border-line bg-panel p-6 space-y-4">
-                  <div>
-                    <h3 className="font-semibold text-lg">ACF Field Group 348 (personal_injury_group)</h3>
-                    <p className="text-xs text-muted">
-                      Mapping all 27 subfields across 6 tabs. Exposed via Secure Custom Fields REST API.
-                    </p>
+                <div className="rounded-2xl border border-line bg-panel p-6 space-y-5">
+                  <div className="flex items-center justify-between border-b border-line pb-4">
+                    <div>
+                      <h3 className="font-semibold text-lg">ACF Field Group 348 (personal_injury_group)</h3>
+                      <p className="text-xs text-muted">
+                        Template: <code className="text-accent font-mono">templates/labor-law.php</code> &bull; Parent ID: <code className="text-accent font-mono">750 (employment-law)</code>
+                      </p>
+                    </div>
+                    <span className="text-xs font-semibold px-2.5 py-1 rounded-md bg-good/10 text-good border border-good/20">
+                      post_content: "" (Strictly Empty)
+                    </span>
                   </div>
 
                   <div className="grid sm:grid-cols-2 gap-4 text-xs font-mono">
                     <div className="p-4 rounded-xl bg-panel-2 border border-line space-y-2">
-                      <span className="text-accent font-semibold block">Tab 1: Personal Injury (Hero)</span>
-                      <p className="text-muted">personal_injury_image: <span className="text-text font-sans">Gemini 16:9 Banner</span></p>
+                      <span className="text-accent font-semibold block font-sans">Tab 1: Personal Injury (Hero Banner)</span>
+                      <p className="text-muted">personal_injury_image: <span className="text-text font-sans">1920x451 Panoramic Banner</span></p>
                       <p className="text-muted">personal_injury_title: <span className="text-text font-sans">{result.content.heroTitle}</span></p>
                     </div>
 
                     <div className="p-4 rounded-xl bg-panel-2 border border-line space-y-2">
-                      <span className="text-accent font-semibold block">Tab 2: Services Section</span>
+                      <span className="text-accent font-semibold block font-sans">Tab 2: Services Section (2,000+ Words)</span>
                       <p className="text-muted">_personal_injury_services_heading: <span className="text-text font-sans">{result.content.servicesHeading}</span></p>
                       <p className="text-muted">_personal_injury_services_sub_heading: <span className="text-text font-sans">{result.content.servicesSubHeading}</span></p>
-                      <p className="text-muted">_personal_injury_services_Sidebar: <span className="text-good font-sans">27 Cloned Practice Area IDs</span></p>
+                      <p className="text-muted">_personal_injury_services_content: <span className="text-good font-sans">2,000+ words deep analysis with h2dav/h3dav and clean 600x400 image</span></p>
+                      <p className="text-muted">_personal_injury_services_Sidebar: <span className="text-good font-sans">27 Practice Area Term IDs Cloned</span></p>
                     </div>
 
                     <div className="p-4 rounded-xl bg-panel-2 border border-line space-y-2">
-                      <span className="text-accent font-semibold block">Tab 3: Testimonials Section</span>
+                      <span className="text-accent font-semibold block font-sans">Tab 3: Testimonials Section</span>
                       <p className="text-muted">testimonials_reviews_repet: <span className="text-good font-sans">8 Authentic Client Reviews Cloned</span></p>
-                      <p className="text-muted">testimonials_reviews_bg_image: <span className="text-good font-sans">Preserved from Page 3933</span></p>
+                      <p className="text-muted">testimonials_reviews_bg_image: <span className="text-good font-sans">Preserved from Reference Page</span></p>
                     </div>
 
                     <div className="p-4 rounded-xl bg-panel-2 border border-line space-y-2">
-                      <span className="text-accent font-semibold block">Tab 4: How Do Section</span>
+                      <span className="text-accent font-semibold block font-sans">Tab 4: How Do Section</span>
                       <p className="text-muted">how_do_heading: <span className="text-text font-sans">{result.content.howDoHeading}</span></p>
-                      <p className="text-muted">how_do_contact_form_shortcode: <span className="text-good font-sans">[contact-form-7 id=&quot;2701763&quot;]</span></p>
+                      <p className="text-muted">how_do_content: <span className="text-text font-sans">Actionable Legal Guidance</span></p>
+                      <p className="text-muted">how_do_contact_form_shortcode: <span className="text-good font-sans">[contact-form-7 id="2701763"]</span></p>
                     </div>
 
                     <div className="p-4 rounded-xl bg-panel-2 border border-line space-y-2">
-                      <span className="text-accent font-semibold block">Tab 5: CTA Section</span>
+                      <span className="text-accent font-semibold block font-sans">Tab 5: CTA Section</span>
                       <p className="text-muted">cta_heading: <span className="text-good font-sans">Get The Representation You Deserve</span></p>
-                      <p className="text-muted">cta_bg_image: <span className="text-good font-sans">Preserved from Page 3933</span></p>
+                      <p className="text-muted">cta_button: <span className="text-good font-sans">Free Consultation &bull; (747) 888-0077</span></p>
                     </div>
 
                     <div className="p-4 rounded-xl bg-panel-2 border border-line space-y-2">
-                      <span className="text-accent font-semibold block">Tab 6: Compensation Section</span>
+                      <span className="text-accent font-semibold block font-sans">Tab 6: Compensation Section</span>
                       <p className="text-muted">compensation_heading: <span className="text-text font-sans">{result.content.compensationHeading}</span></p>
-                      <p className="text-muted">compensation_content: <span className="text-text font-sans">Legal intro + Callout + Custom Accordion + FAQPage JSON-LD</span></p>
+                      <p className="text-muted">compensation_content: <span className="text-good font-sans">Legal intro + Topic CTA with (747) 888-0077 + [sp_easyaccordion id="..."]</span></p>
+                      <p className="text-muted">code_injection: <span className="text-good font-sans">Zero inline CSS or toggle scripts</span></p>
                     </div>
                   </div>
                 </div>

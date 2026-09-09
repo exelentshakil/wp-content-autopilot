@@ -24,7 +24,7 @@ export async function POST(req: Request) {
     );
   }
 
-  const { title: keyword, settings, schedule_at } = parsed.data;
+  const { title: keyword, settings, schedule_at, accordion_shortcode } = parsed.data;
   const city = extractCity(keyword);
   const provider = await activeProvider(settings);
 
@@ -38,6 +38,10 @@ export async function POST(req: Request) {
       provider: (settings?.llm_provider || provider) as "openai" | "gemini" | "simulator",
       systemPrompt: settings?.system_prompt,
     });
+
+    if (accordion_shortcode && accordion_shortcode.trim()) {
+      content.accordionShortcode = accordion_shortcode.trim();
+    }
 
     // 2. Generate Gemini Imagen visual pair (16:9 Banner + 4:3 Editorial Illustration)
     const images = await generateAtoyanImages({
