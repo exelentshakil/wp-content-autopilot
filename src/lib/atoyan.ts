@@ -139,191 +139,12 @@ export function generateFaqSchemaJsonLd(faqs: AtoyanFaq[]): string {
  * Generates an interactive, responsive HTML accordion matching Easy Accordion / theme styling,
  * followed by the native [sp_easyaccordion id="3932"] shortcode so both rendering paths succeed.
  */
-export function generateEasyAccordionHtml(faqs: AtoyanFaq[], shortcodeId = 3932): string {
-  if (!faqs || faqs.length === 0) {
-    return `[sp_easyaccordion id="${shortcodeId}"]`;
-  }
-
-  // Minify each card to a single continuous string without internal newlines or whitespace.
-  // This prevents WordPress wpautop() from converting newlines inside <button> to <br>
-  // and from inserting rogue <p></p> between closing </div> tags.
-  const itemsHtml = faqs
-    .map((faq, index) => {
-      const isFirst = index === 0;
-      const collapseId = `atoyan-faq-collapse-${index + 1}`;
-      const headingId = `atoyan-faq-heading-${index + 1}`;
-      const cleanQuestion = faq.question.trim().toUpperCase();
-      const cleanAnswer = faq.answer.trim();
-
-      return `<div class="atoyan-faq-card ${isFirst ? "atoyan-faq-open" : ""}" style="margin-bottom: 10px; border: 1px solid #e2e2e2; background: #eee; border-radius: 0; overflow: hidden; transition: background 0.15s ease-in-out;"><h3 class="atoyan-faq-header" id="${headingId}" style="margin: 0; padding: 0; font-size: 15px; font-weight: 700; line-height: 1.4;"><button type="button" class="atoyan-faq-toggle" aria-expanded="${isFirst ? "true" : "false"}" aria-controls="${collapseId}" style="width: 100%; border: none; background: transparent; text-align: left; display: flex; align-items: center; padding: 14px 18px; color: #444; font-weight: 700; text-transform: uppercase; font-size: 14px; letter-spacing: 0.5px; cursor: pointer; user-select: none; outline: none; font-family: inherit;"><span class="atoyan-faq-icon" style="float: left; margin-right: 12px; font-size: 18px; font-weight: 700; line-height: 1; color: #444; min-width: 14px; text-align: center; font-family: Arial, sans-serif;">${isFirst ? "−" : "+"}</span><span class="atoyan-faq-title" style="color: #444; flex: 1;">${cleanQuestion}</span></button></h3><div id="${collapseId}" class="atoyan-faq-collapse" aria-labelledby="${headingId}" style="display: ${isFirst ? "block" : "none"}; background: #fff; border-top: 1px solid #e2e2e2;"><div class="atoyan-faq-body" style="padding: 18px 22px; font-size: 15px; line-height: 1.7; color: #444; background: #fff;"><p dir="auto" style="margin: 0; color: #444;">${cleanAnswer}</p></div></div></div>`;
-    })
-    .join("");
-
-  const scopedCss = `<style id="atoyan-faq-custom-style">
-  .atoyan-custom-faq-accordion p:empty,
-  .atoyan-custom-faq-accordion .atoyan-faq-card p:empty,
-  .atoyan-custom-faq-accordion .atoyan-faq-collapse p:empty,
-  .atoyan-custom-faq-accordion .atoyan-faq-body p:empty {
-    display: none !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    height: 0 !important;
-    min-height: 0 !important;
-    line-height: 0 !important;
-    font-size: 0 !important;
-    border: none !important;
-  }
-  .atoyan-custom-faq-accordion p:has(> br:only-child) {
-    display: none !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    height: 0 !important;
-    line-height: 0 !important;
-    font-size: 0 !important;
-  }
-  .atoyan-custom-faq-accordion .atoyan-faq-toggle br,
-  .atoyan-custom-faq-accordion .atoyan-faq-header br,
-  .atoyan-custom-faq-accordion .atoyan-faq-card > br,
-  .atoyan-custom-faq-accordion .atoyan-faq-icon br,
-  .atoyan-custom-faq-accordion .atoyan-faq-title br {
-    display: none !important;
-  }
-  .atoyan-custom-faq-accordion .atoyan-faq-card {
-    margin-bottom: 10px !important;
-    border: 1px solid #e2e2e2 !important;
-    background: #eee !important;
-    transition: background 0.15s ease-in-out;
-  }
-  .atoyan-custom-faq-accordion .atoyan-faq-card:hover {
-    background: #e6e6e6 !important;
-  }
-  .atoyan-custom-faq-accordion .atoyan-faq-toggle {
-    display: flex !important;
-    align-items: center !important;
-    width: 100% !important;
-    padding: 14px 18px !important;
-    border: none !important;
-    background: transparent !important;
-    color: #444 !important;
-    text-decoration: none !important;
-    font-weight: 700 !important;
-    text-transform: uppercase !important;
-    font-size: 14px !important;
-    letter-spacing: 0.5px !important;
-    cursor: pointer !important;
-    text-align: left !important;
-  }
-  .atoyan-custom-faq-accordion .atoyan-faq-toggle:hover .atoyan-faq-title {
-    color: #000 !important;
-  }
-  .atoyan-custom-faq-accordion .atoyan-faq-icon {
-    font-family: Arial, sans-serif !important;
-    font-weight: 700 !important;
-    margin-right: 12px !important;
-    font-size: 18px !important;
-    min-width: 14px !important;
-    text-align: center !important;
-    color: #444 !important;
-  }
-  .atoyan-custom-faq-accordion .atoyan-faq-collapse {
-    background: #fff !important;
-    border-top: 1px solid #e2e2e2 !important;
-  }
-  .atoyan-custom-faq-accordion .atoyan-faq-body {
-    padding: 18px 22px !important;
-    font-size: 15px !important;
-    line-height: 1.7 !important;
-    color: #444 !important;
-    background: #fff !important;
-  }
-  .atoyan-custom-faq-accordion .atoyan-faq-body p {
-    margin: 0 !important;
-    padding: 0 !important;
-    color: #444 !important;
-  }
-  .atoyan-custom-faq-accordion h3.h3dav {
-    margin-top: 0 !important;
-    margin-bottom: 20px !important;
-  }
-</style>`;
-
-  const toggleScript = `<script>
-(function(){
-function cleanRogueFaqNodes(){
-try{
-var pElements=document.querySelectorAll(".atoyan-custom-faq-accordion p");
-pElements.forEach(function(p){
-if(!p.textContent.trim()&&!p.querySelector("img,a,iframe,svg")){
-p.remove();
-}
-});
-var brElements=document.querySelectorAll(".atoyan-custom-faq-accordion .atoyan-faq-toggle br, .atoyan-custom-faq-accordion .atoyan-faq-header br, .atoyan-custom-faq-accordion .atoyan-faq-card > br");
-brElements.forEach(function(b){b.remove();});
-}catch(err){}
-}
-if(document.readyState==="loading"){
-document.addEventListener("DOMContentLoaded",cleanRogueFaqNodes);
-}else{
-cleanRogueFaqNodes();
-}
-function toggleAtoyanFaq(target){
-var card=target.closest(".atoyan-faq-card");
-if(!card)return;
-var collapse=card.querySelector(".atoyan-faq-collapse");
-if(!collapse)return;
-var toggle=card.querySelector(".atoyan-faq-toggle");
-var icon=card.querySelector(".atoyan-faq-icon");
-var isOpen=card.classList.contains("atoyan-faq-open")||collapse.style.display==="block";
-var list=card.closest(".atoyan-faq-list");
-if(list){
-var allCards=list.querySelectorAll(".atoyan-faq-card");
-allCards.forEach(function(c){
-if(c!==card){
-c.classList.remove("atoyan-faq-open");
-var cCollapse=c.querySelector(".atoyan-faq-collapse");
-if(cCollapse){cCollapse.style.display="none";}
-var cToggle=c.querySelector(".atoyan-faq-toggle");
-if(cToggle){cToggle.setAttribute("aria-expanded","false");}
-var cIcon=c.querySelector(".atoyan-faq-icon");
-if(cIcon){cIcon.textContent="+";}
-}
-});
-}
-if(isOpen){
-collapse.style.display="none";
-card.classList.remove("atoyan-faq-open");
-if(toggle){toggle.setAttribute("aria-expanded","false");}
-if(icon){icon.textContent="+";}
-}else{
-collapse.style.display="block";
-card.classList.add("atoyan-faq-open");
-if(toggle){toggle.setAttribute("aria-expanded","true");}
-if(icon){icon.textContent="−";}
-}
-}
-document.addEventListener("click",function(e){
-var btn=e.target.closest(".atoyan-faq-toggle, .atoyan-faq-header");
-if(btn){
-e.preventDefault();
-e.stopPropagation();
-toggleAtoyanFaq(btn);
-}
-},true);
-document.addEventListener("keydown",function(e){
-if(e.key==="Enter"||e.key===" "){
-var btn=e.target.closest(".atoyan-faq-toggle");
-if(btn){
-e.preventDefault();
-toggleAtoyanFaq(btn);
-}
-}
-},true);
-})();
-</script>`;
-
-  const containerHtml = `<div class="atoyan-faq-section atoyan-custom-faq-accordion" style="margin-top: 35px; margin-bottom: 30px;">${scopedCss.trim()}<h3 class="h3dav" style="margin-bottom: 20px;">Frequently Asked Questions</h3><div class="atoyan-faq-list" role="region" aria-label="Frequently Asked Questions">${itemsHtml}</div>${toggleScript.trim()}</div>`;
-
-  return containerHtml;
+export function generateEasyAccordionHtml(faqs: AtoyanFaq[] = [], shortcodeId = 3932): string {
+  // CRITICAL CLIENT REQUIREMENT (Client David):
+  // Strictly maintain zero raw <style>, zero <script>, and zero JSON-LD schema in content fields.
+  // Native Easy Accordion shortcode [sp_easyaccordion id="..."] is processed server-side
+  // by the Easy Accordion WordPress plugin.
+  return `[sp_easyaccordion id="${shortcodeId}"]`;
 }
 
 /**
@@ -355,63 +176,169 @@ export function buildServicesContent(
 export function resolveDefaultAccordionShortcode(keyword: string, city = "California"): string {
   const kw = (keyword + " " + city).toLowerCase();
 
+  // San Pedro specific
+  if (kw.includes("san pedro")) {
+    if (kw.includes("race") || kw.includes("racial") || kw.includes("ethnic") || kw.includes("national origin") || kw.includes("color")) {
+      return '[sp_easyaccordion id="3531"]'; // Ethnic & National Origin Discrimination Attorney in San Pedro
+    }
+    if (kw.includes("sick") || kw.includes("time off") || kw.includes("pto") || kw.includes("paid sick")) {
+      return '[sp_easyaccordion id="3515"]'; // Paid Sick Time Off rights and attorneys in San Pedro
+    }
+    if (kw.includes("overtime")) {
+      return '[sp_easyaccordion id="3504"]'; // Overtime Compensation Attorney in San Pedro
+    }
+    if (kw.includes("harass") || kw.includes("sexual")) {
+      return '[sp_easyaccordion id="3464"]'; // San Pedro Sexual Harassment Lawyer
+    }
+    if (kw.includes("wrongful") || kw.includes("termination") || kw.includes("firing") || kw.includes("fired")) {
+      return '[sp_easyaccordion id="3421"]'; // Wrongful Termination Lawyer San Pedro CA
+    }
+    if (kw.includes("wage") || kw.includes("theft") || kw.includes("unpaid") || kw.includes("pay")) {
+      return '[sp_easyaccordion id="3971"]'; // Unpaid Wages Employment Attorney San Pedro
+    }
+    return '[sp_easyaccordion id="3960"]'; // Employment Attorney San Pedro, CA
+  }
+
+  // Visalia specific
+  if (kw.includes("visalia")) {
+    if (kw.includes("meal") || kw.includes("rest break") || kw.includes("lunch") || kw.includes("break")) {
+      return '[sp_easyaccordion id="4119"]'; // Visalia Meal and Rest Break Violations
+    }
+    if (kw.includes("gender") || kw.includes("sex") || kw.includes("women") || kw.includes("equal pay")) {
+      return '[sp_easyaccordion id="3873"]'; // Visalia Gender Discrimination Lawyer
+    }
+    if (kw.includes("leave") || kw.includes("fmla") || kw.includes("cfra") || kw.includes("medical leave") || kw.includes("family")) {
+      return '[sp_easyaccordion id="3788"]'; // Visalia Family and Medical Leave Lawyer
+    }
+    if (kw.includes("overtime")) {
+      return '[sp_easyaccordion id="3719"]'; // overtime violations in Visalia
+    }
+    if (kw.includes("wage") || kw.includes("unpaid") || kw.includes("hour claims") || kw.includes("claims")) {
+      return '[sp_easyaccordion id="3779"]'; // Visalia Wage and Hour Claims Attorney
+    }
+    if (kw.includes("theft") || kw.includes("unpaid wages")) {
+      return '[sp_easyaccordion id="3830"]'; // Visalia Unpaid Wages Lawyer
+    }
+    if (kw.includes("discrim") || kw.includes("bias")) {
+      return '[sp_easyaccordion id="3738"]'; // Frequently Asked Questions About Workplace Discrimination in Visalia
+    }
+  }
+
+  // Fresno specific
+  if (kw.includes("fresno")) {
+    if (kw.includes("meal") || kw.includes("rest break") || kw.includes("lunch") || kw.includes("break")) {
+      return '[sp_easyaccordion id="4095"]'; // Fresno Meal and Rest Break Violations
+    }
+    if (kw.includes("wage") || kw.includes("theft") || kw.includes("unpaid") || kw.includes("minimum wage")) {
+      return '[sp_easyaccordion id="4086"]'; // Fresno Wage Theft Attorney
+    }
+    if (kw.includes("whistleblower") || kw.includes("retaliat")) {
+      return '[sp_easyaccordion id="3646"]'; // What is whistleblower retaliation in Fresno, California?
+    }
+    if (kw.includes("overtime")) {
+      return '[sp_easyaccordion id="3619"]'; // Fresno Overtime Violation lawyer
+    }
+    if (kw.includes("harass") || kw.includes("hostile")) {
+      return '[sp_easyaccordion id="3446"]'; // Fresno Workplace Harassment Lawyer
+    }
+    if (kw.includes("lgbt") || kw.includes("queer") || kw.includes("trans")) {
+      return '[sp_easyaccordion id="3239"]'; // LGBTQ Discrimination Attorney in Fresno, California
+    }
+  }
+
+  // Bakersfield specific
+  if (kw.includes("bakersfield")) {
+    if (kw.includes("wage") || kw.includes("hour") || kw.includes("unpaid") || kw.includes("theft") || kw.includes("overtime")) {
+      return '[sp_easyaccordion id="3405"]'; // Bakersfield Wage and Hour Violations Lawyer
+    }
+    if (kw.includes("lgbt") || kw.includes("queer") || kw.includes("trans")) {
+      return '[sp_easyaccordion id="3312"]'; // LGBTQ Discrimination Bakersfield
+    }
+  }
+
+  // Los Angeles specific
+  if (kw.includes("los angeles")) {
+    if (kw.includes("race") || kw.includes("ethnic") || kw.includes("national origin") || kw.includes("color")) {
+      return '[sp_easyaccordion id="3549"]'; // Ethnic and National Origin Discrimination in Los Angeles
+    }
+  }
+
   // Burbank specific
   if (kw.includes("burbank")) {
     if (kw.includes("race") || kw.includes("racial") || kw.includes("ethnic") || kw.includes("national origin") || kw.includes("color")) {
-      return '[sp_easyaccordion id="4355"]';
+      return '[sp_easyaccordion id="4355"]'; // Burbank Race Discrimination Attorney
     }
     if (kw.includes("hostile") || kw.includes("harassment") || kw.includes("environment")) {
-      return '[sp_easyaccordion id="4200"]';
+      return '[sp_easyaccordion id="4200"]'; // Burbank Hostile Work Environment Lawyer
     }
     if (kw.includes("wrongful") || kw.includes("termination") || kw.includes("firing") || kw.includes("fired")) {
-      return '[sp_easyaccordion id="4176"]';
+      return '[sp_easyaccordion id="4176"]'; // Burbank Wrongful Termination Lawyer
     }
     if (kw.includes("wage") || kw.includes("theft") || kw.includes("unpaid") || kw.includes("pay") || kw.includes("overtime")) {
-      return '[sp_easyaccordion id="4167"]';
+      return '[sp_easyaccordion id="4167"]'; // Burbank Wage Theft Attorney
+    }
+    if (kw.includes("disability") || kw.includes("medical condition") || kw.includes("accommodation")) {
+      return '[sp_easyaccordion id="3894"]'; // Burbank Disability Discrimination Lawyer
+    }
+    if (kw.includes("gender") || kw.includes("sex") || kw.includes("women") || kw.includes("pregnancy")) {
+      return '[sp_easyaccordion id="3877"]'; // Burbank Gender Discrimination Lawyer
     }
   }
 
-  // Topic specific
-  if (kw.includes("race") || kw.includes("racial") || kw.includes("color") || kw.includes("ethnic")) {
-    return '[sp_easyaccordion id="4355"]';
+  // General Topic Matching across all 45 live posts
+  if (kw.includes("race") || kw.includes("racial") || kw.includes("color") || kw.includes("ethnic") || kw.includes("national origin") || kw.includes("ancestry")) {
+    return '[sp_easyaccordion id="4355"]'; // Burbank Race Discrimination Attorney
   }
-  if (kw.includes("hostile") || kw.includes("toxic")) {
-    return '[sp_easyaccordion id="4200"]';
+  if (kw.includes("hostile") || kw.includes("toxic") || kw.includes("work environment")) {
+    return '[sp_easyaccordion id="4200"]'; // Burbank Hostile Work Environment Lawyer
   }
-  if (kw.includes("meal") || kw.includes("rest break") || kw.includes("lunch")) {
-    if (kw.includes("fresno")) return '[sp_easyaccordion id="4095"]';
-    return '[sp_easyaccordion id="4119"]';
+  if (kw.includes("meal") || kw.includes("rest break") || kw.includes("lunch") || kw.includes("break")) {
+    return '[sp_easyaccordion id="4119"]'; // Visalia Meal and Rest Break Violations
   }
-  if (kw.includes("wage") || kw.includes("unpaid") || kw.includes("minimum wage")) {
-    if (kw.includes("fresno")) return '[sp_easyaccordion id="4086"]';
-    return '[sp_easyaccordion id="4167"]';
+  if (kw.includes("wage") || kw.includes("theft") || kw.includes("unpaid") || kw.includes("minimum wage") || kw.includes("off the clock")) {
+    return '[sp_easyaccordion id="4167"]'; // Burbank Wage Theft Attorney
   }
   if (kw.includes("overtime")) {
-    if (kw.includes("fresno")) return '[sp_easyaccordion id="3619"]';
-    return '[sp_easyaccordion id="3719"]';
+    return '[sp_easyaccordion id="3719"]'; // overtime violations in Visalia
   }
-  if (kw.includes("disability") || kw.includes("accommodation") || kw.includes("medical condition")) {
-    return '[sp_easyaccordion id="3894"]';
+  if (kw.includes("disability") || kw.includes("accommodation") || kw.includes("medical condition") || kw.includes("interactive process")) {
+    return '[sp_easyaccordion id="3894"]'; // Burbank Disability Discrimination Lawyer
   }
-  if (kw.includes("gender") || kw.includes("sex") || kw.includes("pregnancy") || kw.includes("maternity")) {
-    return '[sp_easyaccordion id="3877"]';
+  if (kw.includes("gender") || kw.includes("sex") || kw.includes("pregnancy") || kw.includes("pay equity")) {
+    return '[sp_easyaccordion id="3877"]'; // Burbank Gender Discrimination Lawyer
   }
-  if (kw.includes("sexual harassment")) {
-    return '[sp_easyaccordion id="3464"]';
+  if (kw.includes("maternity") || kw.includes("paternity")) {
+    return '[sp_easyaccordion id="3356"]'; // Maternity Leave
+  }
+  if (kw.includes("sexual harassment") || kw.includes("quid pro quo")) {
+    return '[sp_easyaccordion id="3464"]'; // San Pedro Sexual Harassment Lawyer
   }
   if (kw.includes("leave") || kw.includes("fmla") || kw.includes("cfra") || kw.includes("family")) {
-    return '[sp_easyaccordion id="3788"]';
+    return '[sp_easyaccordion id="3788"]'; // Visalia Family and Medical Leave Lawyer
   }
-  if (kw.includes("retaliat") || kw.includes("whistleblower")) {
-    return '[sp_easyaccordion id="3740"]';
+  if (kw.includes("whistleblower")) {
+    return '[sp_easyaccordion id="3646"]'; // What is whistleblower retaliation in Fresno, California?
+  }
+  if (kw.includes("retaliat")) {
+    return '[sp_easyaccordion id="3740"]'; // What is workplace retaliation?
   }
   if (kw.includes("adverse")) {
-    return '[sp_easyaccordion id="3932"]';
+    return '[sp_easyaccordion id="3932"]'; // What is an Adverse Employment Action?
   }
-  if (kw.includes("wrongful") || kw.includes("termination") || kw.includes("firing")) {
-    return '[sp_easyaccordion id="4176"]';
+  if (kw.includes("evict") || kw.includes("landlord")) {
+    return '[sp_easyaccordion id="3348"]'; // Landlord Eviction
+  }
+  if (kw.includes("tenant")) {
+    return '[sp_easyaccordion id="3344"]'; // Tenant Harassment & Intimidation
+  }
+  if (kw.includes("sue") || kw.includes("on my own")) {
+    return '[sp_easyaccordion id="3828"]'; // How Can I Sue My Employer on My Own in California?
+  }
+  if (kw.includes("wrongful") || kw.includes("termination") || kw.includes("firing") || kw.includes("fired")) {
+    return '[sp_easyaccordion id="4176"]'; // Burbank Wrongful Termination Lawyer
   }
 
+  // Fallback to Burbank Wrongful Termination
   return '[sp_easyaccordion id="4176"]';
 }
 

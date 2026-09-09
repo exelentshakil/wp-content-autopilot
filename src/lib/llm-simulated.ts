@@ -842,6 +842,41 @@ Under California Government Code § 12940(l)(4) and (m)(2), it is an unlawful em
 If your employer cut your hours, gave you a bogus write-up, transferred you to an undesirable post, or terminated your employment after you asked for accommodations or submitted a doctor's note, that constitutes direct unlawful retaliation under California law.
 
 
+
+<h2 class="h2dav">California's Expansive Definition of Disability and Employer Obligations</h2>
+
+California provides the strongest disability rights protections in the United States. While the federal Americans with Disabilities Act (ADA) imposes narrow restrictions on what qualifies as a disability, California's Fair Employment and Housing Act (FEHA) broadly protects California workers:
+
+<h3 class="h3dav">1. The Lower Statutory Threshold: "Limits" vs. "Substantially Limits"</h3>
+Under California Government Code § 12926(m), an impairment qualifies as a physical or mental disability if it merely <strong>limits a major life activity</strong> by making achievement difficult.
+
+Under federal law, an impairment must "substantially limit" major life activities. In California, conditions such as clinical depression, anxiety disorders, chronic back injuries, repetitive stress conditions, cancer remission, diabetes, and long COVID qualify as disabilities entitled to full legal protection and accommodation.
+
+<h3 class="h3dav">2. The Two Separate and Independent Statutory Claims Under FEHA</h3>
+When an employee requests an accommodation or suffers from a medical condition, the employer has two distinct statutory duties:
+<ol>
+  <li><strong>Failure to Engage in a Timely, Good-Faith Interactive Process (Gov Code § 12940(n))</strong>: The employer is legally obligated to initiate an ongoing dialogue with the employee to explore workable accommodations. If an employer ignores your doctor's note, stalls, or summarily rejects your request without discussion, the employer commits an independent statutory violation for which you can recover damages.</li>
+  <li><strong>Failure to Provide Reasonable Accommodation (Gov Code § 12940(m))</strong>: If a reasonable accommodation exists that would allow you to perform your essential job functions, the employer must provide it unless doing so would impose an undue hardship.</li>
+</ol>
+An employer can be held liable under § 12940(n) for failing to communicate even if an accommodation was ultimately unfeasible!
+
+<h3 class="h3dav">3. Common Reasonable Accommodations in California Workplaces</h3>
+Employers often pretend that accommodations are limited to wheelchair ramps. Under California law, reasonable accommodations include:
+<ul>
+  <li>Ergonomic workstations, specialized chairs, and adaptive software.</li>
+  <li>Modified work hours, flexible start times, and part-time schedules.</li>
+  <li>Temporary telecommuting or remote work arrangements.</li>
+  <li>Job restructuring and redistribution of non-essential marginal duties.</li>
+  <li>Extended medical leave of absence for surgery, rehabilitation, or treatment.</li>
+  <li>Reassignment to a vacant comparable or lower position if the employee can no longer perform their current role.</li>
+</ul>
+
+<h3 class="h3dav">4. The Demolition of the Corporate "Undue Hardship" Defense</h3>
+Employers frequently claim that granting an accommodation creates an "undue hardship." Under California law, proving undue hardship requires the employer to show that the accommodation would cause significant difficulty or expense in light of the <strong>overall financial resources of the entire enterprise</strong>, the size of the company, and the nature of its operations. Large corporate employers with multi-million dollar revenues almost never satisfy this high legal standard in court.
+
+<p class="txt-hlt bg-bx ulk-bg pd_v-30 pd_h-30" style="text-align:center;"><em><strong>Did your employer ignore your doctor's restrictions or refuse to discuss reasonable accommodations in ${city}? That violates California FEHA. Call Atoyan Law at <a href="tel:747888-0077">(747) 888-0077</a>.</strong></em></p>
+
+
 ${buildEvidentiaryDeepDive("Disability Discrimination and Accommodation", city)}
 
 ${buildCorporateDefensePlaybook("Disability Discrimination and Accommodation", city)}
@@ -989,6 +1024,49 @@ Common forms of illegal leave interference in ${city} include:
   <li>Counting protected medical leave absences against an employee under an employer's "no-fault" attendance policy.</li>
   <li>Fabricating a "restructuring" or performance pretext to terminate an employee immediately before their scheduled leave begins or right after they return.</li>
 </ul>
+
+
+
+<h2 class="h2dav">Crucial Differences: Why California CFRA Far Outperforms Federal FMLA</h2>
+
+Many workers mistakenly assume they must rely on the federal Family and Medical Leave Act (FMLA). In reality, California's California Family Rights Act (CFRA) offers dramatically broader coverage and protections:
+
+<h3 class="h3dav">1. The 5-Employee Small Employer Threshold</h3>
+Federal FMLA only applies to employers with <strong>50 or more employees</strong> within a 75-mile radius, leaving millions of small-business employees unprotected.
+
+Under California Government Code § 12945.2, the CFRA applies to all employers with <strong>5 or more employees</strong>. If you work for a company in ${city} with at least 5 workers, you are fully entitled to 12 weeks of job-protected family and medical leave once you satisfy the 12-month and 1,250-hour eligibility thresholds.
+
+<h3 class="h3dav">2. Expanded Family Members and "Designated Persons" Under AB 1041</h3>
+Under federal FMLA, an employee can only take leave to care for a spouse, child, or parent.
+Under California CFRA (expanded by Assembly Bill 1041), California workers can take protected leave to care for:
+<ul>
+  <li>Spouses and registered domestic partners.</li>
+  <li>Biological, adopted, foster, and step-children of any age.</li>
+  <li>Parents and parents-in-law.</li>
+  <li>Grandparents and grandchildren.</li>
+  <li>Siblings.</li>
+  <li>A <strong>"Designated Person"</strong>: Any individual related by blood or whose association with the employee is the equivalent of a family relationship, identified by the employee at the time leave is requested.</li>
+</ul>
+
+<h3 class="h3dav">3. California Paid Family Leave (PFL) and State Disability Insurance (SDI)</h3>
+While CFRA and FMLA provide job-protected unpaid leave, California provides wage replacement benefits through the Employment Development Department (EDD):
+<ul>
+  <li><strong>State Disability Insurance (SDI)</strong>: Provides up to 60–70% of regular wages for employees unable to work due to their own non-work-related illness, injury, or pregnancy.</li>
+  <li><strong>Paid Family Leave (PFL)</strong>: Provides up to 8 weeks of partial wage replacement to care for a seriously ill family member or bond with a new child.</li>
+</ul>
+Crucially, receiving EDD benefits does not protect your job on its own—the statutory job protection comes directly from the CFRA and PDL.
+
+<h3 class="h3dav">4. Strict Limits on Employer Medical Inquiries</h3>
+When you request CFRA leave, your employer has no legal right to know your diagnosis, clinical history, or medical treatments.
+Under California law, a medical certification is legally complete if it states:
+<ol>
+  <li>The date on which the serious health condition commenced.</li>
+  <li>The probable duration of the condition.</li>
+  <li>A statement that, due to the serious health condition, the employee is unable to perform their job duties, or that the family member requires care.</li>
+</ol>
+If an employer in ${city} demands access to your full medical charts, questions your physician's judgment, or forces you to see a company-selected doctor, they are violating California medical privacy laws and engaging in unlawful leave interference.
+
+<p class="txt-hlt bg-bx ulk-bg pd_v-30 pd_h-30" style="text-align:center;"><em><strong>Did your employer demand private medical diagnosis records or deny your CFRA bonding leave in ${city}? Protect your rights. Call Atoyan Law at <a href="tel:747888-0077">(747) 888-0077</a>.</strong></em></p>
 
 
 ${buildEvidentiaryDeepDive("Medical and Family Leave Retaliation", city)}
@@ -1142,6 +1220,43 @@ In addition to compensatory damages, back pay, and front pay, California Labor C
   <li>Employers are liable for a civil penalty of up to <strong>$10,000 per violation</strong> payable to the employee.</li>
   <li>Employees can also recover reasonable attorney fees and costs under California Labor Code § 1102.5(j), ensuring employers bear the full financial cost of their unlawful retaliation.</li>
 </ul>
+
+
+
+<h2 class="h2dav">California's Arsenal of Targeted Whistleblower Protection Statutes</h2>
+
+Beyond California Labor Code § 1102.5, California has enacted targeted statutory protections covering workers who report violations across specialized industries, workplace safety, and public health:
+
+<h3 class="h3dav">1. Cal/OSHA Workplace Safety Retaliation Under Labor Code § 6310</h3>
+Every California employee has the fundamental legal right to a safe working environment. Under California Labor Code § 6310, an employer cannot discharge, threaten, demote, or discipline an employee because the employee:
+<ul>
+  <li>Made an oral or written complaint to Cal/OSHA, another government agency, or their employer regarding unsafe working conditions or occupational health hazards.</li>
+  <li>Instituted or caused to be instituted any proceeding relating to workplace safety rights.</li>
+  <li>Testified or participated in any workplace safety inspection or occupational health hearing.</li>
+  <li>Participated in an occupational safety and health committee.</li>
+</ul>
+Under Labor Code § 6310(b), any employee who is terminated, suspended, or demoted for reporting safety hazards is entitled to <strong>mandatory job reinstatement and reimbursement for all lost wages and benefits</strong>.
+
+<h3 class="h3dav">2. Healthcare Worker Whistleblower Protections Under Health & Safety Code § 1278.5</h3>
+California Health and Safety Code § 1278.5 protects doctors, nurses, medical technicians, and healthcare workers who report unsafe patient care, inadequate staffing ratios, sanitation defects, or medical billing fraud.
+
+Crucially, Section 1278.5 establishes a <strong>rebuttable presumption of retaliation</strong> if the healthcare facility takes any discriminatory action against the worker within <strong>120 days</strong> of making a patient care complaint. Healthcare facilities that retaliate face civil penalties of up to $250,000 per violation, in addition to liability for employee damages.
+
+<h3 class="h3dav">3. Refusal to Participate in Unlawful Activities Under Labor Code § 1102.5(c)</h3>
+California Labor Code § 1102.5(c) provides an absolute defense and cause of action for workers who take an ethical stand:
+An employer cannot retaliate against an employee for <strong>refusing to participate in an activity that would result in a violation of a state or federal statute, rule, or regulation</strong>.
+
+If your supervisor ordered you to forge invoices, alter inspection logs, falsify timesheets, dump hazardous materials, or violate safety protocols, and fired you for refusing, you have an unassailable whistleblower lawsuit.
+
+<h3 class="h3dav">4. The Whistleblower's Step-by-Step Evidence Preservation Protocol</h3>
+To build an airtight whistleblower claim against an employer in ${city}, workers should follow these vital evidentiary steps:
+<ul>
+  <li><strong>Keep a Private Contemporaneous Log</strong>: Document the date, time, attendees, exact words, and context of every protected disclosure you make and every negative reaction from management. Store this journal on personal devices, never on company hardware.</li>
+  <li><strong>Preserve Communications in Writing</strong>: Follow up verbal conversations with a polite, professional email confirming the discussion: "Thank you for meeting with me today to discuss my safety concerns regarding..."</li>
+  <li><strong>Do Not Download Trade Secrets or Unrelated Confidential Files</strong>: Focus strictly on preserving evidence of your disclosures and subsequent retaliation. Never take proprietary customer lists or proprietary software code, which employers weaponize in counter-claims.</li>
+</ul>
+
+<p class="txt-hlt bg-bx ulk-bg pd_v-30 pd_h-30" style="text-align:center;"><em><strong>Did management target or fire you after you reported illegal practices or refused to violate the law in ${city}? Atoyan Law Firm protects California whistleblowers. Call <a href="tel:747888-0077">(747) 888-0077</a>.</strong></em></p>
 
 
 ${buildEvidentiaryDeepDive("Workplace Retaliation and Whistleblower Claims", city)}
@@ -1303,6 +1418,40 @@ A wrongful termination lawsuit is designed to make the injured worker financiall
 <p class="txt-hlt bg-bx ulk-bg pd_v-30 pd_h-30" style="text-align:center;"><em><strong>Facing wrongful termination or constructive discharge in ${city}? Do not sign away your rights. Call Atoyan Law Firm at <a href="tel:747888-0077">(747) 888-0077</a> for a confidential, no-cost case review.</strong></em></p>
 
 
+
+<h2 class="h2dav">Tameny Claims: Termination in Violation of Fundamental Public Policy</h2>
+
+Under the landmark California Supreme Court decision <em>Tameny v. Atlantic Richfield Co.</em> (1980), an employer commits a serious common-law tort when it terminates an employee for reasons that violate fundamental public policy.
+
+<h3 class="h3dav">1. The Four Pillars of a Valid Tameny Public Policy Claim</h3>
+To maintain a Tameny wrongful discharge tort in California, the public policy violated must be:
+<ol>
+  <li>Delineated in either a constitutional or statutory provision (such as the California Constitution, Labor Code, Government Code, or Penal Code).</li>
+  <li>"Public" in the sense that it inures to the benefit of the public at large, rather than serving solely the private interests of the employer or employee.</li>
+  <li>Well-established at the time of the discharge.</li>
+  <li>Substantial and fundamental.</li>
+</ol>
+
+Classic Tameny violations include terminating an employee for refusing to commit perjury, firing an employee for reporting antitrust price-fixing, discharging a worker for serving on a jury, or terminating an employee for exercising their statutory political rights under California Labor Code § 1101.
+
+<h3 class="h3dav">2. The Tremendous Value of Tameny Tort Remedies</h3>
+A Tameny claim is a tort, not merely a contract claim. This means an injured employee in ${city} can recover <strong>full emotional distress damages</strong> and <strong>punitive damages</strong> under California Civil Code § 3294. Furthermore, because a Tameny claim is a common-law tort, you are not strictly required to exhaust administrative remedies through the CRD before filing in court, providing immediate legal leverage.
+
+<h3 class="h3dav">3. Implied-in-Fact Contract Exceptions Under Foley v. Interactive Data Corp.</h3>
+While California Labor Code § 2922 presumes employment is at-will, that presumption can be overcome by evidence of an <strong>implied-in-fact contract requiring good cause for termination</strong> under the California Supreme Court's ruling in <em>Foley v. Interactive Data Corp.</em> (1988).
+
+Factors proving an implied contract include:
+<ul>
+  <li>Longevity of satisfactory employment service.</li>
+  <li>Repeated promotions, salary increases, and commendations.</li>
+  <li>Written personnel policies and employee handbook guidelines promising progressive discipline prior to termination.</li>
+  <li>Oral assurances by executive leadership that you would have continuing employment as long as your performance met expectations.</li>
+</ul>
+When an employer abruptly terminates a long-tenured employee without progressive discipline or good cause, they may be liable for breach of implied contract and breach of the implied covenant of good faith and fair dealing.
+
+<p class="txt-hlt bg-bx ulk-bg pd_v-30 pd_h-30" style="text-align:center;"><em><strong>Were you terminated in violation of California public policy or fired without cause after years of loyal service in ${city}? Atoyan Law Firm fights for wrongful termination victims. Call <a href="tel:747888-0077">(747) 888-0077</a>.</strong></em></p>
+
+
 ${buildEvidentiaryDeepDive("Wrongful Termination and Unlawful Firing", city)}
 
 ${buildCorporateDefensePlaybook("Wrongful Termination and Unlawful Firing", city)}
@@ -1389,27 +1538,32 @@ Wrongful termination takes a toll on everything. Your income. Your health. Your 
 
 
 // -----------------------------------------------------------------------------
-// COMPREHENSIVE CALIFORNIA EMPLOYMENT LITIGATION DEPTH EXPANSION (2,000+ WORDS)
+// COMPREHENSIVE CALIFORNIA EMPLOYMENT LITIGATION DEPTH EXPANSION (2,500-3,500+ WORDS)
 // -----------------------------------------------------------------------------
-
 
 function buildIndustryScenarios(topicName: string, city: string): string {
   return `
 <h2 class="h2dav">Industry-Specific Scenarios Across ${city} Workplaces</h2>
 
-Every industry in California possesses its own distinct workplace culture, management hierarchies, and regulatory pressures. In ${city}, unlawful practices take unique forms depending on the operational environment:
+Every industry throughout California possesses its own distinct workplace culture, operational tempo, management hierarchies, and regulatory pressures. In ${city}, unlawful workplace conduct rarely looks like a textbook violation. Instead, it takes nuanced, industry-specific forms designed to exploit workplace vulnerabilities:
 
-<h3 class="h3dav">1. Entertainment Studios, Post-Production, and Media Companies</h3>
-In the entertainment and media hubs of ${city}, freelance arrangements, unpredictable production schedules, and intense creative pressure are routinely abused by production companies. Workers frequently experience unlawful treatment masked as "paying your dues" or "creative collaboration." Long hours without meal breaks, off-the-clock wrap duties, and retaliatory blacklisting against crew members who speak up are severe violations of California law.
+<h3 class="h3dav">1. Entertainment Studios, Post-Production, and Media Production</h3>
+In the entertainment, streaming, and digital production hubs of ${city}, corporate executives routinely abuse freelance structures, project-based deadlines, and intense creative pressure. Workers frequently experience systemic mistreatment masked as "creative collaboration" or "paying your industry dues." Long 14-hour shoot days without statutory meal or rest breaks, off-the-clock wrap duties, illegal misclassification of crew members as independent contractors, and retaliatory industry blacklisting against individuals who report sexual harassment or safety hazards violate fundamental California statutes.
 
-<h3 class="h3dav">2. Healthcare Networks, Hospitals, and Medical Facilities</h3>
-Healthcare workers in ${city} operate in high-stress clinical settings under chronic understaffing. Hospital administrators frequently pressure nurses, medical assistants, and technicians to skip statutory 30-minute meal breaks or remain on call with hospital pagers during rest periods. Furthermore, healthcare workers who report unsafe nurse-to-patient ratios or patient safety hazards face aggressive retaliation in violation of California Health and Safety Code § 1278.5 and Labor Code § 1102.5.
+<h3 class="h3dav">2. Healthcare Networks, Hospitals, and Clinical Facilities</h3>
+Healthcare professionals in ${city} operate in demanding clinical settings under chronic institutional understaffing. Hospital administrators frequently pressure registered nurses, medical assistants, respiratory therapists, and technicians to skip their 30-minute off-duty meal breaks or remain tethered to hospital radios and pagers during rest periods. Furthermore, clinical staff who report patient safety violations, dangerous nurse-to-patient ratios, or medication errors face swift, retaliatory discipline in direct violation of California Health and Safety Code § 1278.5 and California Labor Code § 1102.5.
 
-<h3 class="h3dav">3. Logistics, Warehousing, and Supply Chain Centers</h3>
-In distribution facilities and logistics hubs, automated monitoring systems, strict quotas, and electronic scanners are weaponized against workers. Employees are penalized for taking bathroom breaks, subjected to off-the-clock bag checks at facility exits, and terminated under automated attendance policies when taking protected medical leave.
+<h3 class="h3dav">3. Technology Companies, Software Startups, and Silicon Beach Hubs</h3>
+Across high-tech firms, software startups, and venture-funded companies in Southern California, employers weaponize equity compensation against workers. Tech professionals routinely report "vesting cliff terminations"—where companies abruptly fire engineers or product managers weeks before substantial stock options or equity grants vest. Additionally, tech companies frequently misclassify software developers as exempt from overtime under California Labor Code § 515.5 without satisfying the strict statutory salary and discretionary duty thresholds, while enforcing unlawful non-compete agreements that violate California Business and Professions Code § 16600.
 
-<h3 class="h3dav">4. Hospitality, Food Service, and Retail Establishments</h3>
-In restaurants, bars, and retail operations across ${city}, workers are vulnerable to off-the-clock side work, illegal tip pooling, and managers skimming gratuities. When shift workers request medical accommodations or report sexual harassment from customers or head chefs, management often cuts their scheduled shifts to zero instead of conducting an investigation.
+<h3 class="h3dav">4. Logistics, Warehousing, and Inland Distribution Centers</h3>
+In regional supply chain centers, fulfillment facilities, and distribution hubs serving ${city}, electronic monitoring algorithms and punishing production quotas are weaponized against warehouse staff. Employees are penalized by automated attendance tracking for taking restroom breaks, forced to undergo off-the-clock security bag checks at facility exits, and terminated when taking protected medical leave under the California Family Rights Act (CFRA).
+
+<h3 class="h3dav">5. Construction, Commercial Building Trades, and Public Works</h3>
+In commercial construction, infrastructure projects, and residential developments across ${city}, general contractors and subcontractors frequently evade wage and hour laws. Workers are subjected to unlawful day-rate arrangements, denied prevailing wage rates on public works projects in violation of California Labor Code §§ 1771 and 1774, and denied separate hourly compensation for non-productive standby time under Labor Code § 226.2. Workers who report dangerous scaffolding, trenching hazards, or lack of personal protective equipment face immediate termination in violation of California Labor Code § 6310.
+
+<h3 class="h3dav">6. Hospitality, Luxury Hotels, and Fine Dining Establishments</h3>
+In restaurants, boutique hotels, bars, and catering operations across ${city}, service employees face pervasive wage theft and hostile working environments. Shift workers are routinely subjected to off-the-clock prep work, illegal tip pooling where managers or shift leads skim gratuities in violation of California Labor Code § 351, and sudden shift cancellations without reporting time pay under IWC Wage Orders. When staff report sexual harassment by high-spending guests, kitchen managers, or head chefs, management frequently responds by slashing their scheduled shifts to zero instead of protecting them.
 `.trim();
 }
 
@@ -1417,22 +1571,35 @@ function buildEvidentiaryDeepDive(topicName: string, city: string): string {
   return `
 <h2 class="h2dav">How California Courts Evaluate Evidence in ${topicName} Lawsuits</h2>
 
-Proving an employment law claim in California rarely relies on a single "smoking gun" document where an employer openly admits wrongdoing. Employers are coached by human resources departments and defense counsel to sanitize written records and conceal illegal conduct behind standard corporate jargon.
+Proving an employment law claim in California rarely relies on a single "smoking gun" document where an employer openly admits wrongdoing. Sophisticated employers in ${city} are coached by human resources directors and corporate defense counsel to sanitize internal records, mask discriminatory animus behind bureaucratic jargon, and manufacture false paper trails.
 
-In California Superior Courts, liability is established through a mosaic of direct and circumstantial evidence evaluated under landmark legal doctrines:
+In California Superior Courts, liability is established through a mosaic of direct, circumstantial, and forensic evidence evaluated under landmark California legal doctrines:
 
 <h3 class="h3dav">1. The Power of Circumstantial and Comparative Evidence</h3>
-Under California law, circumstantial evidence carries the exact same legal weight as direct evidence. In ${topicName.toLowerCase()} cases, circumstantial proof often centers on <strong>comparative treatment</strong>.
+Under California law, circumstantial evidence carries the exact same legal weight as direct testimony. In ${topicName.toLowerCase()} cases, circumstantial proof often centers on <strong>comparative treatment</strong>.
 
-Did supervisors enforce rules strictly against you while excusing identical conduct from colleagues? Were other workers given flexible schedules, client assignments, or promotional mentorship while you were systematically shut out? Establishing that similarly situated coworkers were treated more favorably is one of the most persuasive methods of proving unlawful corporate bias under the framework established in <em>McDonnell Douglas Corp. v. Green</em> and reaffirmed in California courts.
+Did management enforce attendance policies or quality metrics strictly against you while excusing identical conduct from coworkers outside your protected group? Were other employees granted schedule flexibility, assigned high-value accounts, or provided promotional mentorship while you were systematically marginalized? Proving that similarly situated coworkers received preferential treatment is one of the most powerful ways to expose unlawful bias under the framework established in <em>McDonnell Douglas Corp. v. Green</em> and reaffirmed under California law in <em>Harris v. City of Santa Monica</em> (2013).
 
 <h3 class="h3dav">2. Suspicious Timing and Temporal Proximity</h3>
-In employment litigation, timing is often everything. When adverse actions follow closely on the heels of a protected activity—such as requesting accommodations, reporting unpaid wages, or complaining about discrimination—California courts recognize <strong>temporal proximity</strong> as powerful circumstantial proof of retaliatory causation.
+In California employment litigation, timing is critical. When adverse employment actions follow closely after an employee engages in protected activity—such as requesting pregnancy leave, reporting wage theft, objecting to sexual comments, or requesting disability accommodations—courts recognize <strong>temporal proximity</strong> as compelling circumstantial proof of retaliatory causation.
 
-Under California Senate Bill 497, when adverse action occurs within <strong>90 days</strong> of protected activity, California law establishes a formal rebuttable presumption of retaliation. The burden immediately falls on the employer to prove legitimate non-retaliatory reasons.
+Under California Senate Bill 497 (enacted as California Labor Code §§ 98.6 and 1102.5), when an employer takes any adverse action against a worker within <strong>90 days</strong> of protected activity, California law establishes a <strong>rebuttable presumption of retaliation</strong>. The legal burden immediately shifts to the employer to prove by clear evidence that its decision was completely unrelated to the employee's protected complaint.
 
 <h3 class="h3dav">3. "Me-Too" Witness Evidence Under California Law</h3>
-Under California appellate precedent established in <em>Johnson v. United Cerebral Palsy of Greater Los Angeles</em> (2009), testimony from former employees who were subjected to similar mistreatment by the same supervisors is fully admissible as "me-too" evidence. Showing that an employer has a consistent pattern or practice of mistreating workers in ${city} dismantles the defense that your experience was merely an "isolated misunderstanding."
+Under California appellate precedent established in <em>Johnson v. United Cerebral Palsy of Greater Los Angeles</em> (2009) and reinforced in <em>Pantoja v. Anton</em> (2011), testimony from former employees who experienced similar mistreatment by the same supervisors or managing agents is fully admissible as "me-too" evidence.
+
+Showing that an employer in ${city} has an ongoing pattern or practice of mistreating employees completely dismantles the defense that your treatment was an "isolated misunderstanding" or an "unfortunate interpersonal personality clash."
+
+<h3 class="h3dav">4. Digital Forensics, Electronic Trails, and Internal Audit Logs</h3>
+In today's digital workplace, crucial evidence is preserved in corporate databases. At Atoyan Law Firm, our attorneys utilize digital discovery to uncover:
+<ul>
+  <li><strong>Slack, Microsoft Teams, and Chat Channels</strong>: Informal internal messaging platforms where supervisors, team leads, and human resources representatives let their guard down and reveal discriminatory bias or retaliatory frustration.</li>
+  <li><strong>Document Metadata and Version Histories</strong>: Electronic timestamps revealing whether a negative performance review or disciplinary memo was authored weeks after the fact and backdated to create a false record.</li>
+  <li><strong>Security Keycard Badge Logs and VPN Access Records</strong>: Objective electronic logs proving hours worked, arrival times, and presence on site, refuting false employer claims of unexcused absences.</li>
+</ul>
+
+<h3 class="h3dav">5. Spoliation of Evidence and Adverse Inference Instructions</h3>
+California law imposes an affirmative legal duty on employers to preserve all relevant documents, emails, text messages, and internal records the moment litigation is reasonably anticipated. When an employer deletes emails, wipes an employee's laptop, or alters personnel records, California courts can impose severe evidentiary sanctions. Under California Evidence Code §§ 412 and 413, and California Civil Jury Instruction (CACI) No. 204, the trial judge can instruct the jury to infer that the destroyed evidence would have proven the employer's unlawful liability.
 `.trim();
 }
 
@@ -1440,16 +1607,30 @@ function buildCorporateDefensePlaybook(topicName: string, city: string): string 
   return `
 <h2 class="h2dav">The Corporate Defense Playbook: How Employers Try to Defeat Claims</h2>
 
-When employees challenge unlawful workplace practices, corporate defense law firms deploy predictable tactics designed to exhaust, intimidate, and discourage workers from pursuing justice. At Atoyan Law Firm, our attorneys anticipate these strategies from day one:
+When employees challenge unlawful workplace practices in ${city}, corporate defense firms deploy predictable, aggressive strategies designed to exhaust, intimidate, and financially strain workers into abandoning their rights. At Atoyan Law Firm, our litigation team anticipates and neutralizes these corporate maneuvers from day one:
 
-<h3 class="h3dav">1. The Manufactured "Legitimate Business Reason"</h3>
-Employers will comb through years of your employment history searching for any minor blemish—a late arrival from six months ago, a typo in a report, or a missed phone call—to fabricate a retroactive excuse. California courts look past this smoke screen by examining whether the employer followed its own progressive discipline guidelines, whether the punishment fit the supposed infraction, and whether the timing aligns with protected complaints.
+<h3 class="h3dav">1. The Manufactured "Legitimate Business Reason" and Pretextual PIP</h3>
+The primary defense to any California employment lawsuit is asserting that the termination, demotion, or adverse action was motivated by a "legitimate, non-discriminatory business reason." Employers routinely comb through years of personnel files searching for any minor blemish—a late arrival from six months ago, an informal customer remark, or an administrative error.
 
-<h3 class="h3dav">2. The Biased Internal HR "Investigation"</h3>
-Human resources departments exist to protect the company from legal liability, not to advocate for employees. When workers report ${topicName.toLowerCase()}, companies often stage an internal "investigation" conducted by an internal manager or paid defense investigator. These investigations frequently interview only management-friendly witnesses, ignore key digital evidence, and conclude with a predetermined finding that "no wrongdoing occurred."
+Employers frequently weaponize a <strong>Performance Improvement Plan (PIP)</strong> containing vague, subjective metrics and unrealistic deadlines designed specifically to create a paper trail justifying termination. California courts look past this corporate pretext by examining whether the employer followed its own progressive discipline guidelines, whether the punishment fit the infraction, and whether the timing correlates with the employee's protected complaints.
 
-<h3 class="h3dav">3. The Mandatory Arbitration Trap</h3>
-Many California workers unknowingly signed mandatory arbitration agreements during their electronic onboarding process. While companies use arbitration to avoid public jury trials, California law strictly limits unfair arbitration clauses. Under the landmark California Supreme Court decision <em>Armendariz v. Foundation Health Psychcare Services, Inc.</em>, an employment arbitration agreement is unenforceable if it is procedurally or substantively unconscionable. If an arbitration clause lacks bilateral remedies, limits statutory damages, restricts discovery, or forces the employee to pay arbitrator fees, California courts will strike it down.
+<h3 class="h3dav">2. The Biased Internal HR "Investigation" Shield</h3>
+Human resources departments exist to protect the corporation from financial liability, not to safeguard workers. When employees report ${topicName.toLowerCase()}, companies often stage an internal "investigation" conducted by an internal HR manager or outside defense attorney.
+
+These internal investigations frequently interview only management-friendly witnesses, ignore key digital evidence, refuse to review the employee's documentation, and issue a predetermined report concluding that "no policy violation occurred." Atoyan Law Firm deconstructs these biased reports during depositions, demonstrating that the investigation was a self-serving sham.
+
+<h3 class="h3dav">3. The Mandatory Arbitration Trap and Unconscionability</h3>
+Many California workers unknowingly signed mandatory arbitration agreements buried in electronic onboarding packets. Corporations use arbitration to avoid public jury trials, limit discovery, and shield their executives from public accountability.
+
+However, California law strictly regulates unfair arbitration agreements. Under the landmark California Supreme Court decision <em>Armendariz v. Foundation Health Psychcare Services, Inc.</em>, an arbitration clause is unenforceable if it is procedurally and substantively unconscionable. If an arbitration clause lacks mutual discovery, limits statutory damages, restricts remedies, or forces the worker to pay arbitration fees, California courts will strike it down and allow the lawsuit to proceed in open court.
+
+<h3 class="h3dav">4. The Severance Agreement Ambush and the Silenced No More Act</h3>
+When terminating an employee, employers frequently offer a severance package—typically two to four weeks of salary—in exchange for a complete release of all legal claims under California Civil Code § 1542. Employers use financial desperation to pressure workers into signing away claims worth tens or hundreds of thousands of dollars.
+
+Crucially, under California's <strong>Silenced No More Act (Senate Bill 331)</strong> and California Government Code § 12964.5, employers are legally prohibited from requiring workers to sign non-disclosure or non-disparagement provisions that prevent them from discussing workplace discrimination, harassment, or illegal conduct. For employees aged 40 and older, federal law under the Older Workers Benefit Protection Act (OWBPA) strictly mandates a 21-day review period and a 7-day revocation window.
+
+<h3 class="h3dav">5. Retaliatory Defamation Threats and Anti-SLAPP Protection</h3>
+Corporate employers occasionally attempt to intimidate whistleblowers by threatening retaliatory lawsuits for "defamation," "breach of fiduciary duty," or "theft of trade secrets." Under California Code of Civil Procedure § 425.16 (California's Anti-SLAPP statute), lawsuits filed against workers for exercising their constitutional right to petition the government or report illegal activity can be dismissed early, with mandatory attorney fees awarded against the employer.
 `.trim();
 }
 
@@ -1457,15 +1638,24 @@ function buildDamagesAndRemediesAnalysis(topicName: string, city: string): strin
   return `
 <h2 class="h2dav">Understanding Your Full Financial Recovery Under California Law</h2>
 
-California statutes are intentionally designed to make injured employees economically whole and impose real financial deterrents on corporate wrongdoers. In a ${topicName.toLowerCase()} lawsuit in ${city}, potential recovery includes:
+California employment statutes are deliberately designed to provide full financial restitution to harmed employees and impose substantial monetary consequences on corporate wrongdoers. In a successful ${topicName.toLowerCase()} claim in ${city}, potential recovery includes:
 
 <ul>
-  <li><strong>Back Pay (Lost Past Earnings)</strong>: The full amount of wages, overtime premiums, bonuses, commissions, and retirement contributions you would have earned from the date of the unlawful action through the date of resolution.</li>
-  <li><strong>Front Pay (Future Lost Earnings)</strong>: Compensation for future economic losses if the employer's unlawful conduct derailed your career progression or if returning to your position is impossible due to hostility.</li>
-  <li><strong>Emotional Distress Damages</strong>: Financial compensation for psychological suffering, anxiety, depression, insomnia, loss of appetite, panic attacks, humiliation, and destruction of professional dignity caused by workplace mistreatment.</li>
-  <li><strong>Statutory and Civil Penalties</strong>: Specific statutory penalties provided under California Labor Code provisions, such as waiting time penalties under § 203 (up to 30 days of daily pay), wage statement penalties under § 226, meal/rest break premiums under § 226.7, and whistleblower penalties under § 1102.5.</li>
-  <li><strong>Punitive Damages</strong>: Under California Civil Code § 3294, if an employer acted with oppression, fraud, or malice—such as upper management knowingly concealing unlawful conduct—juries can award substantial punitive damages to punish the corporation and set a public example.</li>
-  <li><strong>Prevailing Party Attorney Fees</strong>: Under the Fair Employment and Housing Act (Gov Code § 12965) and California Labor Code provisions, a prevailing employee is entitled to have the employer pay all reasonable attorney fees and litigation costs.</li>
+  <li><strong>Back Pay (Past Economic Losses)</strong>: Compensation for all wages, overtime premiums, bonuses, commissions, profit sharing, and retirement 401(k) contributions you would have received from the date of the unlawful action through the date of settlement or trial judgment.</li>
+  <li><strong>Front Pay (Future Economic Losses)</strong>: If reinstatement is impractical or impossible due to hostility, courts award front pay to compensate for future lost earnings and diminished earning capacity until you can secure comparable employment.</li>
+  <li><strong>Loss of Employment Benefits</strong>: The economic cash value of health insurance coverage, COBRA premium reimbursement, dental, vision, life insurance, and accrued paid time off (PTO).</li>
+  <li><strong>Emotional Distress and Compensatory Damages</strong>: Financial compensation for psychological suffering, severe anxiety, depression, insomnia, humiliation, panic attacks, and destruction of professional standing. Crucially, unlike federal law which caps emotional distress damages, California's Fair Employment and Housing Act (FEHA) contains <strong>no statutory cap</strong> on emotional distress damages.</li>
+  <li><strong>Statutory and Civil Penalties</strong>:
+    <ul>
+      <li><strong>Labor Code § 203 Waiting Time Penalties</strong>: Up to 30 days of full daily wages if an employer willfully fails to pay all earned wages immediately upon discharge.</li>
+      <li><strong>Labor Code § 226 Wage Statement Penalties</strong>: Up to $4,000 for failure to provide accurate, itemized pay stubs.</li>
+      <li><strong>Labor Code § 226.7 Break Premiums</strong>: One additional hour of regular pay for each day a meal break was missed, and one additional hour for each day a rest break was denied.</li>
+      <li><strong>Labor Code § 1102.5 Whistleblower Penalties</strong>: Civil penalties of up to $10,000 per violation awarded to the employee.</li>
+    </ul>
+  </li>
+  <li><strong>Punitive Damages Under California Civil Code § 3294</strong>: When an employer acts with oppression, fraud, or malice—such as upper management knowingly concealing workplace abuse or retaliating against a vulnerable worker—a California jury can award significant punitive damages to punish the corporation and deter future misconduct. Under <em>White v. Ultramar, Inc.</em>, malice by corporate managing agents justifies substantial punitive awards.</li>
+  <li><strong>Mandatory Prevailing Party Attorney Fees and Costs</strong>: Under California Government Code § 12965(c)(6) and California Labor Code §§ 218.5 and 1194, an employer that loses an employment lawsuit is legally required to pay all of the employee's reasonable attorney fees and litigation expenses.</li>
+  <li><strong>Prejudgment Interest</strong>: Under California Civil Code § 3287, prejudgment interest accrues at a statutory rate of <strong>10% per annum</strong> on all unpaid wages and liquidated damages from the date they became due.</li>
 </ul>
 `.trim();
 }
@@ -1474,15 +1664,32 @@ function buildAdministrativeRoadmap(topicName: string, city: string): string {
   return `
 <h2 class="h2dav">The Legal Roadmap: From Agency Filing to California Superior Court</h2>
 
-Pursuing a legal claim against an employer in ${city} requires strict adherence to California statutory deadlines and procedural rules. Taking the right steps in the correct sequence ensures your claims remain viable and maximum leverage is maintained:
+Successfully prosecuting an employment lawsuit against an employer in ${city} requires strict compliance with statutory deadlines, administrative prerequisites, and California civil procedure:
 
-<h3 class="h3dav">1. Exhaustion of Administrative Remedies with the CRD or DLSE</h3>
-Before a statutory discrimination, harassment, or retaliation claim can be filed in California state court, you must exhaust your administrative remedies by filing with the California Civil Rights Department (CRD) or Labor Commissioner (DLSE). At Atoyan Law Firm, we typically request an <strong>immediate Right to Sue notice</strong> from the CRD, which allows us to bypass slow administrative investigations and proceed directly into California Superior Court.
+<h3 class="h3dav">1. Administrative Exhaustion with the California Civil Rights Department (CRD)</h3>
+Before an employee can file a civil lawsuit for statutory discrimination, harassment, or retaliation under FEHA, they must first exhaust their administrative remedies with the California Civil Rights Department (CRD).
 
-<h3 class="h3dav">2. Commencing the Lawsuit in California Superior Court</h3>
-Once the Right to Sue notice is issued, we file a formal Complaint in the appropriate California Superior Court venue. The lawsuit initiates formal discovery, including issuing subpoenas for company emails, taking recorded depositions of your supervisors and HR representatives, and forcing the employer to produce personnel files and payroll audit logs.
+Under California Government Code § 12960, employees have <strong>three years</strong> from the date of the unlawful act to file an administrative complaint. While the CRD can conduct an administrative investigation, in high-stakes litigation Atoyan Law Firm requests an <strong>immediate Right to Sue notice</strong>. This allows us to bypass administrative delays and file directly in California Superior Court within one year of issuance.
 
-<h3 class="h3dav">3. Aggressive Settlement Negotiations or Trial by Jury</h3>
-The vast majority of corporate employers prefer to resolve claims confidentially through mediation or settlement once they realize our attorneys have built an unassailable evidentiary record. However, if the employer refuses to offer a fair settlement that reflects your full economic damages and emotional distress, our seasoned trial attorneys will take your case before a California jury to fight for a full verdict and punitive damages.
+<h3 class="h3dav">2. Evaluating Labor Commissioner (DLSE) Claims vs. Direct Civil Lawsuits</h3>
+For wage and hour violations—including unpaid overtime, missed meal and rest breaks, and minimum wage violations—workers can pursue an administrative wage claim (Berman hearing) before the California Labor Commissioner (DLSE) or file a direct civil lawsuit in court. While DLSE hearings are informal, complex claims involving high-dollar damages, executive compensation, or widespread corporate retaliation are almost always more effectively resolved through civil court litigation.
+
+<h3 class="h3dav">3. Complying with Strict Government Claims Act Deadlines for Public Employees</h3>
+If your employer is a public or municipal entity—such as a school district, county hospital, municipal water district, or city agency—California law imposes an extraordinarily strict deadline. Under California Government Code § 911.2, you must file a formal written government tort claim within <strong>six months (180 days)</strong> of the unlawful action before you can sue in court. Missing this six-month deadline permanently forfeits your claims.
+
+<h3 class="h3dav">4. Commencing the Lawsuit and Conducting Aggressive Civil Discovery</h3>
+Once administrative requirements are satisfied, our attorneys file a comprehensive Complaint in California Superior Court. We immediately initiate formal discovery under the California Civil Discovery Act:
+<ul>
+  <li>Serving demands for inspection to obtain electronic emails, internal memos, and payroll databases.</li>
+  <li>Demanding your complete personnel file, payroll records, and signed documents under California Labor Code §§ 1198.5 and 226(c).</li>
+  <li>Subpoenaing third-party records, including external HR consultants and background check providers.</li>
+  <li>Taking sworn, recorded video depositions of corporate executives, supervisors, and HR representatives to lock in their testimony and expose contradictions.</li>
+</ul>
+
+<h3 class="h3dav">5. Defeating Defense Motions for Summary Judgment (CCP § 437c)</h3>
+In almost every major employment case, the employer's defense attorneys file a Motion for Summary Judgment attempting to have the case dismissed before trial. Corporate defense firms argue there is "no triable issue of material fact." Atoyan Law Firm meticulously defeats these motions by presenting concrete evidence of pretext, contradictory witness statements, and suspicious temporal timing, forcing the employer to face trial.
+
+<h3 class="h3dav">6. Private Mediation, High-Stakes Settlement, or Trial by California Jury</h3>
+Once corporate employers face the prospect of public trial, high financial exposure, and our unyielding evidentiary record, the vast majority agree to participate in private mediation before a retired California Superior Court judge. If the employer refuses to offer a settlement that fully compensates your economic losses and emotional suffering, our veteran trial litigators will present your case before a California jury to fight for a complete verdict and punitive damages.
 `.trim();
 }

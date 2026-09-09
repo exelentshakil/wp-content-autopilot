@@ -711,7 +711,7 @@ CREATE POLICY "Public full access" ON public.generation_reports FOR ALL USING (t
                 <span>Atomic REST Persistence &amp; Cache Purge</span>
               </div>
               <p className="text-muted leading-relaxed">
-                All 27 ACF subfields, cloned client reviews, sidebar practice areas, and <code className="text-accent">_inpost_head_script</code> postmeta are dispatched in a single HTTP payload. The bridge plugin then purges WP Rocket immediately.
+                All 27 ACF subfields, cloned client reviews, and sidebar practice areas are dispatched in a clean atomic HTTP payload. The bridge plugin then purges WP Rocket immediately.
               </p>
             </div>
           </div>

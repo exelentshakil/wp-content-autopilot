@@ -53,7 +53,7 @@ export async function POST(req: Request) {
     });
 
     // 3. Generate Accordion & Schema.org JSON-LD
-    const accordionHtml = generateEasyAccordionHtml(content.faqs);
+    const accordionHtml = content.accordionShortcode || generateEasyAccordionHtml(content.faqs);
     const faqSchemaJsonLd = generateFaqSchemaJsonLd(content.faqs);
 
     // 4. Also provide formatted body for backward compatibility

@@ -1020,12 +1020,7 @@ export default function Home() {
                       </button>
                     </div>
 
-                    <div className="p-3.5 rounded-xl border border-good/30 bg-good/5 text-xs text-muted space-y-1">
-                      <span className="font-semibold text-good block">Zero Script Injection Policy (David Feedback):</span>
-                      <p>
-                        WordPress standard editor body (<code className="text-text font-mono">post_content</code>) strictly remains empty (<code className="text-text font-mono">""</code>). Extra head script fields (<code className="text-text font-mono">_inpost_head_script</code>, <code className="text-text font-mono">synth_header_script</code>) and raw CSS/JavaScript are completely excluded from content fields.
-                      </p>
-                    </div>
+
                   </div>
 
                   {/* Topic-Specific FAQs Generated for this Practice Area */}

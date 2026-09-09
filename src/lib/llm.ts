@@ -37,7 +37,7 @@ CRITICAL CLIENT RULES (CLIENT DAVID - ATOYAN LAW FIRM):
 
 2. THREE UNIQUE CONTENT SECTIONS (ACF TABS 2, 4, 6):
    - 1ST: SERVICES CONTENT (Tab 2 - servicesContent):
-     Must be 2,000+ words of deep, high-authority California employment legal analysis.
+     Must be 2,500-3,500+ words of deep, high-authority California employment legal analysis ("strictly huge content").
      Analyze the exact topic under California law with thorough real-world scenarios, legal standards, employer tactics, employee rights, and evidence gathering.
      Structure with:
        * Short punchy paragraphs (1-3 sentences max). No dense walls of text.
@@ -80,7 +80,7 @@ OUTPUT MUST BE VALID JSON with this exact schema:
   "heroTitle": "string ([City] [Topic] Employment Lawyers - [Subtopic])",
   "servicesHeading": "string",
   "servicesSubHeading": "string",
-  "servicesContent": "string (2,000+ words HTML with <h2 class=\"h2dav\">, <h3 class=\"h3dav\">, <p>, <strong>, <ul><li>, and topic-specific callout boxes)",
+  "servicesContent": "string (2,500-3,500+ words HTML with <h2 class=\"h2dav\">, <h3 class=\"h3dav\">, <p>, <strong>, <ul><li>, and topic-specific callout boxes)",
   "howDoHeading": "string",
   "howDoContent": "string",
   "compensationHeading": "string",
@@ -222,7 +222,7 @@ async function generateAtoyanOpenAI(
   apiKey: string,
   systemPrompt?: string,
 ): Promise<AtoyanLegalContent> {
-  const prompt = `Write comprehensive, California employment law practice area content for the target topic/keyword: "${keyword}" in ${city}.\nEnsure all sections match Atoyan Law Firm's punchy, compassionate tone and include 8-10 FAQs.`;
+  const prompt = `Write comprehensive, authoritative California employment law practice area content (strictly huge content: 2,500-3,500+ words in servicesContent) for the target topic/keyword: "${keyword}" in ${city}.\nEnsure all sections match Atoyan Law Firm's punchy, compassionate tone, question-based <h2 class="h2dav"> and <h3 class="h3dav"> subheadings, statutory depth (FEHA, Labor Code §§ 98.6, 201-203, 226.7, 510, 512, 1102.5, SB 497, case law), topic callouts, and 8-10 FAQs.`;
   const activePrompt =
     systemPrompt && !systemPrompt.includes("David") && systemPrompt.includes("Atoyan")
       ? systemPrompt.trim()
@@ -245,7 +245,7 @@ async function generateAtoyanOpenAI(
           response_format: { type: "json_object" },
           temperature: 0.65,
         }),
-        signal: AbortSignal.timeout(60_000),
+        signal: AbortSignal.timeout(120_000),
       });
 
       if (!res.ok) continue;
@@ -272,7 +272,7 @@ async function generateAtoyanGemini(
   apiKey: string,
   systemPrompt?: string,
 ): Promise<AtoyanLegalContent> {
-  const prompt = `Target Topic: "${keyword}" in ${city}.\nWrite high-authority California employment legal practice area content for Atoyan Law Firm following all system guidelines. Output valid JSON.`;
+  const prompt = `Target Topic: "${keyword}" in ${city}.\nWrite high-authority California employment legal practice area content (strictly huge content: 2,500-3,500+ words in servicesContent) for Atoyan Law Firm following all system guidelines. Output valid JSON.`;
   const activePrompt =
     systemPrompt && !systemPrompt.includes("David") && systemPrompt.includes("Atoyan")
       ? systemPrompt.trim()
@@ -292,7 +292,7 @@ async function generateAtoyanGemini(
             temperature: 0.65,
           },
         }),
-        signal: AbortSignal.timeout(60_000),
+        signal: AbortSignal.timeout(120_000),
       });
 
       if (!res.ok) continue;

@@ -72,12 +72,53 @@ export function renderTextAsSvgPath(
   return { pathData: p.toPathData(2), fontSize };
 }
 
+let cachedPsdOverlayBuffer: Buffer | null = null;
+
+/**
+ * Retrieves or builds the client authentic 1920x451 PSD banner overlay template.
+ * Maps directly from docs/topImage.psd preserving the exact client styling:
+ * - Left 0..465px: Authentic Atoyan A watermark and warm #9c6941 / brown styling from Layer 0.
+ * - Right 459..1920px: Client exact Photoshop Gradient Fill 1 fading smoothly into the underlying photo.
+ */
+export async function getAtoyanBannerOverlay(): Promise<Buffer | null> {
+  if (cachedPsdOverlayBuffer) return cachedPsdOverlayBuffer;
+
+  const templatePath = path.join(process.cwd(), "public/images/atoyan-psd-banner-template.png");
+  if (fs.existsSync(templatePath)) {
+    try {
+      cachedPsdOverlayBuffer = fs.readFileSync(templatePath);
+      return cachedPsdOverlayBuffer;
+    } catch (err) {
+      console.warn("Could not read atoyan-psd-banner-template.png:", err);
+    }
+  }
+
+  // The pre-extracted PSD template is stored at public/images/atoyan-psd-banner-template.png
+  // If not found, falls through to compositeAtoyanBanner SVG branding fallback.
+
+  return null;
+}
+
 export async function compositeAtoyanBanner(
   imageBuffer: Buffer
 ): Promise<{ buffer: Buffer; width: number; height: number }> {
   const width = 1920;
   const height = 451;
 
+  // Direct reference to the client PSD template (docs/topImage.psd)
+  const psdOverlay = await getAtoyanBannerOverlay();
+
+  if (psdOverlay) {
+    const brandedBuffer = await sharp(imageBuffer)
+      .resize(width, height, { fit: "cover" })
+      .composite([{ input: psdOverlay, top: 0, left: 0 }])
+      .jpeg({ quality: 90 })
+      .toBuffer();
+
+    return { buffer: brandedBuffer, width, height };
+  }
+
+  // Graceful fallback SVG overlay if PSD template is unavailable
   let logoB64 = "";
   try {
     const logoPath = path.join(process.cwd(), "public/images/atoyan-logo-icon.png");
