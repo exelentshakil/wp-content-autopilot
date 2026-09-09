@@ -92,9 +92,6 @@ export default function Home() {
   const [copiedSchema, setCopiedSchema] = useState(false);
   const [activeTab, setActiveTab] = useState<"content" | "images" | "faqs" | "acf">("content");
   const [accordionShortcode, setAccordionShortcode] = useState("");
-  const [accordionsList, setAccordionsList] = useState<
-    Array<{ id: number; title: string; shortcode: string; topic?: string }>
-  >([]);
   const [copiedShortcode, setCopiedShortcode] = useState(false);
 
   // Admin password protection for live publishing
@@ -126,23 +123,15 @@ export default function Home() {
       })
       .catch(() => null);
 
-    fetch("/api/accordions")
-      .then((res) => res.json())
-      .then((data) => {
-        if (data?.accordions && Array.isArray(data.accordions)) {
-          setAccordionsList(data.accordions);
-        }
-      })
-      .catch(() => null);
   }, []);
 
   const sampleKeywords = [
-    { title: "Burbank Race Discrimination Attorney", code: '[sp_easyaccordion id="4355"]' },
-    { title: "Burbank Wrongful Termination Lawyer", code: '[sp_easyaccordion id="4176"]' },
-    { title: "Burbank Wage Theft Attorney", code: '[sp_easyaccordion id="4167"]' },
-    { title: "Burbank Sexual Harassment Lawyer", code: '[sp_easyaccordion id="3464"]' },
-    { title: "Fresno Meal and Rest Break Violations", code: '[sp_easyaccordion id="4095"]' },
-    { title: "Burbank Disability Discrimination Lawyer", code: '[sp_easyaccordion id="3894"]' },
+    "Burbank Race Discrimination Attorney",
+    "Burbank Wrongful Termination Lawyer",
+    "Burbank Wage Theft Attorney",
+    "Burbank Sexual Harassment Lawyer",
+    "Fresno Meal and Rest Break Violations",
+    "Burbank Disability Discrimination Lawyer",
   ];
 
   const handleGenerate = async () => {
@@ -519,65 +508,21 @@ export default function Home() {
               <div className="space-y-3 pt-2 border-t border-line/50 text-xs">
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="text-muted font-medium">Practice Area Presets:</span>
-                  {sampleKeywords.map((k) => (
+                  {sampleKeywords.map((title) => (
                     <button
-                      key={k.title}
+                      key={title}
                       type="button"
-                      onClick={() => {
-                        setKeyword(k.title);
-                        setAccordionShortcode(k.code);
-                      }}
+                      onClick={() => setKeyword(title)}
                       className="px-2.5 py-1 rounded-lg border border-line bg-panel-2 hover:bg-panel text-muted hover:text-text transition flex items-center gap-1.5"
                     >
-                      <span>{k.title}</span>
-                      <span className="font-mono text-[10px] text-accent/80 bg-panel px-1 rounded">{k.code.replace('[sp_easyaccordion id="', '#').replace('"]', '')}</span>
+                      <span>{title}</span>
                     </button>
                   ))}
                 </div>
 
-                {/* Accordion Shortcode & Schedule Controls */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2 border-t border-line/40">
-                  <div className="space-y-1.5">
-                    <div className="flex items-center justify-between">
-                      <label className="text-muted font-medium flex items-center gap-1.5">
-                        <Layers className="size-3.5 text-accent" />
-                        <span>Easy Accordion Shortcode (Tab 6 Compensation):</span>
-                      </label>
-                      {accordionShortcode && (
-                        <span className="text-[11px] font-mono text-accent font-semibold">{accordionShortcode}</span>
-                      )}
-                    </div>
-                    <div className="flex gap-2">
-                      <input
-                        type="text"
-                        placeholder='e.g. [sp_easyaccordion id="4355"]'
-                        value={accordionShortcode}
-                        onChange={(e) => setAccordionShortcode(e.target.value)}
-                        className="flex-1 rounded-lg border border-line bg-panel-2 px-3 py-1.5 text-xs text-text font-mono focus:outline-none focus:ring-1 focus:ring-accent"
-                      />
-                      {accordionsList.length > 0 && (
-                        <select
-                          onChange={(e) => {
-                            if (e.target.value) setAccordionShortcode(e.target.value);
-                          }}
-                          value={accordionsList.some((a) => a.shortcode === accordionShortcode) ? accordionShortcode : ""}
-                          className="rounded-lg border border-line bg-panel-2 px-2 py-1.5 text-xs text-text focus:outline-none focus:ring-1 focus:ring-accent max-w-[210px] truncate"
-                        >
-                          <option value="">Choose WP Accordion...</option>
-                          {accordionsList.map((acc) => (
-                            <option key={acc.id} value={acc.shortcode}>
-                              {acc.title} (#{acc.id})
-                            </option>
-                          ))}
-                        </select>
-                      )}
-                    </div>
-                    <p className="text-[11px] text-muted">
-                      Auto-mapped to practice area or pick from {accordionsList.length || 45} live Easy Accordion posts. Embedded into Compensation Section.
-                    </p>
-                  </div>
-
-                  <div className="space-y-1.5">
+                {/* Optional Schedule Publication */}
+                <div className="pt-2 border-t border-line/40">
+                  <div className="space-y-1.5 max-w-md">
                     <div className="flex items-center gap-1.5 text-muted font-medium">
                       <Clock className="size-3.5 text-accent" />
                       <span>Optional Schedule Publication:</span>
