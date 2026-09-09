@@ -1,3 +1,4 @@
+import { trackPublishedArticle } from "./article-tracker";
 import type {
   Settings,
   AtoyanLegalContent,
@@ -402,6 +403,17 @@ export async function publishAtoyanPage(params: {
     );
   }
   await Promise.allSettled(linkAttachmentPromises);
+
+  // Automatically track newly published live article in the internal SEO link tracker
+  trackPublishedArticle({
+    slug: content.slug,
+    title: content.heroTitle,
+    keyword: content.keyword,
+    city: content.city,
+    category: content.keyword.toLowerCase(),
+    url: pageLink || `https://www.atoyanlaw.com/practice-areas/employment-law/${content.slug}/`,
+    publishedAt: new Date().toISOString(),
+  });
 
   return {
     mode: "live",

@@ -196,3 +196,14 @@ export interface GenerationReportItem {
   pageUrl?: string;
   status: "published" | "scheduled" | "draft";
 }
+
+export interface TrackedArticle {
+  slug: string;
+  title: string;
+  keyword: string;
+  city?: string;
+  category: string;
+  url: string;
+  publishedAt?: string;
+  isHub?: boolean;
+}

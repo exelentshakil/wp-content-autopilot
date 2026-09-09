@@ -1,3 +1,5 @@
+import { generateContextualCta, injectInternalLinks, formatHowDoContentWithLinks, formatCompensationContentWithLinks } from "./seo-linking";
+import { trackPublishedArticle } from "./article-tracker";
 import type { AtoyanLegalContent, AtoyanFaq } from "./types";
 import { resolveDefaultAccordionShortcode, ATOYAN_PHONE, ATOYAN_CONTACT_URL } from "./atoyan";
 
@@ -42,25 +44,99 @@ export function generateAtoyanSimulated(keyword: string, city: string): AtoyanLe
   const topic = detectTopic(keyword);
   const shortcode = resolveDefaultAccordionShortcode(keyword, city);
 
+  let raw: AtoyanLegalContent;
   switch (topic) {
     case "race_discrimination":
-      return buildRaceDiscriminationContent(keyword, city, safeSlug, shortcode);
+      raw = buildRaceDiscriminationContent(keyword, city, safeSlug, shortcode);
+      break;
     case "wage_theft":
-      return buildWageTheftContent(keyword, city, safeSlug, shortcode);
+      raw = buildWageTheftContent(keyword, city, safeSlug, shortcode);
+      break;
     case "meal_breaks":
-      return buildMealBreaksContent(keyword, city, safeSlug, shortcode);
+      raw = buildMealBreaksContent(keyword, city, safeSlug, shortcode);
+      break;
     case "sexual_harassment":
-      return buildHarassmentContent(keyword, city, safeSlug, shortcode);
+      raw = buildHarassmentContent(keyword, city, safeSlug, shortcode);
+      break;
     case "disability":
-      return buildDisabilityContent(keyword, city, safeSlug, shortcode);
+      raw = buildDisabilityContent(keyword, city, safeSlug, shortcode);
+      break;
     case "family_medical_leave":
-      return buildLeaveContent(keyword, city, safeSlug, shortcode);
+      raw = buildLeaveContent(keyword, city, safeSlug, shortcode);
+      break;
     case "workplace_retaliation":
-      return buildRetaliationContent(keyword, city, safeSlug, shortcode);
+      raw = buildRetaliationContent(keyword, city, safeSlug, shortcode);
+      break;
     case "wrongful_termination":
     default:
-      return buildWrongfulTerminationContent(keyword, city, safeSlug, shortcode);
+      raw = buildWrongfulTerminationContent(keyword, city, safeSlug, shortcode);
+      break;
   }
+
+  // 1. Enforce 100% topic-specific, city-tailored CTAs with toll-free phone links
+  const earlyCta = generateContextualCta({ topic: keyword, city, position: "early" });
+  const midCta = generateContextualCta({ topic: keyword, city, position: "mid" });
+  const closingCta = generateContextualCta({ topic: keyword, city, position: "closing" });
+
+  let updatedServices = raw.servicesContent;
+  const calloutRegex = /<p class="txt-hlt bg-bx ulk-bg pd_v-30 pd_h-30"[^>]*>[\s\S]*?<\/p>/g;
+  const matches = updatedServices.match(calloutRegex) || [];
+
+  if (matches.length >= 3 && matches[0] && matches[1] && matches[2]) {
+    updatedServices = updatedServices.replace(matches[0], earlyCta);
+    updatedServices = updatedServices.replace(matches[1], midCta);
+    updatedServices = updatedServices.replace(matches[2], closingCta);
+  } else if (matches.length === 2 && matches[0] && matches[1]) {
+    updatedServices = updatedServices.replace(matches[0], earlyCta);
+    updatedServices = updatedServices.replace(matches[1], midCta);
+    updatedServices = updatedServices + "\n\n" + closingCta;
+  } else if (matches.length === 1 && matches[0]) {
+    updatedServices = updatedServices.replace(matches[0], midCta);
+    updatedServices = earlyCta + "\n\n" + updatedServices + "\n\n" + closingCta;
+  } else {
+    updatedServices = earlyCta + "\n\n" + updatedServices + "\n\n" + midCta + "\n\n" + closingCta;
+  }
+
+  // 2. Inject Contextual Internal Links into Services Content (3-5+ links, no self-links)
+  const linkedServices = injectInternalLinks(updatedServices, {
+    currentSlug: safeSlug,
+    city,
+    maxLinks: 6,
+  });
+
+  // 3. Format How Do Section with diagnostic questions and contextual internal link
+  const finalHowDo = formatHowDoContentWithLinks({
+    topic: keyword,
+    city,
+    currentSlug: safeSlug,
+  });
+
+  // 4. Format Compensation Section with rights and contact link + accordion shortcode
+  const finalComp = formatCompensationContentWithLinks({
+    topic: keyword,
+    city,
+    accordionShortcode: shortcode,
+  });
+
+  const result: AtoyanLegalContent = {
+    ...raw,
+    servicesContent: linkedServices,
+    howDoContent: finalHowDo,
+    compensationIntro: finalComp,
+  };
+
+  // 5. Track article in internal SEO article tracker
+  trackPublishedArticle({
+    slug: safeSlug,
+    title: result.heroTitle,
+    keyword: result.keyword,
+    city: result.city,
+    category: topic,
+    url: "https://www.atoyanlaw.com/practice-areas/employment-law/" + safeSlug + "/",
+    publishedAt: new Date().toISOString(),
+  });
+
+  return result;
 }
 
 // -----------------------------------------------------------------------------
@@ -88,7 +164,7 @@ Under FEHA, racial discrimination generally falls into two foundational legal do
   <li><strong>Disparate Impact</strong>: When an employer implements facially neutral policies or operational practices that fall with disproportionate harshness on a particular racial or ethnic group and cannot be justified by strict business necessity.</li>
 </ul>
 
-<p class="txt-hlt bg-bx ulk-bg pd_v-30 pd_h-30" style="text-align:center;"><em><strong>Experiencing racial harassment, slurs, or systemic bias at work in ${city}? That is not just unfair - it is illegal under California law. Call Atoyan Law at <a href="tel:747888-0077">(747) 888-0077</a> or <a href="/contact/">contact us online</a> to schedule a confidential case evaluation.</strong></em></p>
+<p class="txt-hlt bg-bx ulk-bg pd_v-30 pd_h-30" style="text-align:center;"><em><strong>Experiencing racial harassment, slurs, or systemic bias at work in ${city}? That is not just unfair - it is illegal under California law. Call Atoyan Law at <a href="tel:8888070077">(888) 807-0077</a> or <a href="/contact/">contact us online</a> to schedule a confidential case evaluation.</strong></em></p>
 
 <h2 class="h2dav">How Racial Discrimination Manifests in California Workplaces</h2>
 
@@ -114,7 +190,7 @@ Examples of actionable racial harassment include:
   <li>Targeted hyper-scrutiny where supervisors closely police the arrival times, breaks, phone usage, or email drafts of minority employees while ignoring the identical conduct of white workers.</li>
 </ul>
 
-<p class="txt-hlt bg-bx ulk-bg pd_v-30 pd_h-30" style="text-align:center;"><em><strong>Did your employer ignore your complaints about racial slurs or workplace harassment? California law holds companies strictly liable when leadership fails to protect you. Atoyan Law Firm fights for California workers. Call <a href="tel:747888-0077">(747) 888-0077</a> today.</strong></em></p>
+<p class="txt-hlt bg-bx ulk-bg pd_v-30 pd_h-30" style="text-align:center;"><em><strong>Did your employer ignore your complaints about racial slurs or workplace harassment? California law holds companies strictly liable when leadership fails to protect you. Atoyan Law Firm fights for California workers. Call <a href="tel:8888070077">(888) 807-0077</a> today.</strong></em></p>
 
 <h2 class="h2dav">California Protections: The Crown Act and Hair Discrimination</h2>
 
@@ -157,7 +233,7 @@ Retaliation can take many forms beyond immediate firing:
 
 <strong>California Senate Bill 497 (The Equal Pay and Anti-Retaliation Protection Act)</strong> established a crucial legal shield for California workers: if an employer takes an adverse employment action against you within 90 days of your protected complaint or activity, the law establishes a <strong>rebuttable presumption of retaliation</strong>. The legal burden instantly shifts to the employer to articulate a legitimate, non-retaliatory reason for their action.
 
-<p class="txt-hlt bg-bx ulk-bg pd_v-30 pd_h-30" style="text-align:center;"><em><strong>Did your hours get cut or your job threatened after you complained about race discrimination? Under California SB 497, adverse action within 90 days is presumed retaliatory. Call Atoyan Law at <a href="tel:747888-0077">(747) 888-0077</a> for urgent legal representation.</strong></em></p>
+<p class="txt-hlt bg-bx ulk-bg pd_v-30 pd_h-30" style="text-align:center;"><em><strong>Did your hours get cut or your job threatened after you complained about race discrimination? Under California SB 497, adverse action within 90 days is presumed retaliatory. Call Atoyan Law at <a href="tel:8888070077">(888) 807-0077</a> for urgent legal representation.</strong></em></p>
 
 <h2 class="h2dav">Steps to Take if You Are Experiencing Race Discrimination in ${city}</h2>
 
@@ -198,7 +274,7 @@ Most importantly, <strong>let Atoyan Law Firm handle the fight</strong>. We mana
   const compensationIntro = `
 You have the right to work in an environment free from racial bias, harassment, and discriminatory prejudice. You have the right to <a href="https://www.atoyanlaw.com/practice-areas/employment-law/what-is-employment-discrimination/">report discrimination</a> without losing your job, without facing demotion, and without having your career sabotaged by retaliatory supervisors. You have the right to equal pay for equal work, fair promotional opportunities, and daily professional dignity under California law.
 
-Workplace race discrimination takes a profound toll on everything. Your self-worth. Your career trajectory. Your earning capacity. Your physical health and your family's financial security. But California law gives you powerful legal tools to fight back and demand justice. If you experienced race discrimination, racial harassment, or unlawful retaliation in ${city}, call us. Atoyan Law offers confidential, no-obligation consultations. No pressure. Real answers. Call <a href="tel:747888-0077">(747) 888-0077</a> or contact us online to schedule a free consultation with our <b>${city} race discrimination lawyers</b>.
+Workplace race discrimination takes a profound toll on everything. Your self-worth. Your career trajectory. Your earning capacity. Your physical health and your family's financial security. But California law gives you powerful legal tools to fight back and demand justice. If you experienced race discrimination, racial harassment, or unlawful retaliation in ${city}, call us. Atoyan Law offers confidential, no-obligation consultations. No pressure. Real answers. Call <a href="tel:8888070077">(888) 807-0077</a> or contact us online to schedule a free consultation with our <b>${city} race discrimination lawyers</b>.
 `.trim();
 
   const faqs: AtoyanFaq[] = [
@@ -251,7 +327,7 @@ Workplace race discrimination takes a profound toll on everything. Your self-wor
     accordionShortcode: shortcode,
     faqs,
     yoastTitle: `${city} Race Discrimination Lawyer | Atoyan Law`,
-    yoastMetaDesc: `Experienced ${city} race discrimination attorney protecting California workers against workplace bias, racial harassment & retaliation. Call (747) 888-0077.`,
+    yoastMetaDesc: `Experienced ${city} race discrimination attorney protecting California workers against workplace bias, racial harassment & retaliation. Call (888) 807-0077.`,
     yoastFocusKw: `${city} race discrimination`,
   };
 }
@@ -284,7 +360,7 @@ Common manifestations of wage theft under California law include:
   <li><strong>Illegal Wage Deductions and Stolen Tips</strong>: Deducting uniform costs, cash register shortages, equipment expenses, or stealing portions of customer gratuities.</li>
 </ul>
 
-<p class="txt-hlt bg-bx ulk-bg pd_v-30 pd_h-30" style="text-align:center;"><em><strong>Did your employer cheat you out of overtime, make you work off the clock, or misclassify your position in ${city}? That is wage theft, and California law penalizes it heavily. Call Atoyan Law at <a href="tel:747888-0077">(747) 888-0077</a> or <a href="/contact/">contact us online</a>.</strong></em></p>
+<p class="txt-hlt bg-bx ulk-bg pd_v-30 pd_h-30" style="text-align:center;"><em><strong>Did your employer cheat you out of overtime, make you work off the clock, or misclassify your position in ${city}? That is wage theft, and California law penalizes it heavily. Call Atoyan Law at <a href="tel:8888070077">(888) 807-0077</a> or <a href="/contact/">contact us online</a>.</strong></em></p>
 
 <h2 class="h2dav">California Overtime Laws: Understanding the Daily and Weekly Rules</h2>
 
@@ -313,7 +389,7 @@ Common off-the-clock violations in ${city} include:
   <li>Contacting employees via phone, email, text message, or WhatsApp during off-duty hours to answer work inquiries or solve operational emergencies without compensation.</li>
 </ul>
 
-<p class="txt-hlt bg-bx ulk-bg pd_v-30 pd_h-30" style="text-align:center;"><em><strong>Were you forced to work before clocking in or after clocking out in ${city}? In California, you are entitled to full pay plus statutory interest and penalties. Call Atoyan Law Firm at <a href="tel:747888-0077">(747) 888-0077</a> for a free consultation.</strong></em></p>
+<p class="txt-hlt bg-bx ulk-bg pd_v-30 pd_h-30" style="text-align:center;"><em><strong>Were you forced to work before clocking in or after clocking out in ${city}? In California, you are entitled to full pay plus statutory interest and penalties. Call Atoyan Law Firm at <a href="tel:8888070077">(888) 807-0077</a> for a free consultation.</strong></em></p>
 
 <h2 class="h2dav">Exemption Misclassification: Are You Truly an Exempt Employee?</h2>
 
@@ -342,7 +418,7 @@ Under California Labor Code § 226, employers must provide accurate, itemized wa
 
 When an employer fails to provide accurate pay stubs—or fails to record all hours worked—employees can recover up to $4,000 in statutory penalties under Labor Code § 226(e), plus reasonable attorney fees.
 
-<p class="txt-hlt bg-bx ulk-bg pd_v-30 pd_h-30" style="text-align:center;"><em><strong>Did your employer fail to pay your final wages on time or give you inaccurate pay stubs? You could be owed thousands in California statutory penalties. Call Atoyan Law at <a href="tel:747888-0077">(747) 888-0077</a> today.</strong></em></p>
+<p class="txt-hlt bg-bx ulk-bg pd_v-30 pd_h-30" style="text-align:center;"><em><strong>Did your employer fail to pay your final wages on time or give you inaccurate pay stubs? You could be owed thousands in California statutory penalties. Call Atoyan Law at <a href="tel:8888070077">(888) 807-0077</a> today.</strong></em></p>
 
 <h2 class="h2dav">Recovering Your Unpaid Wages: DLSE Claims vs. Court Litigation</h2>
 
@@ -381,7 +457,7 @@ ${buildIndustryScenarios("Wage Theft and Overtime Violations", city)}
   const compensationIntro = `
 You have the right to be paid every cent you have earned through your hard work and labor. You have the right to accurate overtime rates, complete wage statements, and prompt final paychecks. You have the right to <a href="https://www.atoyanlaw.com/practice-areas/employment-law/what-is-employment-discrimination/">report discrimination</a> and wage violations without facing retaliatory termination or harassment from management.
 
-Wage theft takes a devastating toll on your household. It strains your ability to pay rent, afford healthcare, provide for your children, and plan for your future. But California labor law provides severe financial penalties against employers who cheat their workers. If your employer withheld your wages, cheated your overtime, or misclassified your job in ${city}, call us. Atoyan Law offers confidential, no-pressure legal consultations. Real answers. Call <a href="tel:747888-0077">(747) 888-0077</a> or contact us online to schedule a free consultation with our <b>${city} wage theft lawyers</b>.
+Wage theft takes a devastating toll on your household. It strains your ability to pay rent, afford healthcare, provide for your children, and plan for your future. But California labor law provides severe financial penalties against employers who cheat their workers. If your employer withheld your wages, cheated your overtime, or misclassified your job in ${city}, call us. Atoyan Law offers confidential, no-pressure legal consultations. Real answers. Call <a href="tel:8888070077">(888) 807-0077</a> or contact us online to schedule a free consultation with our <b>${city} wage theft lawyers</b>.
 `.trim();
 
   const faqs: AtoyanFaq[] = [
@@ -434,7 +510,7 @@ Wage theft takes a devastating toll on your household. It strains your ability t
     accordionShortcode: shortcode,
     faqs,
     yoastTitle: `${city} Wage Theft & Overtime Lawyer | Atoyan Law`,
-    yoastMetaDesc: `Experienced ${city} wage theft attorney fighting for unpaid overtime, off-the-clock pay, misclassification & waiting time penalties. Call (747) 888-0077.`,
+    yoastMetaDesc: `Experienced ${city} wage theft attorney fighting for unpaid overtime, off-the-clock pay, misclassification & waiting time penalties. Call (888) 807-0077.`,
     yoastFocusKw: `${city} wage theft`,
   };
 }
@@ -471,7 +547,7 @@ In the landmark case Brinker Restaurant Corp. v. Superior Court (2012), the Cali
 </ol>
 If you are required to monitor a radio, answer client calls, remain on company premises, or sit at your workstation during your 30 minutes, your meal break is <strong>on-duty</strong> and illegal.
 
-<p class="txt-hlt bg-bx ulk-bg pd_v-30 pd_h-30" style="text-align:center;"><em><strong>Were your meal or rest breaks interrupted, delayed, or denied by your employer in ${city}? Under California law, you are owed a full hour of premium pay for every day this occurred. Call Atoyan Law at <a href="tel:747888-0077">(747) 888-0077</a>.</strong></em></p>
+<p class="txt-hlt bg-bx ulk-bg pd_v-30 pd_h-30" style="text-align:center;"><em><strong>Were your meal or rest breaks interrupted, delayed, or denied by your employer in ${city}? Under California law, you are owed a full hour of premium pay for every day this occurred. Call Atoyan Law at <a href="tel:8888070077">(888) 807-0077</a>.</strong></em></p>
 
 <h2 class="h2dav">California Rest Break Protections: 10 Paid Minutes for Every 4 Hours</h2>
 
@@ -498,7 +574,7 @@ Under California Labor Code § 226.7:
 
 Over months or years of continuous employment, these statutory premium payments accumulate into substantial sums. For a worker earning $25 per hour who was denied breaks for two years, unpaid break premiums alone can easily exceed $25,000, not including statutory interest, waiting time penalties, and attorney fees.
 
-<p class="txt-hlt bg-bx ulk-bg pd_v-30 pd_h-30" style="text-align:center;"><em><strong>Did your supervisor pressure you to skip lunch or cut your rest breaks short? Atoyan Law Firm recovers unpaid break premiums for California workers. Call <a href="tel:747888-0077">(747) 888-0077</a> for a confidential case evaluation.</strong></em></p>
+<p class="txt-hlt bg-bx ulk-bg pd_v-30 pd_h-30" style="text-align:center;"><em><strong>Did your supervisor pressure you to skip lunch or cut your rest breaks short? Atoyan Law Firm recovers unpaid break premiums for California workers. Call <a href="tel:8888070077">(888) 807-0077</a> for a confidential case evaluation.</strong></em></p>
 
 <h2 class="h2dav">Common Employer Tactics Used to Evade Break Violations</h2>
 
@@ -547,7 +623,7 @@ ${buildIndustryScenarios("Meal and Rest Break Violations", city)}
   const compensationIntro = `
 You have the right to take full, uninterrupted meal and rest breaks without interference, harassment, or fear of discipline from your employer. You have the right to leave company property during lunch, disconnect from all duties, and rest. You have the right to <a href="https://www.atoyanlaw.com/practice-areas/employment-law/what-is-employment-discrimination/">report discrimination</a> and labor violations without facing retaliation or termination.
 
-Denying workers their legal breaks takes a serious toll on your health, safety, and daily well-being. California labor laws were written to punish employers who extract unpaid labor by denying basic human rest. If your employer forced you to work through lunch or skip rest breaks in ${city}, call us. Atoyan Law offers confidential, no-obligation consultations. No pressure. Real answers. Call <a href="tel:747888-0077">(747) 888-0077</a> or contact us online to schedule a free consultation with our <b>${city} meal and rest break lawyers</b>.
+Denying workers their legal breaks takes a serious toll on your health, safety, and daily well-being. California labor laws were written to punish employers who extract unpaid labor by denying basic human rest. If your employer forced you to work through lunch or skip rest breaks in ${city}, call us. Atoyan Law offers confidential, no-obligation consultations. No pressure. Real answers. Call <a href="tel:8888070077">(888) 807-0077</a> or contact us online to schedule a free consultation with our <b>${city} meal and rest break lawyers</b>.
 `.trim();
 
   const faqs: AtoyanFaq[] = [
@@ -600,7 +676,7 @@ Denying workers their legal breaks takes a serious toll on your health, safety, 
     accordionShortcode: shortcode,
     faqs,
     yoastTitle: `${city} Meal and Rest Break Lawyer | Atoyan Law`,
-    yoastMetaDesc: `Experienced ${city} meal and rest break violation attorney fighting for California workers. Recover 1-hour premium pay per violation. Call (747) 888-0077.`,
+    yoastMetaDesc: `Experienced ${city} meal and rest break violation attorney fighting for California workers. Recover 1-hour premium pay per violation. Call (888) 807-0077.`,
     yoastFocusKw: `${city} meal and rest breaks`,
   };
 }
@@ -626,7 +702,7 @@ In California employment litigation, sexual harassment claims generally fall int
   <li><strong>Hostile Work Environment Harassment</strong>: This occurs when an employee is subjected to unwelcome sexual, romantic, or gender-based conduct that is either <strong>severe or pervasive</strong> enough to alter the conditions of their working environment and create an intimidating, hostile, abusive, or offensive workplace.</li>
 </ul>
 
-<p class="txt-hlt bg-bx ulk-bg pd_v-30 pd_h-30" style="text-align:center;"><em><strong>Subjected to unwanted sexual advances, lewd comments, or a hostile work environment in ${city}? That is not just inappropriate - it is unlawful under California FEHA. Call Atoyan Law at <a href="tel:747888-0077">(747) 888-0077</a> or <a href="/contact/">contact us online</a>.</strong></em></p>
+<p class="txt-hlt bg-bx ulk-bg pd_v-30 pd_h-30" style="text-align:center;"><em><strong>Subjected to unwanted sexual advances, lewd comments, or a hostile work environment in ${city}? That is not just inappropriate - it is unlawful under California FEHA. Call Atoyan Law at <a href="tel:8888070077">(888) 807-0077</a> or <a href="/contact/">contact us online</a>.</strong></em></p>
 
 <h2 class="h2dav">The Legal Standard: California Law Does Not Require "Severe AND Pervasive"</h2>
 
@@ -650,7 +726,7 @@ Harassment does not require physical touching. Actionable sexual harassment in $
   <li>Gender-based hostility: demeaning or insulting comments directed at women, men, or non-binary individuals simply because of their gender identity or presentation, even without sexual attraction.</li>
 </ul>
 
-<p class="txt-hlt bg-bx ulk-bg pd_v-30 pd_h-30" style="text-align:center;"><em><strong>Did your supervisor touch you inappropriately, make lewd comments, or retaliate after you said no? California law holds employers strictly liable for supervisor harassment. Call Atoyan Law Firm at <a href="tel:747888-0077">(747) 888-0077</a>.</strong></em></p>
+<p class="txt-hlt bg-bx ulk-bg pd_v-30 pd_h-30" style="text-align:center;"><em><strong>Did your supervisor touch you inappropriately, make lewd comments, or retaliate after you said no? California law holds employers strictly liable for supervisor harassment. Call Atoyan Law Firm at <a href="tel:8888070077">(888) 807-0077</a>.</strong></em></p>
 
 <h2 class="h2dav">Employer Liability: Supervisors vs. Coworkers</h2>
 
@@ -675,7 +751,7 @@ Under California Government Code § 12940(h) and Labor Code § 1102.5, it is ill
 
 Under California Senate Bill 497, if an employer takes an adverse action against you within <strong>90 days</strong> of making a harassment complaint, the law creates a <strong>rebuttable presumption of retaliation</strong>.
 
-<p class="txt-hlt bg-bx ulk-bg pd_v-30 pd_h-30" style="text-align:center;"><em><strong>Were you fired, demoted, or isolated after reporting sexual harassment in ${city}? Under California SB 497, adverse action within 90 days is presumed retaliatory. Call Atoyan Law at <a href="tel:747888-0077">(747) 888-0077</a> today.</strong></em></p>
+<p class="txt-hlt bg-bx ulk-bg pd_v-30 pd_h-30" style="text-align:center;"><em><strong>Were you fired, demoted, or isolated after reporting sexual harassment in ${city}? Under California SB 497, adverse action within 90 days is presumed retaliatory. Call Atoyan Law at <a href="tel:8888070077">(888) 807-0077</a> today.</strong></em></p>
 
 <h2 class="h2dav">The "Silenced No More Act": Non-Disclosure Agreements Are Banned</h2>
 
@@ -710,7 +786,7 @@ ${buildIndustryScenarios("Sexual Harassment and Hostile Work Environment", city)
   const compensationIntro = `
 You have the right to work without being subjected to unwanted sexual advances, lewd comments, or an intimidating hostile working environment. You have the right to <a href="https://www.atoyanlaw.com/practice-areas/employment-law/what-is-employment-discrimination/">report discrimination</a> and harassment without fear of being fired, demoted, or ostracized by management. You have the right to hold both the harasser and the negligent company legally accountable under California law.
 
-Workplace sexual harassment inflicts deep emotional trauma. It causes anxiety, insomnia, panic attacks, depression, and tears apart your sense of professional security. But California law gives you powerful legal tools to fight back. If you experienced sexual harassment, assault, or retaliation in ${city}, call us. Atoyan Law offers completely confidential consultations. No judgment. No pressure. Real answers. Call <a href="tel:747888-0077">(747) 888-0077</a> or contact us online to schedule a free consultation with our <b>${city} sexual harassment lawyers</b>.
+Workplace sexual harassment inflicts deep emotional trauma. It causes anxiety, insomnia, panic attacks, depression, and tears apart your sense of professional security. But California law gives you powerful legal tools to fight back. If you experienced sexual harassment, assault, or retaliation in ${city}, call us. Atoyan Law offers completely confidential consultations. No judgment. No pressure. Real answers. Call <a href="tel:8888070077">(888) 807-0077</a> or contact us online to schedule a free consultation with our <b>${city} sexual harassment lawyers</b>.
 `.trim();
 
   const faqs: AtoyanFaq[] = [
@@ -763,7 +839,7 @@ Workplace sexual harassment inflicts deep emotional trauma. It causes anxiety, i
     accordionShortcode: shortcode,
     faqs,
     yoastTitle: `${city} Sexual Harassment Lawyer | Atoyan Law`,
-    yoastMetaDesc: `Experienced ${city} sexual harassment attorney fighting for victims of hostile work environment, quid pro quo & retaliation. Call (747) 888-0077.`,
+    yoastMetaDesc: `Experienced ${city} sexual harassment attorney fighting for victims of hostile work environment, quid pro quo & retaliation. Call (888) 807-0077.`,
     yoastFocusKw: `${city} sexual harassment`,
   };
 }
@@ -790,7 +866,7 @@ Under California Government Code § 12940, employers with five or more employees
   <li><strong>The Duty to Engage in a Timely, Good-Faith Interactive Process (§ 12940(n))</strong>: Employers must actively communicate in good faith with an employee to identify potential effective accommodations.</li>
 </ol>
 
-<p class="txt-hlt bg-bx ulk-bg pd_v-30 pd_h-30" style="text-align:center;"><em><strong>Did your employer refuse your doctor's note, ignore your medical accommodations, or fire you after medical leave in ${city}? That is illegal under California FEHA. Call Atoyan Law at <a href="tel:747888-0077">(747) 888-0077</a>.</strong></em></p>
+<p class="txt-hlt bg-bx ulk-bg pd_v-30 pd_h-30" style="text-align:center;"><em><strong>Did your employer refuse your doctor's note, ignore your medical accommodations, or fire you after medical leave in ${city}? That is illegal under California FEHA. Call Atoyan Law at <a href="tel:8888070077">(888) 807-0077</a>.</strong></em></p>
 
 <h2 class="h2dav">What Qualifies as a Disability Under California Law?</h2>
 
@@ -827,7 +903,7 @@ A classic corporate violation in California is the unlawful "100% healed" rule. 
 
 The California courts and Civil Rights Department have repeatedly ruled that <strong>"100% healed" policies are per se illegal</strong> under FEHA. An employer must evaluate whether a worker with partial restrictions can safely perform their core duties with reasonable accommodations.
 
-<p class="txt-hlt bg-bx ulk-bg pd_v-30 pd_h-30" style="text-align:center;"><em><strong>Did your employer tell you that you cannot return to work until you are "100% healed"? That is illegal in California. Atoyan Law Firm fights for disabled workers. Call <a href="tel:747888-0077">(747) 888-0077</a> today.</strong></em></p>
+<p class="txt-hlt bg-bx ulk-bg pd_v-30 pd_h-30" style="text-align:center;"><em><strong>Did your employer tell you that you cannot return to work until you are "100% healed"? That is illegal in California. Atoyan Law Firm fights for disabled workers. Call <a href="tel:8888070077">(888) 807-0077</a> today.</strong></em></p>
 
 <h2 class="h2dav">Medical Leave as a Reasonable Accommodation</h2>
 
@@ -874,7 +950,7 @@ Employers often pretend that accommodations are limited to wheelchair ramps. Und
 <h3 class="h3dav">4. The Demolition of the Corporate "Undue Hardship" Defense</h3>
 Employers frequently claim that granting an accommodation creates an "undue hardship." Under California law, proving undue hardship requires the employer to show that the accommodation would cause significant difficulty or expense in light of the <strong>overall financial resources of the entire enterprise</strong>, the size of the company, and the nature of its operations. Large corporate employers with multi-million dollar revenues almost never satisfy this high legal standard in court.
 
-<p class="txt-hlt bg-bx ulk-bg pd_v-30 pd_h-30" style="text-align:center;"><em><strong>Did your employer ignore your doctor's restrictions or refuse to discuss reasonable accommodations in ${city}? That violates California FEHA. Call Atoyan Law at <a href="tel:747888-0077">(747) 888-0077</a>.</strong></em></p>
+<p class="txt-hlt bg-bx ulk-bg pd_v-30 pd_h-30" style="text-align:center;"><em><strong>Did your employer ignore your doctor's restrictions or refuse to discuss reasonable accommodations in ${city}? That violates California FEHA. Call Atoyan Law at <a href="tel:8888070077">(888) 807-0077</a>.</strong></em></p>
 
 
 ${buildEvidentiaryDeepDive("Disability Discrimination and Accommodation", city)}
@@ -903,7 +979,7 @@ ${buildIndustryScenarios("Disability Discrimination and Accommodation", city)}
   const compensationIntro = `
 You have the right to work without being marginalized, pushed out, or fired simply because you have a medical condition or physical limitation. You have the right to reasonable accommodations, good-faith interactive dialogue, and protected medical leave under California law. You have the right to <a href="https://www.atoyanlaw.com/practice-areas/employment-law/what-is-employment-discrimination/">report discrimination</a> without facing retaliatory discharge from your employer.
 
-Disability discrimination is deeply destabilizing. It strikes when you are most vulnerable, threatening your health insurance, your livelihood, and your family's financial stability. But California's FEHA statutes provide severe financial remedies against companies that discard injured or sick workers. If you were denied accommodations or terminated due to a medical condition in ${city}, call us. Atoyan Law offers confidential, no-obligation consultations. No pressure. Real answers. Call <a href="tel:747888-0077">(747) 888-0077</a> or contact us online to schedule a free consultation with our <b>${city} disability discrimination lawyers</b>.
+Disability discrimination is deeply destabilizing. It strikes when you are most vulnerable, threatening your health insurance, your livelihood, and your family's financial stability. But California's FEHA statutes provide severe financial remedies against companies that discard injured or sick workers. If you were denied accommodations or terminated due to a medical condition in ${city}, call us. Atoyan Law offers confidential, no-obligation consultations. No pressure. Real answers. Call <a href="tel:8888070077">(888) 807-0077</a> or contact us online to schedule a free consultation with our <b>${city} disability discrimination lawyers</b>.
 `.trim();
 
   const faqs: AtoyanFaq[] = [
@@ -956,7 +1032,7 @@ Disability discrimination is deeply destabilizing. It strikes when you are most 
     accordionShortcode: shortcode,
     faqs,
     yoastTitle: `${city} Disability Discrimination Lawyer | Atoyan Law`,
-    yoastMetaDesc: `Experienced ${city} disability discrimination attorney fighting for California workers. Failure to accommodate & interactive process claims. Call (747) 888-0077.`,
+    yoastMetaDesc: `Experienced ${city} disability discrimination attorney fighting for California workers. Failure to accommodate & interactive process claims. Call (888) 807-0077.`,
     yoastFocusKw: `${city} disability discrimination`,
   };
 }
@@ -986,7 +1062,7 @@ Eligible employees are entitled to up to 12 workweeks of unpaid, job-protected l
   <li>Qualifying exigencies related to the active military duty of an employee's spouse, domestic partner, child, or parent.</li>
 </ul>
 
-<p class="txt-hlt bg-bx ulk-bg pd_v-30 pd_h-30" style="text-align:center;"><em><strong>Did your employer deny your medical leave, interfere with your bonding time, or terminate your job while on leave in ${city}? That violates California CFRA. Call Atoyan Law at <a href="tel:747888-0077">(747) 888-0077</a>.</strong></em></p>
+<p class="txt-hlt bg-bx ulk-bg pd_v-30 pd_h-30" style="text-align:center;"><em><strong>Did your employer deny your medical leave, interfere with your bonding time, or terminate your job while on leave in ${city}? That violates California CFRA. Call Atoyan Law at <a href="tel:8888070077">(888) 807-0077</a>.</strong></em></p>
 
 <h2 class="h2dav">The Right to Reinstatement: You Must Get Your Job Back</h2>
 
@@ -1010,7 +1086,7 @@ Under California Government Code § 12945, California provides dedicated <strong
   <li>Crucially, <strong>PDL and CFRA bonding leave do not run concurrently</strong>! A new mother can take up to 4 months of PDL for pregnancy disability, and subsequently take up to 12 weeks of CFRA leave to bond with her newborn, for a total of nearly 7 months of job-protected leave.</li>
 </ul>
 
-<p class="txt-hlt bg-bx ulk-bg pd_v-30 pd_h-30" style="text-align:center;"><em><strong>Were you demoted or terminated after pregnancy leave in ${city}? Under California law, pregnancy disability and bonding leave are strictly protected. Call Atoyan Law Firm at <a href="tel:747888-0077">(747) 888-0077</a> today.</strong></em></p>
+<p class="txt-hlt bg-bx ulk-bg pd_v-30 pd_h-30" style="text-align:center;"><em><strong>Were you demoted or terminated after pregnancy leave in ${city}? Under California law, pregnancy disability and bonding leave are strictly protected. Call Atoyan Law Firm at <a href="tel:8888070077">(888) 807-0077</a> today.</strong></em></p>
 
 <h2 class="h2dav">Unlawful Leave Interference and Retaliation</h2>
 
@@ -1066,7 +1142,7 @@ Under California law, a medical certification is legally complete if it states:
 </ol>
 If an employer in ${city} demands access to your full medical charts, questions your physician's judgment, or forces you to see a company-selected doctor, they are violating California medical privacy laws and engaging in unlawful leave interference.
 
-<p class="txt-hlt bg-bx ulk-bg pd_v-30 pd_h-30" style="text-align:center;"><em><strong>Did your employer demand private medical diagnosis records or deny your CFRA bonding leave in ${city}? Protect your rights. Call Atoyan Law at <a href="tel:747888-0077">(747) 888-0077</a>.</strong></em></p>
+<p class="txt-hlt bg-bx ulk-bg pd_v-30 pd_h-30" style="text-align:center;"><em><strong>Did your employer demand private medical diagnosis records or deny your CFRA bonding leave in ${city}? Protect your rights. Call Atoyan Law at <a href="tel:8888070077">(888) 807-0077</a>.</strong></em></p>
 
 
 ${buildEvidentiaryDeepDive("Medical and Family Leave Retaliation", city)}
@@ -1095,7 +1171,7 @@ ${buildIndustryScenarios("Medical and Family Leave Retaliation", city)}
   const compensationIntro = `
 You have the right to care for your health, heal from surgery, welcome a new child, and care for an ailing parent without sacrificing your livelihood. You have the right to full job reinstatement and uninterrupted health benefits. You have the right to <a href="https://www.atoyanlaw.com/practice-areas/employment-law/what-is-employment-discrimination/">report discrimination</a> and leave violations without facing retaliatory discharge from management.
 
-Losing your job during a medical crisis or newborn bonding period is devastating. It threatens your health coverage and financial stability when you need it most. But California's CFRA and FEHA laws provide severe financial remedies against companies that retaliate against workers for taking leave. If your employer denied your medical leave or fired you while on leave in ${city}, call us. Atoyan Law offers confidential, no-obligation consultations. No pressure. Real answers. Call <a href="tel:747888-0077">(747) 888-0077</a> or contact us online to schedule a free consultation with our <b>${city} medical leave lawyers</b>.
+Losing your job during a medical crisis or newborn bonding period is devastating. It threatens your health coverage and financial stability when you need it most. But California's CFRA and FEHA laws provide severe financial remedies against companies that retaliate against workers for taking leave. If your employer denied your medical leave or fired you while on leave in ${city}, call us. Atoyan Law offers confidential, no-obligation consultations. No pressure. Real answers. Call <a href="tel:8888070077">(888) 807-0077</a> or contact us online to schedule a free consultation with our <b>${city} medical leave lawyers</b>.
 `.trim();
 
   const faqs: AtoyanFaq[] = [
@@ -1148,7 +1224,7 @@ Losing your job during a medical crisis or newborn bonding period is devastating
     accordionShortcode: shortcode,
     faqs,
     yoastTitle: `${city} Family & Medical Leave Lawyer | Atoyan Law`,
-    yoastMetaDesc: `Experienced ${city} CFRA & FMLA attorney protecting California workers against medical leave denial, interference & retaliation. Call (747) 888-0077.`,
+    yoastMetaDesc: `Experienced ${city} CFRA & FMLA attorney protecting California workers against medical leave denial, interference & retaliation. Call (888) 807-0077.`,
     yoastFocusKw: `${city} medical leave`,
   };
 }
@@ -1177,7 +1253,7 @@ California Labor Code § 1102.5 is widely recognized as one of the most powerful
 
 Crucially, an employee does not need to prove that the employer actually broke the law. The employee only needs to show that they had <strong>reasonable cause to believe</strong> that the information disclosed a violation of a state or federal statute, rule, or regulation.
 
-<p class="txt-hlt bg-bx ulk-bg pd_v-30 pd_h-30" style="text-align:center;"><em><strong>Did your employer fire, demote, or mistreat you after you blew the whistle or complained about illegal practices in ${city}? That is unlawful retaliation. Call Atoyan Law at <a href="tel:747888-0077">(747) 888-0077</a>.</strong></em></p>
+<p class="txt-hlt bg-bx ulk-bg pd_v-30 pd_h-30" style="text-align:center;"><em><strong>Did your employer fire, demote, or mistreat you after you blew the whistle or complained about illegal practices in ${city}? That is unlawful retaliation. Call Atoyan Law at <a href="tel:8888070077">(888) 807-0077</a>.</strong></em></p>
 
 <h2 class="h2dav">The Burden of Proof: The Lawson v. PPG Architectural Finishes Standard</h2>
 
@@ -1211,7 +1287,7 @@ An adverse employment action includes any conduct that materially affects the <s
   <li>Hyper-scrutiny, micromanagement, and hostile intimidation by executive staff.</li>
 </ul>
 
-<p class="txt-hlt bg-bx ulk-bg pd_v-30 pd_h-30" style="text-align:center;"><em><strong>Did management target you with unfair discipline or cut your shifts after you reported workplace violations in ${city}? That is actionable retaliation. Call Atoyan Law Firm at <a href="tel:747888-0077">(747) 888-0077</a>.</strong></em></p>
+<p class="txt-hlt bg-bx ulk-bg pd_v-30 pd_h-30" style="text-align:center;"><em><strong>Did management target you with unfair discipline or cut your shifts after you reported workplace violations in ${city}? That is actionable retaliation. Call Atoyan Law Firm at <a href="tel:8888070077">(888) 807-0077</a>.</strong></em></p>
 
 <h2 class="h2dav">Civil Penalties Under Labor Code § 1102.5: Up to $10,000 Per Violation</h2>
 
@@ -1256,7 +1332,7 @@ To build an airtight whistleblower claim against an employer in ${city}, workers
   <li><strong>Do Not Download Trade Secrets or Unrelated Confidential Files</strong>: Focus strictly on preserving evidence of your disclosures and subsequent retaliation. Never take proprietary customer lists or proprietary software code, which employers weaponize in counter-claims.</li>
 </ul>
 
-<p class="txt-hlt bg-bx ulk-bg pd_v-30 pd_h-30" style="text-align:center;"><em><strong>Did management target or fire you after you reported illegal practices or refused to violate the law in ${city}? Atoyan Law Firm protects California whistleblowers. Call <a href="tel:747888-0077">(747) 888-0077</a>.</strong></em></p>
+<p class="txt-hlt bg-bx ulk-bg pd_v-30 pd_h-30" style="text-align:center;"><em><strong>Did management target or fire you after you reported illegal practices or refused to violate the law in ${city}? Atoyan Law Firm protects California whistleblowers. Call <a href="tel:8888070077">(888) 807-0077</a>.</strong></em></p>
 
 
 ${buildEvidentiaryDeepDive("Workplace Retaliation and Whistleblower Claims", city)}
@@ -1285,7 +1361,7 @@ ${buildIndustryScenarios("Workplace Retaliation and Whistleblower Claims", city)
   const compensationIntro = `
 You have the right to blow the whistle on illegal practices, report health and safety hazards, and object to workplace violations without facing termination, demotion, or blacklisting. You have the right to <a href="https://www.atoyanlaw.com/practice-areas/employment-law/what-is-employment-discrimination/">report discrimination</a> and wage theft without retaliation. You have the right to hold your employer accountable under California law.
 
-Workplace retaliation takes a heavy toll. It punishes honest workers for doing the right thing, threatening your livelihood and professional reputation. But California law provides some of the strongest anti-retaliation protections in the country. If you faced retaliation or were fired after speaking up in ${city}, call us. Atoyan Law offers confidential, no-obligation consultations. No pressure. Real answers. Call <a href="tel:747888-0077">(747) 888-0077</a> or contact us online to schedule a free consultation with our <b>${city} retaliation lawyers</b>.
+Workplace retaliation takes a heavy toll. It punishes honest workers for doing the right thing, threatening your livelihood and professional reputation. But California law provides some of the strongest anti-retaliation protections in the country. If you faced retaliation or were fired after speaking up in ${city}, call us. Atoyan Law offers confidential, no-obligation consultations. No pressure. Real answers. Call <a href="tel:8888070077">(888) 807-0077</a> or contact us online to schedule a free consultation with our <b>${city} retaliation lawyers</b>.
 `.trim();
 
   const faqs: AtoyanFaq[] = [
@@ -1338,7 +1414,7 @@ Workplace retaliation takes a heavy toll. It punishes honest workers for doing t
     accordionShortcode: shortcode,
     faqs,
     yoastTitle: `${city} Workplace Retaliation Lawyer | Atoyan Law`,
-    yoastMetaDesc: `Experienced ${city} workplace retaliation attorney fighting for whistleblowers & workers facing illegal discipline. Call (747) 888-0077.`,
+    yoastMetaDesc: `Experienced ${city} workplace retaliation attorney fighting for whistleblowers & workers facing illegal discipline. Call (888) 807-0077.`,
     yoastFocusKw: `${city} workplace retaliation`,
   };
 }
@@ -1372,7 +1448,7 @@ In ${city}, an employer commits unlawful wrongful termination when the firing is
   <li><strong>Violation of Fundamental Public Policy (Tameny Claims)</strong>: Terminating an employee for reasons that violate core public policies embedded in the California constitution or state statutes.</li>
 </ul>
 
-<p class="txt-hlt bg-bx ulk-bg pd_v-30 pd_h-30" style="text-align:center;"><em><strong>Were you fired unlawfully or forced out of your job in ${city}? At-will employment does not protect employers who break California law. Call Atoyan Law at <a href="tel:747888-0077">(747) 888-0077</a> or <a href="/contact/">contact us online</a>.</strong></em></p>
+<p class="txt-hlt bg-bx ulk-bg pd_v-30 pd_h-30" style="text-align:center;"><em><strong>Were you fired unlawfully or forced out of your job in ${city}? At-will employment does not protect employers who break California law. Call Atoyan Law at <a href="tel:8888070077">(888) 807-0077</a> or <a href="/contact/">contact us online</a>.</strong></em></p>
 
 <h2 class="h2dav">How Employers Disguise Unlawful Terminations: The Doctrine of Pretext</h2>
 
@@ -1390,7 +1466,7 @@ The employer fires you for a minor, universal infraction—such as arriving five
 
 <strong>That timeline and pattern of disparate discipline matters.</strong> Under California's burden-shifting framework established in McDonnell Douglas and Harris v. City of Santa Monica (2013), proving that an employer's stated reason was false or a cover-up is direct proof of wrongful termination.
 
-<p class="txt-hlt bg-bx ulk-bg pd_v-30 pd_h-30" style="text-align:center;"><em><strong>Did your employer fabricate a performance excuse or restructure to fire you in ${city}? Atoyan Law Firm exposes corporate pretext and fights for California workers. Call <a href="tel:747888-0077">(747) 888-0077</a> today.</strong></em></p>
+<p class="txt-hlt bg-bx ulk-bg pd_v-30 pd_h-30" style="text-align:center;"><em><strong>Did your employer fabricate a performance excuse or restructure to fire you in ${city}? Atoyan Law Firm exposes corporate pretext and fights for California workers. Call <a href="tel:8888070077">(888) 807-0077</a> today.</strong></em></p>
 
 <h2 class="h2dav">Constructive Discharge: When You Are Forced to Quit</h2>
 
@@ -1415,7 +1491,7 @@ A wrongful termination lawsuit is designed to make the injured worker financiall
   <li><strong>Statutory Attorney Fees</strong>: Reimbursement of all reasonable attorney fees and expert witness costs under California Government Code § 12965.</li>
 </ul>
 
-<p class="txt-hlt bg-bx ulk-bg pd_v-30 pd_h-30" style="text-align:center;"><em><strong>Facing wrongful termination or constructive discharge in ${city}? Do not sign away your rights. Call Atoyan Law Firm at <a href="tel:747888-0077">(747) 888-0077</a> for a confidential, no-cost case review.</strong></em></p>
+<p class="txt-hlt bg-bx ulk-bg pd_v-30 pd_h-30" style="text-align:center;"><em><strong>Facing wrongful termination or constructive discharge in ${city}? Do not sign away your rights. Call Atoyan Law Firm at <a href="tel:8888070077">(888) 807-0077</a> for a confidential, no-cost case review.</strong></em></p>
 
 
 
@@ -1449,7 +1525,7 @@ Factors proving an implied contract include:
 </ul>
 When an employer abruptly terminates a long-tenured employee without progressive discipline or good cause, they may be liable for breach of implied contract and breach of the implied covenant of good faith and fair dealing.
 
-<p class="txt-hlt bg-bx ulk-bg pd_v-30 pd_h-30" style="text-align:center;"><em><strong>Were you terminated in violation of California public policy or fired without cause after years of loyal service in ${city}? Atoyan Law Firm fights for wrongful termination victims. Call <a href="tel:747888-0077">(747) 888-0077</a>.</strong></em></p>
+<p class="txt-hlt bg-bx ulk-bg pd_v-30 pd_h-30" style="text-align:center;"><em><strong>Were you terminated in violation of California public policy or fired without cause after years of loyal service in ${city}? Atoyan Law Firm fights for wrongful termination victims. Call <a href="tel:8888070077">(888) 807-0077</a>.</strong></em></p>
 
 
 ${buildEvidentiaryDeepDive("Wrongful Termination and Unlawful Firing", city)}
@@ -1478,7 +1554,7 @@ ${buildIndustryScenarios("Wrongful Termination and Unlawful Firing", city)}
   const compensationIntro = `
 You have the right to work without being fired for an illegal reason. You have the right to <a href="https://www.atoyanlaw.com/practice-areas/employment-law/what-is-employment-discrimination/">report discrimination</a> without losing your job. You have the right to take medical leave. You have the right to blow the whistle on illegal activity. You have the right to stand up without retaliation.
 
-Wrongful termination takes a toll on everything. Your income. Your health. Your family. But the law gives you tools to fight back. If you were fired in ${city} and you believe it was illegal, call us. Atoyan Law offers confidential consultations. No pressure. Real answers. Call <a href="tel:747888-0077">(747) 888-0077</a> or contact us online to schedule a free consultation with our <b>${city} wrongful termination lawyers</b>.
+Wrongful termination takes a toll on everything. Your income. Your health. Your family. But the law gives you tools to fight back. If you were fired in ${city} and you believe it was illegal, call us. Atoyan Law offers confidential consultations. No pressure. Real answers. Call <a href="tel:8888070077">(888) 807-0077</a> or contact us online to schedule a free consultation with our <b>${city} wrongful termination lawyers</b>.
 `.trim();
 
   const faqs: AtoyanFaq[] = [
@@ -1531,7 +1607,7 @@ Wrongful termination takes a toll on everything. Your income. Your health. Your 
     accordionShortcode: shortcode,
     faqs,
     yoastTitle: `${city} Wrongful Termination Lawyer | Atoyan Law`,
-    yoastMetaDesc: `Experienced ${city} wrongful termination attorney fighting for California workers against illegal firing, pretext & retaliation. Call (747) 888-0077.`,
+    yoastMetaDesc: `Experienced ${city} wrongful termination attorney fighting for California workers against illegal firing, pretext & retaliation. Call (888) 807-0077.`,
     yoastFocusKw: `${city} wrongful termination`,
   };
 }

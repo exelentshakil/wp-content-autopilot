@@ -1,3 +1,5 @@
+import { buildLinkingCatalogForLlm, trackPublishedArticle } from "./article-tracker";
+import { injectInternalLinks, formatHowDoContentWithLinks, formatCompensationContentWithLinks, generateContextualCta } from "./seo-linking";
 import { generateAtoyanSimulated } from "./llm-simulated";
 import type { Settings, AtoyanLegalContent, AtoyanFaq } from "./types";
 import { resolveDefaultAccordionShortcode, ATOYAN_PHONE, ATOYAN_TOLL_FREE } from "./atoyan";
@@ -24,6 +26,31 @@ You are the senior legal content strategist and employment litigation attorney a
 Your job is to generate authoritative, deeply compelling California employment practice area content matching the exact conversational, punchy tone and structure used by Atoyan Law.
 
 CRITICAL CLIENT RULES (CLIENT DAVID - ATOYAN LAW FIRM):
+
+7. CRITICAL INTERNAL SEO LINKING (INTERNAL SEO JUICE):
+   Every practice area page must actively harness and cross-link Atoyan Law Firm articles:
+   - In servicesContent (Tab 2):
+     Contextually weave 3 to 5+ natural internal links to related practice area and localized pages on atoyanlaw.com.
+     Examples:
+     * If you believe you were <a href="https://www.atoyanlaw.com/practice-areas/employment-law/overtime-pay/">not properly paid for overtime</a>, it is important...
+     * An employer might reduce hours or <a href="https://www.atoyanlaw.com/practice-areas/employment-law/burbank-wrongful-termination-lawyer/">terminate their employment</a> after they complain...
+     * Every <a href="https://www.atoyanlaw.com/practice-areas/employment-law/work-retaliation/">retaliation claim</a> depends on its particular facts...
+     * DO NOT link to the current page itself (no self-links).
+   - In howDoContent (Tab 4):
+     Format with diagnostic questions including internal link:
+     e.g., "Did the <a href=\"https://www.atoyanlaw.com/practice-areas/employment-law/work-retaliation/\">employer retaliate after the employee complained?</a>"
+   - In compensationIntro (Tab 6):
+     Must conclude with firm contact link:
+     "If you believe your workplace rights were violated in [City], Atoyan Employment Law can help you evaluate your claim. <a href=\"/contact/\">Contact</a> the firm to discuss what happened and learn what options may be available to you."
+
+8. 100% TOPIC-SPECIFIC CTAs & CALLOUT BOXES:
+   ALL CTAs and callouts MUST be 100% relevant to the specific violation and city (never generic):
+   - Early callout:
+     <p class="txt-hlt bg-bx ulk-bg pd_v-30 pd_h-30" style="text-align:center;"><em><strong>If your employer [topic-specific issue in City], Atoyan Law Firm is here to help. <a href="tel:8888070077">Contact our [City] [Topic] Attorneys</a> today for a free consultation and fight back for what you’ve earned.</strong></em></p>
+   - Mid callout:
+     <p class="txt-hlt bg-bx ulk-bg pd_v-30 pd_h-30" style="text-align:center;"><em><strong>[Punchy topic questions]? You may be entitled to compensation. Our [City] [Topic] Lawyers are ready to fight for you. <a href="tel:8888070077">Reach out</a> now for your confidential case review.</strong></em></p>
+   - Closing callout:
+     <p class="txt-hlt bg-bx ulk-bg pd_v-30 pd_h-30" style="text-align:center;"><em><strong>[Topic violation] is against the law. Don’t let your employer take advantage of you. <a href="tel:8888070077">Contact Atoyan Law Firm’s [City] [Topic] team</a> today and take the first step toward justice.</strong></em></p>
 
 1. TITLE FORMULA:
    Hero title MUST follow this exact formula:
@@ -159,13 +186,40 @@ function validateAndNormalizeAtoyanContent(
 
   const finalFaqs = faqs.length > 0 ? faqs : sim.faqs;
 
-  return {
+  const resolvedSlug =
+    typeof obj.slug === "string" && obj.slug
+      ? obj.slug.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")
+      : sim.slug;
+  const resolvedCity = typeof obj.city === "string" && obj.city ? obj.city : city;
+  const rawServices = typeof obj.servicesContent === "string" && obj.servicesContent ? obj.servicesContent : sim.servicesContent;
+
+  // Guarantee internal SEO linking on services content
+  const linkedServices = injectInternalLinks(rawServices, {
+    currentSlug: resolvedSlug,
+    city: resolvedCity,
+    maxLinks: 6,
+  });
+
+  // Guarantee How Do Section has strategic diagnostic question linking
+  let finalHowDoContent = typeof obj.howDoContent === "string" && obj.howDoContent ? obj.howDoContent : sim.howDoContent;
+  if (!finalHowDoContent.includes("<a href=") || !finalHowDoContent.includes("retaliat")) {
+    finalHowDoContent = formatHowDoContentWithLinks({
+      topic: keyword,
+      city: resolvedCity,
+      currentSlug: resolvedSlug,
+    });
+  }
+
+  // Guarantee Compensation Section has contact link
+  let finalCompIntro = typeof obj.compensationIntro === "string" && obj.compensationIntro ? obj.compensationIntro : sim.compensationIntro;
+  if (!finalCompIntro.includes('href="/contact/"') && !finalCompIntro.includes('href="https://www.atoyanlaw.com/contact/"')) {
+    finalCompIntro = finalCompIntro + " If you believe your rights were violated in " + resolvedCity + ', Atoyan Employment Law can evaluate your claim. <a href="/contact/">Contact</a> the firm to discuss what happened.';
+  }
+
+  const result: AtoyanLegalContent = {
     keyword: typeof obj.keyword === "string" && obj.keyword ? obj.keyword : keyword,
-    city: typeof obj.city === "string" && obj.city ? obj.city : city,
-    slug:
-      typeof obj.slug === "string" && obj.slug
-        ? obj.slug.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")
-        : sim.slug,
+    city: resolvedCity,
+    slug: resolvedSlug,
     heroTitle: typeof obj.heroTitle === "string" && obj.heroTitle ? obj.heroTitle : sim.heroTitle,
     servicesHeading:
       typeof obj.servicesHeading === "string" && obj.servicesHeading
@@ -175,26 +229,17 @@ function validateAndNormalizeAtoyanContent(
       typeof obj.servicesSubHeading === "string" && obj.servicesSubHeading
         ? obj.servicesSubHeading
         : sim.servicesSubHeading,
-    servicesContent:
-      typeof obj.servicesContent === "string" && obj.servicesContent
-        ? obj.servicesContent
-        : sim.servicesContent,
+    servicesContent: linkedServices,
     howDoHeading:
       typeof obj.howDoHeading === "string" && obj.howDoHeading
         ? obj.howDoHeading
         : sim.howDoHeading,
-    howDoContent:
-      typeof obj.howDoContent === "string" && obj.howDoContent
-        ? obj.howDoContent
-        : sim.howDoContent,
+    howDoContent: finalHowDoContent,
     compensationHeading:
       typeof obj.compensationHeading === "string" && obj.compensationHeading
         ? obj.compensationHeading
         : sim.compensationHeading,
-    compensationIntro:
-      typeof obj.compensationIntro === "string" && obj.compensationIntro
-        ? obj.compensationIntro
-        : sim.compensationIntro,
+    compensationIntro: finalCompIntro,
     faqs: finalFaqs,
     yoastTitle:
       typeof obj.yoastTitle === "string" && obj.yoastTitle ? obj.yoastTitle : sim.yoastTitle,
@@ -211,6 +256,19 @@ function validateAndNormalizeAtoyanContent(
         ? obj.accordionShortcode
         : sim.accordionShortcode,
   };
+
+  // Dynamically record in article tracker for future cross-linking
+  trackPublishedArticle({
+    slug: result.slug,
+    title: result.heroTitle,
+    keyword: result.keyword,
+    city: result.city,
+    category: keyword.toLowerCase(),
+    url: "https://www.atoyanlaw.com/practice-areas/employment-law/" + result.slug + "/",
+    publishedAt: new Date().toISOString(),
+  });
+
+  return result;
 }
 
 /**
@@ -222,7 +280,9 @@ async function generateAtoyanOpenAI(
   apiKey: string,
   systemPrompt?: string,
 ): Promise<AtoyanLegalContent> {
-  const prompt = `Write comprehensive, authoritative California employment law practice area content (strictly huge content: 2,500-3,500+ words in servicesContent) for the target topic/keyword: "${keyword}" in ${city}.\nEnsure all sections match Atoyan Law Firm's punchy, compassionate tone, question-based <h2 class="h2dav"> and <h3 class="h3dav"> subheadings, statutory depth (FEHA, Labor Code §§ 98.6, 201-203, 226.7, 510, 512, 1102.5, SB 497, case law), topic callouts, and 8-10 FAQs.`;
+  const safeSlug = keyword.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+  const linkCatalog = buildLinkingCatalogForLlm({ category: keyword, city, currentSlug: safeSlug });
+  const prompt = `${linkCatalog}\n\nWrite comprehensive, authoritative California employment law practice area content (strictly huge content: 2,500-3,500+ words in servicesContent) for the target topic/keyword: "${keyword}" in ${city}.\nEnsure all sections match Atoyan Law Firm's punchy, compassionate tone, question-based <h2 class="h2dav"> and <h3 class="h3dav"> subheadings, statutory depth (FEHA, Labor Code §§ 98.6, 201-203, 226.7, 510, 512, 1102.5, SB 497, case law), topic callouts, and 8-10 FAQs.`;
   const activePrompt =
     systemPrompt && !systemPrompt.includes("David") && systemPrompt.includes("Atoyan")
       ? systemPrompt.trim()
@@ -272,7 +332,9 @@ async function generateAtoyanGemini(
   apiKey: string,
   systemPrompt?: string,
 ): Promise<AtoyanLegalContent> {
-  const prompt = `Target Topic: "${keyword}" in ${city}.\nWrite high-authority California employment legal practice area content (strictly huge content: 2,500-3,500+ words in servicesContent) for Atoyan Law Firm following all system guidelines. Output valid JSON.`;
+  const safeSlug = keyword.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+  const linkCatalog = buildLinkingCatalogForLlm({ category: keyword, city, currentSlug: safeSlug });
+  const prompt = `${linkCatalog}\n\nTarget Topic: "${keyword}" in ${city}.\nWrite high-authority California employment legal practice area content (strictly huge content: 2,500-3,500+ words in servicesContent) for Atoyan Law Firm following all system guidelines. Output valid JSON.`;
   const activePrompt =
     systemPrompt && !systemPrompt.includes("David") && systemPrompt.includes("Atoyan")
       ? systemPrompt.trim()
