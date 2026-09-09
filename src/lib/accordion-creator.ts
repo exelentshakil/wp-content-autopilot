@@ -234,7 +234,7 @@ export async function createEasyAccordion(
   if (!wpUser || !wpPassword) {
     const shortcode = resolveDefaultAccordionShortcode(topic, city);
     const idMatch = shortcode.match(/\d+/);
-    const id = idMatch ? parseInt(idMatch[0], 10) : 4176;
+    const id = idMatch ? parseInt(idMatch[0], 10) : 0;
     return {
       id,
       title,
@@ -326,7 +326,7 @@ export async function createEasyAccordion(
   // Strategy 3: Graceful fallback to verified live catalog mapping
   const fallbackShortcode = resolveDefaultAccordionShortcode(topic, city);
   const idMatch = fallbackShortcode.match(/\d+/);
-  const id = idMatch ? parseInt(idMatch[0], 10) : 4176;
+  const id = idMatch ? parseInt(idMatch[0], 10) : 0;
 
   return {
     id,

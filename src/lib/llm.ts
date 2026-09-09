@@ -93,8 +93,10 @@ CRITICAL CLIENT RULES (CLIENT DAVID - ATOYAN LAW FIRM):
    Produce 8 to 10 practical, in-depth FAQs directly addressing real employee questions about this EXACT topic.
    No generic filler FAQs.
 
-5. EASY ACCORDION SHORTCODE:
-   Set accordionShortcode to the appropriate WordPress shortcode matching the topic, e.g. [sp_easyaccordion id="4355"] for race discrimination, [sp_easyaccordion id="4200"] for hostile work environment, [sp_easyaccordion id="4176"] for wrongful termination, [sp_easyaccordion id="4167"] for wage theft, [sp_easyaccordion id="4119"] for meal/rest breaks, [sp_easyaccordion id="3894"] for disability, etc.
+5. DYNAMIC EASY ACCORDION & FAQS:
+   Every single practice area page requires a brand-new, unique WordPress Easy Accordion created dynamically from its FAQs.
+   Set "accordionShortcode" to "" (empty string) in your JSON output.
+   DO NOT reuse old, existing, or hardcoded accordion IDs (such as 4176). The system will dynamically register a new WordPress sp_easy_accordion with your 8-10 FAQs.
 
 6. SEO METADATA:
    Yoast title (< 60 chars), meta description (< 160 chars), focus keyword, clean URL slug.
@@ -112,7 +114,7 @@ OUTPUT MUST BE VALID JSON with this exact schema:
   "howDoContent": "string",
   "compensationHeading": "string",
   "compensationIntro": "string (Rights intro and topic CTA with (747) 888-0077)",
-  "accordionShortcode": "string (e.g. [sp_easyaccordion id=\"4355\"])",
+  "accordionShortcode": "string (leave empty \"\" for dynamic creation)",
   "faqs": [
     {
       "question": "string",
@@ -272,6 +274,27 @@ function validateAndNormalizeAtoyanContent(
 }
 
 /**
+ * Builds the effective system prompt by preserving ATOYAN_SYSTEM_PROMPT as the foundational legal schema
+ * and cleanly appending custom attorney directives or ChatGPT conversation context.
+ */
+export function buildActiveSystemPrompt(customDirectives?: string, chatContext?: string): string {
+  let prompt = ATOYAN_SYSTEM_PROMPT.trim();
+
+  if (customDirectives && customDirectives.trim()) {
+    const trimmed = customDirectives.trim();
+    if (!prompt.includes(trimmed)) {
+      prompt += `\n\nADDITIONAL ATTORNEY DIRECTIVES & PREFERENCES:\n${trimmed}`;
+    }
+  }
+
+  if (chatContext && chatContext.trim()) {
+    prompt += `\n\nCLIENT CHATGPT CONVERSATION CONTEXT & SPECIAL CASE NOTES:\n${chatContext.trim()}\n\nIntegrate the above discussion, specific California case citations, and nuances directly into the legal analysis while strictly maintaining the required JSON schema and 2,500-3,500+ words depth.`;
+  }
+
+  return prompt;
+}
+
+/**
  * Generates California employment legal content using OpenAI.
  */
 async function generateAtoyanOpenAI(
@@ -279,17 +302,17 @@ async function generateAtoyanOpenAI(
   city: string,
   apiKey: string,
   systemPrompt?: string,
+  chatContext?: string,
 ): Promise<AtoyanLegalContent> {
   const safeSlug = keyword.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
   const linkCatalog = buildLinkingCatalogForLlm({ category: keyword, city, currentSlug: safeSlug });
-  const prompt = `${linkCatalog}\n\nWrite comprehensive, authoritative California employment law practice area content (strictly huge content: 2,500-3,500+ words in servicesContent) for the target topic/keyword: "${keyword}" in ${city}.\nEnsure all sections match Atoyan Law Firm's punchy, compassionate tone, question-based <h2 class="h2dav"> and <h3 class="h3dav"> subheadings, statutory depth (FEHA, Labor Code §§ 98.6, 201-203, 226.7, 510, 512, 1102.5, SB 497, case law), topic callouts, and 8-10 FAQs.`;
-  const activePrompt =
-    systemPrompt && !systemPrompt.includes("David") && systemPrompt.includes("Atoyan")
-      ? systemPrompt.trim()
-      : ATOYAN_SYSTEM_PROMPT;
+  const prompt = `${linkCatalog}\n\nWrite comprehensive, authoritative California employment law practice area content (strictly huge content: 2,500-3,500+ words in servicesContent) for the target topic/keyword: "${keyword}" in ${city}.\nEnsure all sections match Atoyan Law Firm\x27s punchy, compassionate tone, question-based <h2 class="h2dav"> and <h3 class="h3dav"> subheadings, statutory depth (FEHA, Labor Code §§ 98.6, 201-203, 226.7, 510, 512, 1102.5, SB 497, case law), topic callouts, and 8-10 FAQs. Output valid JSON matching the schema.`;
+
+  const activePrompt = buildActiveSystemPrompt(systemPrompt, chatContext);
 
   for (const model of OPENAI_MODELS) {
     try {
+      console.log(`[Atoyan LLM] Calling OpenAI (${model}) for "${keyword}" in ${city}...`);
       const res = await fetch("https://api.openai.com/v1/chat/completions", {
         method: "POST",
         headers: {
@@ -304,23 +327,39 @@ async function generateAtoyanOpenAI(
           ],
           response_format: { type: "json_object" },
           temperature: 0.65,
+          max_tokens: 16000,
         }),
         signal: AbortSignal.timeout(120_000),
       });
 
-      if (!res.ok) continue;
+      if (!res.ok) {
+        const errBody = await res.text();
+        console.error(`[Atoyan LLM] OpenAI (${model}) returned HTTP ${res.status}:`, errBody.slice(0, 500));
+        continue;
+      }
+
       const json = await res.json();
       const content = json.choices?.[0]?.message?.content;
       if (content) {
         const parsed = JSON.parse(content);
-        return validateAndNormalizeAtoyanContent(parsed, keyword, city);
+        if (
+          parsed &&
+          typeof parsed === "object" &&
+          typeof parsed.servicesContent === "string" &&
+          parsed.servicesContent.trim().length > 500
+        ) {
+          console.log(`[Atoyan LLM] Successfully generated ${parsed.servicesContent.length} chars via OpenAI (${model})`);
+          return validateAndNormalizeAtoyanContent(parsed, keyword, city);
+        } else {
+          console.warn(`[Atoyan LLM] OpenAI (${model}) response missing servicesContent or length <= 500`);
+        }
       }
-    } catch {
-      // Fall through to next model or Gemini
+    } catch (err) {
+      console.error(`[Atoyan LLM] OpenAI (${model}) request exception:`, err);
     }
   }
 
-  throw new Error("OpenAI generation failed");
+  throw new Error("OpenAI generation failed across all configured models");
 }
 
 /**
@@ -331,17 +370,17 @@ async function generateAtoyanGemini(
   city: string,
   apiKey: string,
   systemPrompt?: string,
+  chatContext?: string,
 ): Promise<AtoyanLegalContent> {
   const safeSlug = keyword.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
   const linkCatalog = buildLinkingCatalogForLlm({ category: keyword, city, currentSlug: safeSlug });
-  const prompt = `${linkCatalog}\n\nTarget Topic: "${keyword}" in ${city}.\nWrite high-authority California employment legal practice area content (strictly huge content: 2,500-3,500+ words in servicesContent) for Atoyan Law Firm following all system guidelines. Output valid JSON.`;
-  const activePrompt =
-    systemPrompt && !systemPrompt.includes("David") && systemPrompt.includes("Atoyan")
-      ? systemPrompt.trim()
-      : ATOYAN_SYSTEM_PROMPT;
+  const prompt = `${linkCatalog}\n\nTarget Topic: "${keyword}" in ${city}.\nWrite high-authority California employment legal practice area content (strictly huge content: 2,500-3,500+ words in servicesContent) for Atoyan Law Firm following all system guidelines. Output valid JSON matching the schema.`;
+
+  const activePrompt = buildActiveSystemPrompt(systemPrompt, chatContext);
 
   for (const model of GEMINI_MODELS) {
     try {
+      console.log(`[Atoyan LLM] Calling Gemini (${model}) for "${keyword}" in ${city}...`);
       const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
       const res = await fetch(url, {
         method: "POST",
@@ -352,24 +391,40 @@ async function generateAtoyanGemini(
           generationConfig: {
             responseMimeType: "application/json",
             temperature: 0.65,
+            maxOutputTokens: 16000,
           },
         }),
         signal: AbortSignal.timeout(120_000),
       });
 
-      if (!res.ok) continue;
+      if (!res.ok) {
+        const errBody = await res.text();
+        console.error(`[Atoyan LLM] Gemini (${model}) returned HTTP ${res.status}:`, errBody.slice(0, 500));
+        continue;
+      }
+
       const json = await res.json();
       const text = json?.candidates?.[0]?.content?.parts?.[0]?.text;
       if (text) {
         const parsed = JSON.parse(text);
-        return validateAndNormalizeAtoyanContent(parsed, keyword, city);
+        if (
+          parsed &&
+          typeof parsed === "object" &&
+          typeof parsed.servicesContent === "string" &&
+          parsed.servicesContent.trim().length > 500
+        ) {
+          console.log(`[Atoyan LLM] Successfully generated ${parsed.servicesContent.length} chars via Gemini (${model})`);
+          return validateAndNormalizeAtoyanContent(parsed, keyword, city);
+        } else {
+          console.warn(`[Atoyan LLM] Gemini (${model}) response missing servicesContent or length <= 500`);
+        }
       }
-    } catch {
-      // Fall through
+    } catch (err) {
+      console.error(`[Atoyan LLM] Gemini (${model}) request exception:`, err);
     }
   }
 
-  throw new Error("Gemini generation failed");
+  throw new Error("Gemini generation failed across all configured models");
 }
 
 export { generateAtoyanSimulated } from "./llm-simulated";
@@ -384,55 +439,61 @@ export async function generateAtoyanContent(params: {
   geminiKey?: string;
   provider?: "openai" | "gemini" | "simulator";
   systemPrompt?: string;
+  chatContext?: string;
 }): Promise<AtoyanLegalContent> {
-  const { keyword, systemPrompt } = params;
+  const { keyword, systemPrompt, chatContext } = params;
   const city = params.city || extractCity(keyword);
 
-  // If simulator is explicitly chosen, skip external API calls immediately
+  // If simulator is explicitly chosen in settings, return simulated
   if (params.provider === "simulator") {
+    console.log(`[Atoyan LLM] Simulator explicitly selected for "${keyword}"`);
     return generateAtoyanSimulated(keyword, city);
   }
 
-  const openaiKey = process.env.OPENAI_API_KEY?.trim() || params.openaiKey?.trim() || undefined;
-  const geminiKey = process.env.GEMINI_API_KEY?.trim() || params.geminiKey?.trim() || undefined;
+  // Prioritize client-provided API keys (from Settings modal) over server environment keys
+  const openaiKey = params.openaiKey?.trim() || process.env.OPENAI_API_KEY?.trim() || undefined;
+  const geminiKey = params.geminiKey?.trim() || process.env.GEMINI_API_KEY?.trim() || undefined;
 
-  let provider: "openai" | "gemini" = params.provider === "gemini" ? "gemini" : "openai";
-  if (openaiKey && !geminiKey) provider = "openai";
-  else if (geminiKey && !openaiKey) provider = "gemini";
+  let preferredProvider: "openai" | "gemini" = params.provider === "gemini" ? "gemini" : "openai";
+  if (openaiKey && !geminiKey) preferredProvider = "openai";
+  else if (geminiKey && !openaiKey) preferredProvider = "gemini";
 
-  if (provider === "openai" && openaiKey) {
+  // Attempt 1: Preferred Provider
+  if (preferredProvider === "openai" && openaiKey) {
     try {
-      return await generateAtoyanOpenAI(keyword, city, openaiKey, systemPrompt);
+      return await generateAtoyanOpenAI(keyword, city, openaiKey, systemPrompt, chatContext);
     } catch (e) {
-      console.warn("OpenAI generation failed, falling back to Gemini / simulated:", e);
+      console.warn("[Atoyan LLM] Primary OpenAI attempt failed, falling back to Gemini / simulated:", e);
     }
   }
 
-  if (provider === "gemini" && geminiKey) {
+  if (preferredProvider === "gemini" && geminiKey) {
     try {
-      return await generateAtoyanGemini(keyword, city, geminiKey, systemPrompt);
+      return await generateAtoyanGemini(keyword, city, geminiKey, systemPrompt, chatContext);
     } catch (e) {
-      console.warn("Gemini generation failed, falling back to OpenAI / simulated:", e);
+      console.warn("[Atoyan LLM] Primary Gemini attempt failed, falling back to OpenAI / simulated:", e);
     }
   }
 
-  // Provider fallbacks if primary failed or key not set
-  if (openaiKey && provider !== "openai") {
+  // Attempt 2: Secondary Provider Fallback
+  if (openaiKey && preferredProvider !== "openai") {
     try {
-      return await generateAtoyanOpenAI(keyword, city, openaiKey, systemPrompt);
+      return await generateAtoyanOpenAI(keyword, city, openaiKey, systemPrompt, chatContext);
     } catch (e) {
-      console.warn("OpenAI fallback failed:", e);
+      console.warn("[Atoyan LLM] Fallback OpenAI attempt failed:", e);
     }
   }
 
-  if (geminiKey && provider !== "gemini") {
+  if (geminiKey && preferredProvider !== "gemini") {
     try {
-      return await generateAtoyanGemini(keyword, city, geminiKey, systemPrompt);
+      return await generateAtoyanGemini(keyword, city, geminiKey, systemPrompt, chatContext);
     } catch (e) {
-      console.warn("Gemini fallback failed:", e);
+      console.warn("[Atoyan LLM] Fallback Gemini attempt failed:", e);
     }
   }
 
+  // Attempt 3: Last resort offline simulator
+  console.warn(`[Atoyan LLM] No AI API succeeded for "${keyword}" in ${city}. Using offline simulator as emergency fallback.`);
   return generateAtoyanSimulated(keyword, city);
 }
 

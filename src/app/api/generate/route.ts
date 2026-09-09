@@ -4,6 +4,7 @@ import { generateAtoyanContent, extractCity, activeProvider } from "@/lib/llm";
 import { generateAtoyanImages } from "@/lib/imagen";
 import { formatArticle } from "@/lib/formatting";
 import { generateEasyAccordionHtml, generateFaqSchemaJsonLd } from "@/lib/atoyan";
+import { createEasyAccordion } from "@/lib/accordion-creator";
 
 export const runtime = "nodejs";
 export const maxDuration = 120;
@@ -24,7 +25,7 @@ export async function POST(req: Request) {
     );
   }
 
-  const { title: keyword, settings, schedule_at, accordion_shortcode } = parsed.data;
+  const { title: keyword, settings, schedule_at, accordion_shortcode, chat_context } = parsed.data;
   const city = extractCity(keyword);
   const provider = await activeProvider(settings);
 
@@ -37,10 +38,44 @@ export async function POST(req: Request) {
       geminiKey: settings?.gemini_api_key,
       provider: (settings?.llm_provider || provider) as "openai" | "gemini" | "simulator",
       systemPrompt: settings?.system_prompt,
+      chatContext: chat_context,
     });
 
     if (accordion_shortcode && accordion_shortcode.trim()) {
       content.accordionShortcode = accordion_shortcode.trim();
+    } else if (content.faqs && content.faqs.length > 0) {
+      // Dynamically create WordPress Easy Accordion with the unique FAQs right during preview
+      const wpSiteUrl =
+        settings?.wp_site_url?.trim() ||
+        process.env.WP_SITE_URL?.trim() ||
+        "https://www.atoyanlaw.com";
+      const wpUser =
+        process.env.WP_USER?.trim() ||
+        settings?.wp_username?.trim() ||
+        undefined;
+      const wpPassword =
+        process.env.WP_PASSWORD?.trim() ||
+        settings?.wp_app_password?.trim() ||
+        undefined;
+
+      if (wpUser && wpPassword) {
+        try {
+          const acc = await createEasyAccordion({
+            title: `${city} ${content.keyword} FAQs`,
+            faqs: content.faqs,
+            city,
+            topic: content.keyword,
+            wpSiteUrl,
+            wpUser,
+            wpPassword,
+          });
+          if (acc && acc.shortcode) {
+            content.accordionShortcode = acc.shortcode;
+          }
+        } catch (accErr) {
+          console.warn("Could not create dynamic Easy Accordion in preview:", accErr);
+        }
+      }
     }
 
     // 2. Generate Gemini Imagen visual pair (16:9 Banner + 4:3 Editorial Illustration)

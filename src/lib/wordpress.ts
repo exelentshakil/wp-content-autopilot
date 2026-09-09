@@ -195,13 +195,19 @@ export async function publishAtoyanPage(params: {
   let newlyUploadedServicesId: number | undefined;
 
   // Resolve or initialize accordion shortcode
-  let accordionShortcode = content.accordionShortcode?.trim();
+  let accordionShortcode = content.accordionShortcode?.trim() || "";
   let accordionId: number | undefined;
 
-  if (accordionShortcode) {
+  // Check if existing shortcode is an invalid/stale 4176 fallback on a non-Burbank practice area
+  const isOldBurbank4176 =
+    accordionShortcode.includes("4176") &&
+    !(content.city?.toLowerCase() === "burbank" && content.keyword?.toLowerCase().includes("wrongful termination"));
+
+  if (accordionShortcode && !isOldBurbank4176) {
     const idMatch = accordionShortcode.match(/\d+/);
     if (idMatch) accordionId = parseInt(idMatch[0], 10);
   } else {
+    // Check if there is an exact city match, otherwise leave empty for dynamic creation
     accordionShortcode = resolveDefaultAccordionShortcode(content.keyword, content.city);
     const idMatch = accordionShortcode.match(/\d+/);
     if (idMatch) accordionId = parseInt(idMatch[0], 10);
@@ -296,9 +302,20 @@ export async function publishAtoyanPage(params: {
     }
   }
 
-  // Step 2.5: Dynamically create or map Easy Accordion (sp_easy_accordion)
-  if (!params.content.accordionShortcode && content.faqs && content.faqs.length > 0) {
+  // Step 2.5: Dynamically create Easy Accordion (sp_easy_accordion) if not already created
+  const isStale4176 =
+    accordionShortcode.includes("4176") &&
+    !(content.city?.toLowerCase() === "burbank" && content.keyword?.toLowerCase().includes("wrongful termination"));
+
+  const needsAccordionCreation =
+    !accordionShortcode ||
+    accordionShortcode.includes("pending") ||
+    accordionShortcode.includes("auto") ||
+    isStale4176;
+
+  if (needsAccordionCreation && content.faqs && content.faqs.length > 0) {
     try {
+      console.log(`[Atoyan WordPress] Creating dynamic Easy Accordion for "${content.city || "California"} ${content.keyword}"...`);
       const accordionResult = await createEasyAccordion({
         title: `${content.city || "California"} ${content.keyword || "Employment Law"} FAQs`,
         faqs: content.faqs,
@@ -311,8 +328,9 @@ export async function publishAtoyanPage(params: {
       accordionShortcode = accordionResult.shortcode;
       accordionId = accordionResult.id;
       content.accordionShortcode = accordionShortcode;
+      console.log(`[Atoyan WordPress] Created dynamic Easy Accordion: ${accordionShortcode} (id: ${accordionId})`);
     } catch (accErr) {
-      console.warn("Could not create dynamic Easy Accordion, using mapped fallback:", accErr);
+      console.warn("Could not create dynamic Easy Accordion:", accErr);
     }
   }
 

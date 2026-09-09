@@ -87,6 +87,7 @@ export async function POST(req: Request) {
         geminiKey: settings?.gemini_api_key,
         provider: settings?.llm_provider,
         systemPrompt: settings?.system_prompt,
+        chatContext: parsed.data.chat_context,
       });
 
       // If legacy content was provided as a string, honor it inside servicesContent

@@ -334,12 +334,12 @@ export function resolveDefaultAccordionShortcode(keyword: string, city = "Califo
   if (kw.includes("sue") || kw.includes("on my own")) {
     return '[sp_easyaccordion id="3828"]'; // How Can I Sue My Employer on My Own in California?
   }
-  if (kw.includes("wrongful") || kw.includes("termination") || kw.includes("firing") || kw.includes("fired")) {
+  if (kw.includes("burbank") && (kw.includes("wrongful") || kw.includes("termination") || kw.includes("firing") || kw.includes("fired"))) {
     return '[sp_easyaccordion id="4176"]'; // Burbank Wrongful Termination Lawyer
   }
 
-  // Fallback to Burbank Wrongful Termination
-  return '[sp_easyaccordion id="4176"]';
+  // Do NOT reuse Burbank 4176 for Glendale or other practice areas - return empty so a unique accordion is dynamically created
+  return "";
 }
 
 /**
@@ -411,7 +411,10 @@ export function buildCompensationSection(
     cleanIntro = `${cleanIntro}\r\n\r\n<p>If you believe your rights were violated in ${city}, Atoyan Employment Law can help you understand your rights and evaluate your potential claim. <a href="/contact/">Contact</a> the firm to discuss what happened and learn what options may be available to you.</p>`;
   }
 
-  return `${cleanIntro}\r\n\r\n${shortcode}`;
+  if (shortcode) {
+    return `${cleanIntro}\r\n\r\n${shortcode}`;
+  }
+  return cleanIntro;
 }
 
 /**

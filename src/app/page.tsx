@@ -82,7 +82,9 @@ interface PublishResponse {
 export default function Home() {
   const { settings, ready } = useSettings();
   const [mainView, setMainView] = useState<"generator" | "reports">("generator");
-  const [keyword, setKeyword] = useState("Burbank Wrongful Termination Lawyer");
+  const [keyword, setKeyword] = useState("");
+  const [chatContext, setChatContext] = useState("");
+  const [showChatContext, setShowChatContext] = useState(false);
   const [scheduleAt, setScheduleAt] = useState("");
   const [loading, setLoading] = useState(false);
   const [publishing, setPublishing] = useState(false);
@@ -138,6 +140,7 @@ export default function Home() {
           title: keyword,
           schedule_at: scheduleAt || undefined,
           accordion_shortcode: accordionShortcode || undefined,
+          chat_context: chatContext.trim() || undefined,
           settings,
         }),
       });
@@ -177,6 +180,7 @@ export default function Home() {
         title: targetData ? targetData.content.heroTitle : keyword,
         schedule_at: scheduleAt || undefined,
         accordion_shortcode: accordionShortcode || targetData?.content?.accordionShortcode || undefined,
+        chat_context: chatContext.trim() || undefined,
         settings,
         admin_password: effectivePassword || undefined,
       };
@@ -291,6 +295,7 @@ export default function Home() {
           title: keyword,
           schedule_at: scheduleAt || undefined,
           accordion_shortcode: accordionShortcode || undefined,
+          chat_context: chatContext.trim() || undefined,
           settings,
         }),
       });
@@ -505,9 +510,9 @@ export default function Home() {
               </div>
 
               <div className="space-y-3 pt-2 border-t border-line/50 text-xs">
-                {/* Optional Schedule Publication */}
-                <div className="pt-2 border-t border-line/40">
-                  <div className="space-y-1.5 max-w-md">
+                {/* Optional Schedule Publication & ChatGPT Context */}
+                <div className="pt-2 border-t border-line/40 grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
                     <div className="flex items-center gap-1.5 text-muted font-medium">
                       <Clock className="size-3.5 text-accent" />
                       <span>Optional Schedule Publication:</span>
@@ -521,6 +526,43 @@ export default function Home() {
                     <p className="text-[11px] text-muted">
                       Leave blank for instant publication, or set future date/time to queue on WordPress.
                     </p>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <button
+                        type="button"
+                        onClick={() => setShowChatContext((prev) => !prev)}
+                        className="flex items-center gap-1.5 text-muted hover:text-text font-medium transition"
+                      >
+                        <Sparkles className="size-3.5 text-accent" />
+                        <span>ChatGPT Context &amp; Custom Notes:</span>
+                        <span className="text-[10px] text-accent font-semibold ml-1">
+                          {showChatContext ? "▲ Hide" : "▼ Add"}
+                        </span>
+                      </button>
+                      {chatContext && (
+                        <span className="text-[10px] text-good font-medium">Context Active</span>
+                      )}
+                    </div>
+                    {showChatContext ? (
+                      <div>
+                        <textarea
+                          rows={3}
+                          value={chatContext}
+                          onChange={(e) => setChatContext(e.target.value)}
+                          placeholder="Paste ChatGPT conversation context, specific California case citations, or custom attorney directives to guide OpenAI generation..."
+                          className="w-full rounded-lg border border-line bg-panel-2 p-2.5 text-xs text-text focus:outline-none focus:ring-1 focus:ring-accent leading-relaxed font-mono resize-y"
+                        />
+                        <p className="text-[11px] text-muted">
+                          Appended to the OpenAI prompt so the generated page reflects your specific legal nuances and citations.
+                        </p>
+                      </div>
+                    ) : (
+                      <p className="text-[11px] text-muted">
+                        {chatContext ? "Custom notes attached to prompt." : "Optional: click above to supply ChatGPT conversation context or case citations."}
+                      </p>
+                    )}
                   </div>
                 </div>
               </div>
@@ -803,7 +845,7 @@ export default function Home() {
                           </span>
                         </div>
                         <span className="text-xs font-mono font-bold text-accent bg-accent/10 px-3 py-1 rounded border border-accent/20 self-start sm:self-auto">
-                          {result.content.accordionShortcode || accordionShortcode || '[sp_easyaccordion id="4176"]'}
+                          {result.content.accordionShortcode || accordionShortcode || '[sp_easyaccordion id="..."] (Dynamic)'}
                         </span>
                       </div>
                       <p className="text-xs text-muted leading-relaxed">
@@ -993,14 +1035,17 @@ export default function Home() {
                     <div className="flex flex-col sm:flex-row sm:items-center gap-3 p-4 rounded-xl bg-panel-2 border border-line">
                       <span className="text-xs text-muted font-medium">Active Shortcode:</span>
                       <code className="text-accent font-mono font-bold text-sm bg-panel px-3 py-1 rounded border border-line">
-                        {result.content.accordionShortcode || accordionShortcode || '[sp_easyaccordion id="4176"]'}
+                        {result.content.accordionShortcode || accordionShortcode || "Dynamic Easy Accordion"}
                       </code>
                       <button
                         type="button"
                         onClick={() => {
-                          navigator.clipboard.writeText(result.content.accordionShortcode || accordionShortcode || '[sp_easyaccordion id="4176"]');
-                          setCopiedShortcode(true);
-                          setTimeout(() => setCopiedShortcode(false), 2000);
+                          const sc = result.content.accordionShortcode || accordionShortcode;
+                          if (sc) {
+                            navigator.clipboard.writeText(sc);
+                            setCopiedShortcode(true);
+                            setTimeout(() => setCopiedShortcode(false), 2000);
+                          }
                         }}
                         className="inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded border border-line bg-panel hover:bg-panel-2 text-text font-medium transition sm:ml-auto"
                       >

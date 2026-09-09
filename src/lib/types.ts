@@ -52,6 +52,7 @@ export const GenerateRequest = z.object({
   settings: Settings.optional(),
   schedule_at: z.string().optional(),
   accordion_shortcode: z.string().optional(),
+  chat_context: z.string().optional(),
 });
 export type GenerateRequest = z.infer<typeof GenerateRequest>;
 
@@ -69,6 +70,7 @@ export const PublishRequest = z.object({
   services_attachment_id: z.number().optional(),
   admin_password: z.string().optional(),
   accordion_shortcode: z.string().optional(),
+  chat_context: z.string().optional(),
 });
 export type PublishRequest = z.infer<typeof PublishRequest>;
 
