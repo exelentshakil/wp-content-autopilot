@@ -1,3 +1,4 @@
+import { createEasyAccordion } from "@/lib/accordion-creator";
 import { NextResponse } from "next/server";
 
 export const runtime = "nodejs";
@@ -56,12 +57,30 @@ export async function GET() {
   const wpUser = process.env.WP_USER?.trim();
   const wpPassword = process.env.WP_PASSWORD?.trim();
 
-  // Try fetching live accordions from WordPress REST API (authenticated or public)
+  // Try fetching live accordions: 1) Bridge endpoint, 2) Standard WP REST, 3) Catalog
   try {
     const headers: Record<string, string> = {};
     if (wpUser && wpPassword) {
       headers["Authorization"] = "Basic " + Buffer.from(wpUser + ":" + wpPassword).toString("base64");
     }
+
+    // Tier 1: Try Autopilot Bridge endpoint
+    try {
+      const bridgeRes = await fetch(cleanBase + "/wp-json/autopilot/v1/accordions", {
+        headers,
+        signal: AbortSignal.timeout(6_000),
+      });
+      if (bridgeRes.ok) {
+        const data = await bridgeRes.json();
+        if (Array.isArray(data?.accordions) && data.accordions.length > 0) {
+          return NextResponse.json({ accordions: data.accordions, source: "bridge" });
+        }
+      }
+    } catch {
+      // Bridge not yet updated on remote, proceed to Tier 2
+    }
+
+    // Tier 2: Try core WP REST API
     const res = await fetch(cleanBase + "/wp-json/wp/v2/sp_easy_accordion?per_page=100", {
       headers,
       signal: AbortSignal.timeout(10_000),
@@ -82,4 +101,33 @@ export async function GET() {
   }
 
   return NextResponse.json({ accordions: KNOWN_ACCORDIONS, source: "catalog" });
+}
+
+export async function POST(req: Request) {
+  try {
+    const body = await req.json();
+    const { title, faqs, city, topic, shortcode_options } = body;
+
+    if (!title) {
+      return NextResponse.json(
+        { error: "Title is required to create an accordion" },
+        { status: 400 }
+      );
+    }
+
+    const result = await createEasyAccordion({
+      title,
+      faqs: Array.isArray(faqs) ? faqs : [],
+      city: city || "California",
+      topic: topic || "Employment Law",
+      shortcode_options,
+    });
+
+    return NextResponse.json(result);
+  } catch (err: any) {
+    return NextResponse.json(
+      { error: err.message || "Failed to create accordion" },
+      { status: 500 }
+    );
+  }
 }

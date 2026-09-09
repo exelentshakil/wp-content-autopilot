@@ -13,7 +13,9 @@ import {
   ATOYAN_BANNER_ATTACHMENT_ID,
   buildAcfPersonalInjuryGroup,
   generateFaqSchemaJsonLd,
+  resolveDefaultAccordionShortcode,
 } from "./atoyan";
+import { createEasyAccordion } from "./accordion-creator";
 
 export interface PublishResult {
   mode: "live" | "simulated";
@@ -192,6 +194,20 @@ export async function publishAtoyanPage(params: {
   let servicesAttachmentId = existingServicesId;
   let newlyUploadedServicesId: number | undefined;
 
+  // Resolve or initialize accordion shortcode
+  let accordionShortcode = content.accordionShortcode?.trim();
+  let accordionId: number | undefined;
+
+  if (accordionShortcode) {
+    const idMatch = accordionShortcode.match(/\d+/);
+    if (idMatch) accordionId = parseInt(idMatch[0], 10);
+  } else {
+    accordionShortcode = resolveDefaultAccordionShortcode(content.keyword, content.city);
+    const idMatch = accordionShortcode.match(/\d+/);
+    if (idMatch) accordionId = parseInt(idMatch[0], 10);
+  }
+  content.accordionShortcode = accordionShortcode;
+
   // Build ACF Group
   const acfGroup = buildAcfPersonalInjuryGroup(
     content,
@@ -216,6 +232,8 @@ export async function publishAtoyanPage(params: {
       yoastUpdated: true,
       inpostHeadScript: generateFaqSchemaJsonLd(content.faqs),
       acfPayload: acfGroup as unknown as Record<string, unknown>,
+      accordionShortcode,
+      accordionId,
     };
   }
 
@@ -275,6 +293,26 @@ export async function publishAtoyanPage(params: {
       newlyUploadedServicesId = servicesUpload.id;
     } catch (servicesErr) {
       console.warn("Services image upload error, falling back to default image:", servicesErr);
+    }
+  }
+
+  // Step 2.5: Dynamically create or map Easy Accordion (sp_easy_accordion)
+  if (!params.content.accordionShortcode && content.faqs && content.faqs.length > 0) {
+    try {
+      const accordionResult = await createEasyAccordion({
+        title: `${content.city || "California"} ${content.keyword || "Employment Law"} FAQs`,
+        faqs: content.faqs,
+        city: content.city,
+        topic: content.keyword,
+        wpSiteUrl: cleanBase,
+        wpUser,
+        wpPassword,
+      });
+      accordionShortcode = accordionResult.shortcode;
+      accordionId = accordionResult.id;
+      content.accordionShortcode = accordionShortcode;
+    } catch (accErr) {
+      console.warn("Could not create dynamic Easy Accordion, using mapped fallback:", accErr);
     }
   }
 
@@ -429,6 +467,8 @@ export async function publishAtoyanPage(params: {
     yoastUpdated,
     
     acfPayload: finalAcfGroup as unknown as Record<string, unknown>,
+    accordionShortcode,
+    accordionId,
   };
 }
 

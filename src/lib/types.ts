@@ -177,6 +177,8 @@ export interface AtoyanPublishResult {
   yoastUpdated: boolean;
   inpostHeadScript?: string;
   acfPayload: Record<string, unknown>;
+  accordionShortcode?: string;
+  accordionId?: number;
 }
 
 export interface GenerationReportItem {

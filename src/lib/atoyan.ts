@@ -373,9 +373,43 @@ export function buildCompensationSection(
     }
   }
 
-  const cleanIntro = compensationIntro
+  let cleanIntro = compensationIntro
     .replace(/\[sp_easyaccordion\s+id=["']?\d+["']?\]/gi, "")
     .trim();
+
+  // If cleanIntro is missing or very short, construct high-authority legal rights overview
+  if (!cleanIntro || cleanIntro.length < 50) {
+    const kw = keyword.toLowerCase();
+    let harmText = "experienced illegal workplace violations";
+    let lawText = "California's employment laws are designed to protect employees from suffering career and financial harm";
+    let claimText = "your workplace rights were violated";
+
+    if (kw.includes("overtime") || kw.includes("wage") || kw.includes("theft") || kw.includes("unpaid")) {
+      harmText = "worked the hours, California law may require your employer to pay you for them. And if those hours qualify as overtime, the employer may owe more than your normal hourly rate";
+      lawText = "California's overtime laws are designed to protect employees from losing wages because they worked longer hours";
+      claimText = "you were denied overtime pay or earned wages";
+    } else if (kw.includes("wrongful") || kw.includes("termination") || kw.includes("firing")) {
+      harmText = "were fired or pressured into resigning, California law may require your employer to compensate you for lost income, emotional distress, and statutory penalties";
+      lawText = "California's wrongful termination laws are designed to protect employees from unlawful retaliation and discrimination";
+      claimText = "you were wrongfully terminated";
+    } else if (kw.includes("harass") || kw.includes("sexual") || kw.includes("hostile")) {
+      harmText = "endured unlawful harassment or a hostile work environment, California law holds employers accountable for misconduct and failure to take immediate corrective action";
+      lawText = "California's Fair Employment and Housing Act (FEHA) strictly protects employees from harassment and hostility";
+      claimText = "you experienced workplace harassment";
+    } else if (kw.includes("retaliat") || kw.includes("whistleblow")) {
+      harmText = "faced adverse action after asserting your rights or reporting misconduct, California law provides strong protections against retaliation";
+      lawText = "California Labor Code § 1102.5 and related statutes prohibit retaliating against workers who engage in protected activities";
+      claimText = "you experienced illegal retaliation";
+    } else if (kw.includes("disability") || kw.includes("medical") || kw.includes("leave")) {
+      harmText = "were denied reasonable accommodation or penalized for taking protected medical leave, California law protects your health and employment rights";
+      lawText = "California's CFRA, FMLA, and FEHA disability provisions protect workers requiring accommodations or leave";
+      claimText = "your accommodation or medical leave rights were violated";
+    }
+
+    cleanIntro = `<p>If you ${harmText}.</p>\r\n\r\n<p>Do not assume that an employer's payroll system is always correct. Do not assume that being salaried automatically means you are exempt. And do not assume that a manager's instruction to work off the clock makes the work unpaid.</p>\r\n\r\n<p>${lawText}.</p>\r\n\r\n<p>If you believe ${claimText} in ${city}, Atoyan Employment Law can help you understand your rights and evaluate your potential wage claim. <a href="/contact/">Contact</a> the firm to discuss what happened and learn what options may be available to you.</p>`;
+  } else if (!cleanIntro.includes('href="/contact/"') && !cleanIntro.includes('href="https://www.atoyanlaw.com/contact/"')) {
+    cleanIntro = `${cleanIntro}\r\n\r\n<p>If you believe your rights were violated in ${city}, Atoyan Employment Law can help you understand your rights and evaluate your potential claim. <a href="/contact/">Contact</a> the firm to discuss what happened and learn what options may be available to you.</p>`;
+  }
 
   return `${cleanIntro}\r\n\r\n${shortcode}`;
 }
