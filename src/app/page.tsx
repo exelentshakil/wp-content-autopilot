@@ -125,14 +125,6 @@ export default function Home() {
 
   }, []);
 
-  const sampleKeywords = [
-    "Burbank Race Discrimination Attorney",
-    "Burbank Wrongful Termination Lawyer",
-    "Burbank Wage Theft Attorney",
-    "Burbank Sexual Harassment Lawyer",
-    "Fresno Meal and Rest Break Violations",
-    "Burbank Disability Discrimination Lawyer",
-  ];
 
   const handleGenerate = async () => {
     setLoading(true);
@@ -466,12 +458,12 @@ export default function Home() {
             <div className="space-y-4">
               <div>
                 <label className="block text-xs font-medium text-muted uppercase tracking-wider mb-2">
-                  Target Keyword / Practice Area Topic
+                  Practice Area or Page Title
                 </label>
                 <div className="flex flex-col sm:flex-row gap-3">
                   <input
                     className="flex-1 rounded-xl border border-line bg-panel-2 px-4 py-3 text-sm text-text focus:outline-none focus:ring-2 focus:ring-accent/40 font-medium"
-                    placeholder="e.g. Burbank Wrongful Termination Lawyer"
+                    placeholder="e.g. Glendale Wrongful Termination Lawyer"
                     value={keyword}
                     onChange={(e) => setKeyword(e.target.value)}
                   />
@@ -502,24 +494,17 @@ export default function Home() {
                     </button>
                   </div>
                 </div>
+
+                <p className="text-xs text-muted mt-2">
+                  Type any title to generate and preview or publish directly. Sample titles to test:{" "}
+                  <button type="button" onClick={() => setKeyword("Glendale Wrongful Termination Lawyer")} className="text-accent hover:underline font-medium">&ldquo;Glendale Wrongful Termination Lawyer&rdquo;</button>,{" "}
+                  <button type="button" onClick={() => setKeyword("Pasadena Sexual Harassment Attorney")} className="text-accent hover:underline font-medium">&ldquo;Pasadena Sexual Harassment Attorney&rdquo;</button>,{" "}
+                  <button type="button" onClick={() => setKeyword("Torrance Disability Discrimination Lawyer")} className="text-accent hover:underline font-medium">&ldquo;Torrance Disability Discrimination Lawyer&rdquo;</button>, or{" "}
+                  <button type="button" onClick={() => setKeyword("Long Beach Wage Theft Attorney")} className="text-accent hover:underline font-medium">&ldquo;Long Beach Wage Theft Attorney&rdquo;</button>.
+                </p>
               </div>
 
-              {/* Practice Area Presets */}
               <div className="space-y-3 pt-2 border-t border-line/50 text-xs">
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="text-muted font-medium">Practice Area Presets:</span>
-                  {sampleKeywords.map((title) => (
-                    <button
-                      key={title}
-                      type="button"
-                      onClick={() => setKeyword(title)}
-                      className="px-2.5 py-1 rounded-lg border border-line bg-panel-2 hover:bg-panel text-muted hover:text-text transition flex items-center gap-1.5"
-                    >
-                      <span>{title}</span>
-                    </button>
-                  ))}
-                </div>
-
                 {/* Optional Schedule Publication */}
                 <div className="pt-2 border-t border-line/40">
                   <div className="space-y-1.5 max-w-md">
@@ -614,6 +599,30 @@ export default function Home() {
                   </span>
                 </div>
               </div>
+
+              {(publishResult.inpostHeadScript || result?.faqSchemaJsonLd) && (
+                <div className="rounded-xl border border-accent/30 bg-panel p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2 font-semibold text-text">
+                      <FileCode className="size-4 text-accent" />
+                      <span>Insert Script to &lt;head&gt;</span>
+                      <span className="font-mono text-[10px] px-1.5 py-0.5 rounded bg-accent/10 text-accent font-normal">
+                        _inpost_head_script
+                      </span>
+                    </div>
+                    <p className="text-muted">
+                      The code below will be inserted into the &lt;head&gt; section of this specific page/post.
+                    </p>
+                  </div>
+                  <button
+                    onClick={copySchemaJsonLd}
+                    className="inline-flex items-center gap-1.5 rounded-lg bg-accent text-white px-3 py-1.5 text-xs font-medium hover:opacity-90 transition shrink-0"
+                  >
+                    {copiedSchema ? <Check className="size-3.5" /> : <Copy className="size-3.5" />}
+                    {copiedSchema ? "Copied to Clipboard" : "Copy <head> Script"}
+                  </button>
+                </div>
+              )}
             </section>
           )}
 
@@ -921,6 +930,41 @@ export default function Home() {
               {/* TAB 3: EASY ACCORDION & FAQS */}
               {activeTab === "faqs" && (
                 <div className="space-y-6">
+                  {/* Insert Script to <head> (_inpost_head_script) Meta Box */}
+                  <div className="rounded-2xl border-2 border-accent/40 bg-panel p-6 space-y-4 shadow-sm">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-line pb-3">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <FileCode className="size-5 text-accent" />
+                          <h3 className="font-bold text-lg text-text">Insert Script to &lt;head&gt;</h3>
+                          <span className="text-xs font-mono px-2 py-0.5 rounded bg-accent/10 text-accent font-semibold">
+                            custom field: _inpost_head_script
+                          </span>
+                        </div>
+                        <p className="text-xs text-muted mt-1">
+                          The code below will be inserted into the &lt;head&gt; section of this specific page/post.
+                        </p>
+                      </div>
+
+                      <button
+                        onClick={copySchemaJsonLd}
+                        className="inline-flex items-center gap-2 rounded-xl bg-accent text-white px-4 py-2.5 text-xs font-bold hover:opacity-90 transition shadow-sm self-start sm:self-auto"
+                      >
+                        {copiedSchema ? <Check className="size-4" /> : <Copy className="size-4" />}
+                        {copiedSchema ? "Copied to Clipboard!" : "Copy Script for <head>"}
+                      </button>
+                    </div>
+
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between text-xs text-muted">
+                        <span className="font-medium text-text">Schema.org FAQPage JSON-LD Script</span>
+                        <span className="text-accent text-[11px] font-medium">Auto-injected into WordPress &lt;head&gt;</span>
+                      </div>
+                      <pre className="p-4 rounded-xl bg-panel-2 border border-line text-xs font-mono text-text/90 overflow-x-auto max-h-64 whitespace-pre">
+                        {result?.faqSchemaJsonLd || publishResult?.inpostHeadScript}
+                      </pre>
+                    </div>
+                  </div>
                   {/* Easy Accordion Integration Card */}
                   <div className="rounded-2xl border border-line bg-panel p-6 space-y-4 shadow-sm">
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">

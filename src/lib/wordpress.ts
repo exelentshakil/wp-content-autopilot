@@ -326,8 +326,13 @@ export async function publishAtoyanPage(params: {
     baseGroup,
   );
 
+  const faqSchemaJsonLd = generateFaqSchemaJsonLd(content.faqs);
+  const headScriptMeta = {
+    synth_header_script: faqSchemaJsonLd,
+  };
+
   // Client Requirement: standard post_content must strictly remain empty ("")
-  // and extra head script fields (_inpost_head_script, synth_header_script) must NOT be sent.
+  // FAQ Schema is injected into <head> via _inpost_head_script meta and Autopilot Bridge endpoint
   const pagePayload: Record<string, unknown> = {
     title: content.heroTitle,
     slug: content.slug,
@@ -337,6 +342,10 @@ export async function publishAtoyanPage(params: {
     content: "", // Post content must remain strictly empty per client requirement
     acf: {
       personal_injury_group: finalAcfGroup,
+    },
+    meta: {
+      _inpost_head_script: headScriptMeta,
+      _inpost_head_script_synth_header_script: faqSchemaJsonLd,
     },
   };
 
@@ -387,7 +396,24 @@ export async function publishAtoyanPage(params: {
     console.warn("ACF follow-up persistence patch error:", acfPatchErr);
   }
 
-  // Step 4c: Purge WP Rocket cache for the newly created page if bridge plugin is active
+  // Step 4c: Set the head script directly via Autopilot Bridge and purge WP Rocket cache
+  try {
+    await fetch(`${cleanBase}/wp-json/autopilot/v1/head-script`, {
+      method: "POST",
+      headers: {
+        Authorization: `Basic ${authHeader}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        post_id: createdPageId,
+        script: faqSchemaJsonLd,
+      }),
+      signal: AbortSignal.timeout(10_000),
+    });
+  } catch {
+    // Graceful fallback if bridge plugin is not yet activated
+  }
+
   try {
     await fetch(`${cleanBase}/wp-json/autopilot/v1/purge-cache`, {
       method: "POST",
@@ -466,6 +492,7 @@ export async function publishAtoyanPage(params: {
     servicesUrl,
     yoastUpdated,
     
+    inpostHeadScript: faqSchemaJsonLd,
     acfPayload: finalAcfGroup as unknown as Record<string, unknown>,
     accordionShortcode,
     accordionId,
