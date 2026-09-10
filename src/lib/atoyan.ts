@@ -1,3 +1,4 @@
+import { decomposeKeyword } from "./keyword-utils";
 import type {
   AtoyanLegalContent,
   AtoyanFaq,
@@ -155,12 +156,16 @@ export function generateNativeEasyAccordionHtml(
 ): string {
   if (!faqs || faqs.length === 0) return "";
 
+  const decomposed = decomposeKeyword(topic, city);
+  const resolvedCity = decomposed.city || city || "California";
+  const cleanTopic = decomposed.cleanTopic || topic || "Employment Law";
+
   const uniqueId =
     customUniqId ||
     `dynamic_${Math.floor(1000 + Math.random() * 9000)}`;
 
-  const citySlug = city.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
-  const topicSlug = topic.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+  const citySlug = resolvedCity.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+  const topicSlug = cleanTopic.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 
   const itemsHtml = faqs.map((faq, index) => {
     const isFirst = index === 0;
@@ -180,7 +185,7 @@ export function generateNativeEasyAccordionHtml(
 
     // Ensure 10th/last FAQ item concludes with localized Atoyan attorney CTA
     if (isLast && !answerHtml.includes("Talk to a") && !answerHtml.includes("807-0077")) {
-      const ctaBlock = `\r\n<h2 id="talk-to-a-${citySlug}-${topicSlug}-lawyer" class="font-semibold leading-tight text-pretty mb-2 mt-4 text-base">Talk to a ${city} ${topic} Lawyer</h2>\r\n<p class="my-2">If you believe your workplace rights were violated, time limits apply under California law. <strong>Contact Atoyan Law at (888) 807-0077</strong> or through the online form at <a class="reset interactable cursor-pointer decoration-1 underline-offset-1 text-super-primary hover:underline" href="https://www.atoyanlaw.com/contact/" target="_blank" rel="noopener"><span class="text-box-trim-both">atoyanlaw.com</span></a> for a free, confidential case evaluation.</p>`;
+      const ctaBlock = `\r\n<h2 id="talk-to-a-${citySlug}-${topicSlug}-lawyer" class="font-semibold leading-tight text-pretty mb-2 mt-4 text-base">Talk to a ${resolvedCity} ${cleanTopic} Lawyer</h2>\r\n<p class="my-2">If you believe your workplace rights were violated, time limits apply under California law. <strong>Contact Atoyan Law at (888) 807-0077</strong> or through the online form at <a class="reset interactable cursor-pointer decoration-1 underline-offset-1 text-super-primary hover:underline" href="https://www.atoyanlaw.com/contact/" target="_blank" rel="noopener"><span class="text-box-trim-both">atoyanlaw.com</span></a> for a free, confidential case evaluation.</p>`;
       answerHtml += ctaBlock;
     }
 
@@ -446,6 +451,9 @@ export function buildCompensationSection(
   keyword = "Employment Law",
   accordionShortcode?: string,
 ): string {
+  const decomposed = decomposeKeyword(keyword, city);
+  const resolvedCity = decomposed.city || city || "California";
+  const cleanTopic = decomposed.cleanTopic || keyword || "Employment Law";
   let shortcode = (accordionShortcode || "").trim();
   if (shortcode && !shortcode.startsWith("[")) {
     shortcode = `[sp_easyaccordion id="${shortcode}"]`;
@@ -504,7 +512,7 @@ export function buildCompensationSection(
   if (faqs && faqs.length > 0) {
     const idMatch = shortcode.match(/\d+/);
     const uid = idMatch ? idMatch[0] : undefined;
-    const nativeAccordion = generateNativeEasyAccordionHtml(faqs, city, keyword, uid);
+    const nativeAccordion = generateNativeEasyAccordionHtml(faqs, resolvedCity, cleanTopic, uid);
     return `${cleanIntro}\r\n\r\n${nativeAccordion}`;
   }
 

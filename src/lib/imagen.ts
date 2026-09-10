@@ -4,6 +4,7 @@ import path from "path";
 import zlib from "zlib";
 import sharp from "sharp";
 import type { AtoyanGeneratedImage, AtoyanImages } from "./types";
+import { decomposeKeyword } from "./keyword-utils";
 
 interface GenerateSingleImageOptions {
   prompt: string;
@@ -20,16 +21,8 @@ interface GenerateSingleImageOptions {
  * Example: 'Burbank Wrongful Termination Lawyer' -> 'WRONGFUL TERMINATION'
  */
 export function deriveAtoyanCategory(keyword: string, city?: string): string {
-  let cleaned = keyword;
-  if (city) {
-    cleaned = cleaned.replace(new RegExp(city, "gi"), "");
-  }
-  cleaned = cleaned.replace(/\b(lawyer|attorney|law firm|attorneys|lawyers|legal representation|legal advocacy)\b/gi, "");
-  cleaned = cleaned.trim().replace(/^[-–—:,\s]+|[-–—:,\s]+$/g, "");
-  if (!cleaned || cleaned.length < 3) {
-    return "CALIFORNIA EMPLOYMENT LAW";
-  }
-  return cleaned;
+  const decomposed = decomposeKeyword(keyword, city);
+  return decomposed.cleanTopic.toUpperCase();
 }
 
 /**
@@ -92,9 +85,6 @@ export async function getAtoyanBannerOverlay(): Promise<Buffer | null> {
       console.warn("Could not read atoyan-psd-banner-template.png:", err);
     }
   }
-
-  // The pre-extracted PSD template is stored at public/images/atoyan-psd-banner-template.png
-  // If not found, falls through to compositeAtoyanBanner SVG branding fallback.
 
   return null;
 }
@@ -397,7 +387,7 @@ async function tryOpenAiImage(opts: GenerateSingleImageOptions, key: string): Pr
 }
 
 /**
- * Generates an image using available AI providers, falling back gracefully to authentic Atoyan photography.
+ * Cleans an API key by stripping quotes and whitespace.
  */
 function cleanApiKey(raw?: string): string | undefined {
   if (!raw) return undefined;
@@ -431,9 +421,85 @@ async function generateSingleImage(opts: GenerateSingleImageOptions): Promise<At
 }
 
 /**
- * Generates both Atoyan practice area images:
- * 1. Banner Image (1920x451): Moody legal desk with Atoyan 'A' brand mark & dark left gradient.
- * 2. Services Image (600x400): Editorial corporate photo with dark horizontal overlay & bold typography.
+ * Builds a dynamic, 100% topic-specific visual prompt for the 1920x451 Panoramic Hero Banner.
+ * Strictly enforces negative space on the left for the Atoyan logo & dark gradient overlay.
+ */
+export function buildTopicBannerPrompt(cleanTopic: string, city: string, topicKey: string): string {
+  switch (topicKey) {
+    case "wrongful_termination":
+      return `Cinematic professional 35mm panoramic photography of an executive modern California corporate office in ${city} at dusk. On the right side, an empty executive boardroom with glass walls overlooking city skyline, polished dark mahogany conference table with scattered legal briefs and a discreet cardboard personal belongings box on a side credenza symbolizing an abrupt departure. The left half has generous empty space with moody atmospheric shadows. Warm amber interior glow, shallow depth of field. Clean photograph with zero text, no letters, no words, no signage. 16:9 wide landscape orientation.`;
+
+    case "sexual_harassment":
+      return `Cinematic professional 35mm panoramic photography of a high-end California corporate office suite in ${city} during late evening. On the center-right side, architectural glass partitions, warm architectural downlights illuminating an empty corridor between executive offices, expressing tension and legal gravity. The left portion features deep, soft, moody negative space with elegant dark wood paneling and soft ambient shadows. Dramatic warm lighting, clean architectural composition. Zero text, no letters, no words, no signage. 16:9 wide landscape orientation.`;
+
+    case "race_discrimination":
+      return `Cinematic professional 35mm panoramic photography of a sunlit modern California corporate workplace in ${city}. On the right side, an architectural boardroom with glass walls and contemporary walnut fixtures, looking out toward urban architecture under warm California sunlight, symbolizing workplace equality and accountability. The left half features clean, minimalist negative space with soft architectural shadows and shallow depth of field. Professional architectural composition. Zero text, no letters, no words, no signage. 16:9 wide landscape orientation.`;
+
+    case "wage_theft":
+      return `Cinematic professional 35mm panoramic photography of a California corporate compliance and finance office in ${city}. On the right side, a dimly lit executive wooden desk with neatly arranged timecards, payroll ledger records, an antique brass balance scale of justice, and a luxury fountain pen under a warm desk lamp. The left side has expansive, clean, dark negative space with soft shadows. Rich mahogany tones, moody ambiance, shallow depth of field. Zero text, no letters, no words, no signage. 16:9 wide landscape orientation.`;
+
+    case "meal_breaks":
+      return `Cinematic professional 35mm panoramic photography of a contemporary California workplace environment in ${city}. On the right side, a quiet employee breakroom or outdoor patio courtyard adjacent to modern glass corporate offices, bathed in golden hour California sunlight, with a clean table, an empty ceramic mug, and a digital clock reflection, highlighting labor rights and statutory time compliance. The left side has smooth negative space with soft architectural blur. Warm natural lighting. Zero text, no letters, no words, no signage. 16:9 wide landscape orientation.`;
+
+    case "disability":
+      return `Cinematic professional 35mm panoramic photography of an accessible, elegant modern California corporate office in ${city}. On the right side, a beautifully designed ergonomic executive workstation with an adjustable standing desk, wide accessible pathways, warm ambient lighting, and natural greenery through large windows. The left side provides clean negative space with soft warm shadows. Respectful, dignified corporate atmosphere, shallow depth of field. Zero text, no letters, no words, no signage. 16:9 wide landscape orientation.`;
+
+    case "workplace_retaliation":
+      return `Cinematic professional 35mm panoramic photography of a moody, high-stakes corporate environment in ${city} at twilight. On the right side, a modern corner office with floor-to-ceiling glass windows looking out over illuminated city buildings, a desk with a glowing tablet and confidential legal file folders. Dramatic contrast between warm interior lamp light and cool twilight exterior, conveying truth-telling and legal courage. The left side has deep, clean negative space. Zero text, no letters, no words, no signage. 16:9 wide landscape orientation.`;
+
+    case "family_medical_leave":
+      return `Cinematic professional 35mm panoramic photography of a serene, warm California executive office setting in ${city}. On the right side, a polished wooden desk near sun-drenched windows with an organized calendar, a fountain pen, and a warm framed scenic landscape photograph in the soft background, balancing career and family rights. The left side has expansive, soft negative space with gentle bokeh. Golden hour warmth. Zero text, no letters, no words, no signage. 16:9 wide landscape orientation.`;
+
+    case "age_discrimination":
+      return `Cinematic professional 35mm panoramic photography of a distinguished California law firm partner office or executive suite in ${city}. On the right side, classic dark walnut bookshelves lined with leather-bound legal treatises, an executive leather chair, and polished wood surfaces bathed in warm afternoon sunlight, conveying seniority, experience, and dignity. The left side offers ample clean negative space with soft shadows. Zero text, no letters, no words, no signage. 16:9 wide landscape orientation.`;
+
+    default:
+      return `Cinematic professional 35mm panoramic photography of a prestigious California employment law firm library and conference setting in ${city}. On the right side, a polished conference table with leather case binders, warm architectural lighting, and floor-to-ceiling glass windows. The left side has generous clean negative space with soft dark tones. Professional architectural composition. Zero text, no letters, no words, no signage. 16:9 wide landscape orientation.`;
+  }
+}
+
+/**
+ * Builds a dynamic, 100% topic-specific visual prompt for the 600x400 Editorial Services Photo.
+ * Strictly enforces real human client-attorney scenarios without text overlays or dark bars.
+ */
+export function buildTopicServicesPrompt(cleanTopic: string, city: string, topicKey: string): string {
+  switch (topicKey) {
+    case "wrongful_termination":
+      return `Professional editorial corporate photograph of an employee in business attire seated across from an employment attorney at a conference table in ${city}, reviewing termination and severance paperwork with serious, focused expressions. Natural daylight pouring through office windows, clean modern background with glass and warm wood. Authentic editorial corporate photography, 3:2 landscape orientation. Zero text, no letters, no words, no overlays, no watermarks.`;
+
+    case "sexual_harassment":
+      return `Professional editorial corporate photograph of an employee speaking confidentially with a supportive legal professional in a private, sunlit consultation room in ${city}. Empathetic and professional demeanor, safe legal consultation setting, subtle corporate glass backdrop. Dignified, authentic editorial photography, 3:2 landscape orientation. Zero text, no letters, no words, no overlays, no watermarks.`;
+
+    case "race_discrimination":
+      return `Professional editorial corporate photograph of a diverse group of corporate professionals in a modern collaborative office in ${city}, engaged in a serious workplace discussion around a conference table. Natural daylight, contemporary architectural interior, professional business attire. Authentic editorial photography, 3:2 landscape orientation. Zero text, no letters, no words, no overlays, no watermarks.`;
+
+    case "wage_theft":
+      return `Professional editorial corporate photograph of an employee and an employment attorney reviewing detailed payroll printouts, timesheets, and paystub documentation together with a legal notepad on a wooden desk in ${city}. Focused, analytical expressions, natural office lighting. Authentic editorial corporate photography, 3:2 landscape orientation. Zero text, no letters, no words, no overlays, no watermarks.`;
+
+    case "meal_breaks":
+      return `Professional editorial corporate photograph of California workplace employees in business casual attire reviewing daily work schedules, time-tracking logs, and labor compliance documents with legal counsel in a modern office in ${city}. Natural daylight, clean composition. Authentic editorial photography, 3:2 landscape orientation. Zero text, no letters, no words, no overlays, no watermarks.`;
+
+    case "disability":
+      return `Professional editorial corporate photograph of an employee with an accommodation discussing workplace documentation in a bright, modern, fully accessible executive conference room with an employment advocate in ${city}. Respectful, professional, empowering atmosphere. Authentic editorial photography, 3:2 landscape orientation. Zero text, no letters, no words, no overlays, no watermarks.`;
+
+    case "workplace_retaliation":
+      return `Professional editorial corporate photograph of an employee holding a confidential documentation folder, consulting with an attorney in a private office in ${city} while looking through evidence on a tablet. Serious, determined expressions, clean modern California office setting. Authentic editorial photography, 3:2 landscape orientation. Zero text, no letters, no words, no overlays, no watermarks.`;
+
+    case "family_medical_leave":
+      return `Professional editorial corporate photograph of a working parent or caregiver consulting with an employment attorney at a bright, warm office desk in ${city}, reviewing medical leave request forms and family rights documentation. Reassuring, professional consultation. Authentic editorial photography, 3:2 landscape orientation. Zero text, no letters, no words, no overlays, no watermarks.`;
+
+    case "age_discrimination":
+      return `Professional editorial corporate photograph of an experienced senior professional in elegant business attire reviewing employment records and performance evaluations alongside legal counsel in a sophisticated boardroom in ${city}. Dignified, focused expressions. Authentic editorial photography, 3:2 landscape orientation. Zero text, no letters, no words, no overlays, no watermarks.`;
+
+    default:
+      return `Professional editorial corporate photograph of an employment attorney meeting with an employee client in a modern California law office in ${city}, reviewing case files and discussing legal rights across a polished conference table. Natural daylight, warm wood accents. Authentic editorial corporate photography, 3:2 landscape orientation. Zero text, no letters, no words, no overlays, no watermarks.`;
+  }
+}
+
+/**
+ * Generates both Atoyan practice area images dynamically tailored to the topic:
+ * 1. Banner Image (1920x451): Topic-specific cinematic office scene with Atoyan 'A' brand mark & dark left gradient.
+ * 2. Services Image (600x400): Topic-specific editorial corporate photo without text overlays or dark bars.
  */
 export async function generateAtoyanImages(params: {
   keyword: string;
@@ -443,19 +509,22 @@ export async function generateAtoyanImages(params: {
   apiKey?: string;
   openaiKey?: string;
 }): Promise<AtoyanImages> {
-  const { keyword, city = "California", category: providedCategory, slug, apiKey, openaiKey } = params;
-  const safeSlug = (slug || keyword.toLowerCase().replace(/[^a-z0-9]+/g, "-")).replace(/^-|-$/g, "");
+  const { keyword, city: rawCity, category: providedCategory, slug, apiKey, openaiKey } = params;
+  const decomposed = decomposeKeyword(keyword, rawCity);
+  const city = decomposed.city;
+  const cleanTopic = decomposed.cleanTopic;
+  const topicKey = decomposed.topicKey;
+  const safeSlug = (slug || decomposed.slug).replace(/^-|-$/g, "");
   const category = providedCategory || deriveAtoyanCategory(keyword, city);
 
-  const bannerPrompt = `Cinematic professional 35mm photography of an empty California law firm partner office desk. Warm green banker desk lamp, stacked legal case files, leather-bound legal volumes on dark polished mahogany wood. Moody evening ambiance, soft bokeh, executive attorney aesthetic. A clean photograph with natural architectural composition and zero text, letters, signage, or watermarks. 16:9 wide landscape orientation.`;
-
-  const servicesPrompt = `Professional editorial corporate photograph of two legal professionals in business attire reviewing employment documents together in a sleek modern conference room. Natural light, clean architectural background, elegant navy and slate tones. A clean authentic editorial scene with natural composition and zero text, letters, signage, or overlays. 3:2 landscape orientation (600x400).`;
+  const bannerPrompt = buildTopicBannerPrompt(cleanTopic, city, topicKey);
+  const servicesPrompt = buildTopicServicesPrompt(cleanTopic, city, topicKey);
 
   const [rawBanner, rawServices] = await Promise.all([
     generateSingleImage({
       prompt: bannerPrompt,
       filename: `${safeSlug}-banner.jpg`,
-      altText: `${keyword} in ${city} - Atoyan Law Firm`,
+      altText: `${city} ${cleanTopic} Employment Lawyers - Atoyan Law Firm`,
       width: 1920,
       height: 451,
       apiKey,
@@ -464,7 +533,7 @@ export async function generateAtoyanImages(params: {
     generateSingleImage({
       prompt: servicesPrompt,
       filename: `${safeSlug}-services.jpg`,
-      altText: `${keyword} Legal Services & Representation - Atoyan Law`,
+      altText: `${city} ${cleanTopic} Legal Representation & Rights - Atoyan Law`,
       width: 600,
       height: 400,
       apiKey,
@@ -492,7 +561,7 @@ export async function generateAtoyanImages(params: {
   try {
     const rawServicesBuf = Buffer.from(rawServices.base64, "base64");
     const { buffer: servicesBuf, width: sW, height: sH } = await compositeAtoyanServicesImage(rawServicesBuf, {
-      headline: keyword,
+      headline: decomposed.lawyerTitle,
       category,
     });
     services = {

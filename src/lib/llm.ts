@@ -1,4 +1,5 @@
 import { buildLinkingCatalogForLlm, trackPublishedArticle } from "./article-tracker";
+import { decomposeKeyword } from "./keyword-utils";
 import { injectInternalLinks, formatHowDoContentWithLinks, formatCompensationContentWithLinks, generateContextualCta } from "./seo-linking";
 import { generateAtoyanSimulated } from "./llm-simulated";
 import type { Settings, AtoyanLegalContent, AtoyanFaq } from "./types";
@@ -114,10 +115,21 @@ CRITICAL CLIENT RULES (CLIENT DAVID - ATOYAN LAW FIRM):
      Conclude with firm contact link:
      "If you believe your workplace rights were violated in [City], Atoyan Employment Law can help you evaluate your claim. <a href=\"/contact/\">Contact</a> the firm to discuss what happened and learn what options may be available to you."
 
-3. COMPREHENSIVE TOPIC-SPECIFIC FAQS (8 TO 10 IN-DEPTH QUESTIONS):
-   Produce 8 to 10 practical, multi-paragraph FAQs directly addressing real employee questions about this EXACT topic.
-   Every FAQ answer must contain 2-3 substantive paragraphs with California statutory citations and practical reality.
-   The 10th (or final) FAQ item MUST conclude with David Atoyan's localized attorney CTA block:
+3. DAVID ATOYAN APPROVED 10-QUESTION HIGH-INTENT GOOGLE SEARCH FAQ STRUCTURE (MANDATORY):
+   You MUST generate EXACTLY 10 practical, multi-paragraph FAQs for [Topic] in [City], strictly adhering to this searcher progression:
+   1. What Qualifies as [Topic] in [City], California?
+   2. What Are Common Examples of [Topic] at Work?
+   3. Can I Sue My Employer for [Topic] in [City]?
+   4. Can My Employer Fire Me for Reporting [Topic]? (or for [Topic]?)
+   5. Can My Employer Retaliate Against Me for Reporting [Topic]?
+   6. What Evidence Do I Need for a Workplace [Topic] Case?
+   7. Can I Have a [Topic] Case If My Coworker Violated My Rights Instead of My Boss?
+   8. Do I Have to Report [Topic] to HR Before I Can Sue?
+   9. How Long Do I Have to File a [Topic] Claim in California?
+   10. How Much Is a [Topic] Case Worth in California?
+
+   Every FAQ answer MUST contain 2-3 substantive paragraphs citing California Civil Rights Department (CRD/DFEH), Labor Code, and EEOC regulations.
+   The 10th FAQ item MUST conclude with David Atoyan localized attorney CTA block:
    <h2 id="talk-to-a-[city]-[topic]-lawyer" class="font-semibold leading-tight text-pretty mb-2 mt-4 text-base">Talk to a [City] [Topic] Lawyer</h2>
    <p class="my-2">If you believe your workplace rights were violated, time limits apply under California law. <strong>Contact Atoyan Law at (888) 807-0077</strong> or through the online form at <a class="reset interactable cursor-pointer decoration-1 underline-offset-1 text-super-primary hover:underline" href="https://www.atoyanlaw.com/contact/" target="_blank" rel="noopener"><span class="text-box-trim-both">atoyanlaw.com</span></a> for a free, confidential case evaluation.</p>
 
@@ -192,7 +204,10 @@ function validateAndNormalizeAtoyanContent(
   keyword: string,
   city: string,
 ): AtoyanLegalContent {
-  const sim = generateAtoyanSimulated(keyword, city);
+  const decomposed = decomposeKeyword(keyword, city);
+  const resolvedCity = decomposed.city;
+  const cleanTopic = decomposed.cleanTopic;
+  const sim = generateAtoyanSimulated(keyword, resolvedCity);
   if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
     return sim;
   }
@@ -219,13 +234,13 @@ function validateAndNormalizeAtoyanContent(
     typeof obj.slug === "string" && obj.slug
       ? obj.slug.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")
       : sim.slug;
-  const resolvedCity = typeof obj.city === "string" && obj.city ? obj.city : city;
+  const validatedCity = typeof obj.city === "string" && obj.city ? obj.city : resolvedCity;
   const rawServices = typeof obj.servicesContent === "string" && obj.servicesContent ? obj.servicesContent : sim.servicesContent;
 
   // Guarantee internal SEO linking on services content
   const linkedServices = injectInternalLinks(rawServices, {
     currentSlug: resolvedSlug,
-    city: resolvedCity,
+    city: validatedCity,
     maxLinks: 6,
   });
 
@@ -233,8 +248,8 @@ function validateAndNormalizeAtoyanContent(
   let finalHowDoContent = typeof obj.howDoContent === "string" && obj.howDoContent ? obj.howDoContent : sim.howDoContent;
   if (!finalHowDoContent.includes("<a href=") || !finalHowDoContent.includes("retaliat")) {
     finalHowDoContent = formatHowDoContentWithLinks({
-      topic: keyword,
-      city: resolvedCity,
+      topic: cleanTopic,
+      city: validatedCity,
       currentSlug: resolvedSlug,
     });
   }
@@ -249,16 +264,16 @@ function validateAndNormalizeAtoyanContent(
   if (finalFaqs.length > 0) {
     const lastFaq = finalFaqs[finalFaqs.length - 1];
     if (!lastFaq.answer.includes("Talk to a") && !lastFaq.answer.includes("807-0077")) {
-      const citySlug = resolvedCity.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
-      const topicSlug = keyword.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
-      const ctaBlock = `\r\n<h2 id="talk-to-a-${citySlug}-${topicSlug}-lawyer" class="font-semibold leading-tight text-pretty mb-2 mt-4 text-base">Talk to a ${resolvedCity} ${keyword} Lawyer</h2>\r\n<p class="my-2">If you believe your workplace rights were violated, time limits apply under California law. <strong>Contact Atoyan Law at (888) 807-0077</strong> or through the online form at <a class="reset interactable cursor-pointer decoration-1 underline-offset-1 text-super-primary hover:underline" href="https://www.atoyanlaw.com/contact/" target="_blank" rel="noopener"><span class="text-box-trim-both">atoyanlaw.com</span></a> for a free, confidential case evaluation.</p>`;
+      const citySlug = validatedCity.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+      const topicSlug = cleanTopic.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+      const ctaBlock = `\r\n<h2 id="talk-to-a-${citySlug}-${topicSlug}-lawyer" class="font-semibold leading-tight text-pretty mb-2 mt-4 text-base">Talk to a ${validatedCity} ${cleanTopic} Lawyer</h2>\r\n<p class="my-2">If you believe your workplace rights were violated, time limits apply under California law. <strong>Contact Atoyan Law at (888) 807-0077</strong> or through the online form at <a class="reset interactable cursor-pointer decoration-1 underline-offset-1 text-super-primary hover:underline" href="https://www.atoyanlaw.com/contact/" target="_blank" rel="noopener"><span class="text-box-trim-both">atoyanlaw.com</span></a> for a free, confidential case evaluation.</p>`;
       lastFaq.answer = lastFaq.answer.trim() + ctaBlock;
     }
   }
 
   const result: AtoyanLegalContent = {
     keyword: typeof obj.keyword === "string" && obj.keyword ? obj.keyword : keyword,
-    city: resolvedCity,
+    city: validatedCity,
     slug: resolvedSlug,
     heroTitle: typeof obj.heroTitle === "string" && obj.heroTitle ? obj.heroTitle : sim.heroTitle,
     servicesHeading:
@@ -282,15 +297,15 @@ function validateAndNormalizeAtoyanContent(
     compensationIntro: finalCompIntro,
     faqs: finalFaqs,
     yoastTitle:
-      typeof obj.yoastTitle === "string" && obj.yoastTitle ? obj.yoastTitle : sim.yoastTitle,
+      typeof obj.yoastTitle === "string" && obj.yoastTitle ? obj.yoastTitle : decomposed.yoastTitle,
     yoastMetaDesc:
       typeof obj.yoastMetaDesc === "string" && obj.yoastMetaDesc
         ? obj.yoastMetaDesc
-        : sim.yoastMetaDesc,
+        : decomposed.yoastMetaDesc,
     yoastFocusKw:
       typeof obj.yoastFocusKw === "string" && obj.yoastFocusKw
         ? obj.yoastFocusKw
-        : sim.yoastFocusKw,
+        : decomposed.yoastFocusKw,
     accordionShortcode:
       typeof obj.accordionShortcode === "string" && obj.accordionShortcode
         ? obj.accordionShortcode
@@ -336,34 +351,40 @@ export function buildActiveSystemPrompt(customDirectives?: string, chatContext?:
  * Builds the exhaustive user prompt mandating the 7 California litigation sections and 8-10 FAQs.
  */
 function buildLegalPrompt(keyword: string, city: string, linkCatalog: string): string {
+  const decomposed = decomposeKeyword(keyword, city);
+  const resolvedCity = decomposed.city;
+  const cleanTopic = decomposed.cleanTopic;
+  const citySlug = resolvedCity.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+  const topicSlug = cleanTopic.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+
   return `${linkCatalog}
 
-CRITICAL REQUIREMENT: servicesContent MUST be 2,500-3,500+ words of exhaustive, litigation-grade California employment law analysis for "${keyword}" in ${city}.
+CRITICAL REQUIREMENT: servicesContent MUST be 2,500-3,500+ words of exhaustive, litigation-grade California employment law analysis for "${cleanTopic}" in ${resolvedCity}.
 DO NOT generate a short generic summary. Follow this mandatory 7-section framework with 4-6 substantial paragraphs per section:
 
 SECTION 1: STATUTORY FRAMEWORK & DEFINITIONS UNDER CALIFORNIA LAW
-- Heading: <h2 class="h2dav">Understanding ${keyword} Under California Law: Definitions, Rights, and Statutory Protections</h2>
+- Heading: <h2 class="h2dav">Understanding ${cleanTopic} Under California Law: Definitions, Rights, and Statutory Protections</h2>
 - Cite Fair Employment and Housing Act (FEHA) Gov Code § 12940, protected categories, CROWN Act SB 188 if applicable, strict liability for supervisors vs negligence for coworkers under Gov Code § 12940(j), relevant California Labor Code sections.
 - Include Early Callout Box:
-<p class="txt-hlt bg-bx ulk-bg pd_v-30 pd_h-30" style="text-align:center;"><em><strong>If your employer has subjected you to ${keyword} in ${city}, Atoyan Law Firm is here to fight for your rights. <a href="tel:8888070077">Contact our ${city} ${keyword} Attorneys</a> at (888) 807-0077 today for a free, confidential case evaluation.</strong></em></p>
+<p class="txt-hlt bg-bx ulk-bg pd_v-30 pd_h-30" style="text-align:center;"><em><strong>If your employer has subjected you to ${cleanTopic.toLowerCase()} in ${resolvedCity}, Atoyan Law Firm is here to fight for your rights. <a href="tel:8888070077">Contact our ${resolvedCity} ${cleanTopic} Attorneys</a> at (888) 807-0077 today for a free, confidential case evaluation.</strong></em></p>
 
-SECTION 2: WORKPLACE MANIFESTATIONS & UNLAWFUL ADVERSE ACTIONS IN ${city.toUpperCase()}
-- Heading: <h2 class="h2dav">Common Forms of ${keyword} in ${city} Workplaces</h2>
+SECTION 2: WORKPLACE MANIFESTATIONS & UNLAWFUL ADVERSE ACTIONS IN ${resolvedCity.toUpperCase()}
+- Heading: <h2 class="h2dav">Common Forms of ${cleanTopic} in ${resolvedCity} Workplaces</h2>
 - Subheadings with <h3 class="h3dav"> for Direct vs Disparate Impact, Adverse Employment Actions (demotion, pay reduction, constructive discharge), Hostile Work Environment legal standards.
-- Detailed <ul> bulleted list with 6-8 concrete workplace examples typical in ${city}.
+- Detailed <ul> bulleted list with 6-8 concrete workplace examples typical in ${resolvedCity}.
 
 SECTION 3: EMPLOYER PRETEXT, SHAM INVESTIGATIONS & PAPER TRAILS
-- Heading: <h2 class="h2dav">How California Employers Mask ${keyword}: Pretext, Bogus Write-Ups, and Sham HR Investigations</h2>
+- Heading: <h2 class="h2dav">How California Employers Mask ${cleanTopic}: Pretext, Bogus Write-Ups, and Sham HR Investigations</h2>
 - Explain the McDonnell Douglas burden-shifting framework (Guz v. Bechtel National), retaliatory write-ups, bogus PIPs (performance improvement plans), sudden restructuring/RIFs, and HR bias protecting the employer.
 - Include Mid Callout Box:
-<p class="txt-hlt bg-bx ulk-bg pd_v-30 pd_h-30" style="text-align:center;"><em><strong>Facing sudden write-ups, bogus disciplinary reviews, or employer retaliation in ${city}? You have legal rights under California law. Our ${city} ${keyword} Lawyers are prepared to hold them accountable. <a href="tel:8888070077">Call (888) 807-0077</a> for an immediate consultation.</strong></em></p>
+<p class="txt-hlt bg-bx ulk-bg pd_v-30 pd_h-30" style="text-align:center;"><em><strong>Facing sudden write-ups, bogus disciplinary reviews, or employer retaliation in ${resolvedCity}? You have legal rights under California law. Our ${resolvedCity} ${cleanTopic} Lawyers are prepared to hold them accountable. <a href="tel:8888070077">Call (888) 807-0077</a> for an immediate consultation.</strong></em></p>
 
 SECTION 4: WORKPLACE RETALIATION & CALIFORNIA'S 90-DAY STATUTORY PRESUMPTION (SB 497)
 - Heading: <h2 class="h2dav">Workplace Retaliation Under California Law: Labor Code § 1102.5 & Senate Bill 497</h2>
 - Explain Labor Code § 1102.5 whistleblower rights, Labor Code § 98.6, and California Senate Bill 497 (SB 497) establishing a rebuttable presumption of retaliation if adverse action happens within 90 days of protected activity. Contrast California's employee-protective standard (Lawson v. PPG Architectural Finishes) with federal standards.
 
 SECTION 5: EVIDENTIARY BLUEPRINT: HOW TO DOCUMENT & PROVE YOUR CASE
-- Heading: <h2 class="h2dav">How to Document and Prove a ${keyword} Claim in California</h2>
+- Heading: <h2 class="h2dav">How to Document and Prove a ${cleanTopic} Claim in California</h2>
 - Subheadings with <h3 class="h3dav"> on Documentary Evidence, Digital Communications (emails, texts, Slack/Teams), Comparator Evidence, and Contemporaneous Journaling.
 - Detail what records to preserve and caution regarding California Penal Code § 632 two-party consent wiretapping laws.
 
@@ -375,19 +396,29 @@ SECTION 7: RECOVERABLE DAMAGES AND FINANCIAL COMPENSATION
 - Heading: <h2 class="h2dav">What Compensation and Financial Damages Can You Recover in California?</h2>
 - Subheadings with <h3 class="h3dav"> for Economic Damages (Back Pay, Front Pay, Lost Benefits, Stock Options), Non-Economic Damages (Emotional Distress, Mental Anguish), Punitive Damages under California Civil Code § 3294 (oppression, fraud, malice), and Statutory Attorneys' Fees under Gov Code § 12965(b).
 - Include Concluding Callout Box:
-<p class="txt-hlt bg-bx ulk-bg pd_v-30 pd_h-30" style="text-align:center;"><em><strong>${keyword} is an unacceptable violation of California labor protections. Don’t face your employer alone. <a href="tel:8888070077">Contact Atoyan Law Firm’s ${city} ${keyword} team</a> today at (888) 807-0077 to demand the full compensation you are owed.</strong></em></p>
+<p class="txt-hlt bg-bx ulk-bg pd_v-30 pd_h-30" style="text-align:center;"><em><strong>${cleanTopic} is an unacceptable violation of California labor protections. Don’t face your employer alone. <a href="tel:8888070077">Contact Atoyan Law Firm’s ${resolvedCity} ${cleanTopic} team</a> today at (888) 807-0077 to demand the full compensation you are owed.</strong></em></p>
 
-ALSO INCLUDE:
-- 8 to 10 in-depth, multi-paragraph FAQs specifically addressing real employee questions about ${keyword} in California. Every answer must have 2-3 substantive paragraphs citing California statutes and practical realities. The final FAQ must end with David Atoyan's localized attorney CTA block:
-<h2 id="talk-to-a-${city.toLowerCase().replace(/[^a-z0-9]+/g, "-")}-${keyword.toLowerCase().replace(/[^a-z0-9]+/g, "-")}-lawyer" class="font-semibold leading-tight text-pretty mb-2 mt-4 text-base">Talk to a ${city} ${keyword} Lawyer</h2>
+MANDATORY 10-QUESTION HIGH-INTENT GOOGLE SEARCH FAQ STRUCTURE (DAVID ATOYAN APPROVED):
+You MUST generate EXACTLY 10 practical, multi-paragraph FAQs for "${cleanTopic}" in ${resolvedCity}, covering this exact searcher progression:
+1. What Qualifies as ${cleanTopic} in ${resolvedCity}, California?
+2. What Are Common Examples of ${cleanTopic} at Work?
+3. Can I Sue My Employer for ${cleanTopic} in ${resolvedCity}?
+4. Can My Employer Fire Me for Reporting ${cleanTopic}? (or for ${cleanTopic}?)
+5. Can My Employer Retaliate Against Me for Reporting ${cleanTopic}?
+6. What Evidence Do I Need for a Workplace ${cleanTopic} Case?
+7. Can I Have a ${cleanTopic} Case If My Coworker Violated My Rights Instead of My Boss?
+8. Do I Have to Report ${cleanTopic} to HR Before I Can Sue?
+9. How Long Do I Have to File a ${cleanTopic} Claim in California?
+10. How Much Is a ${cleanTopic} Case Worth in California?
+
+Every answer MUST contain 2-3 substantive paragraphs citing California Civil Rights Department (CRD), California Labor Code, and EEOC regulations.
+The 10th FAQ answer MUST conclude with David Atoyan's localized attorney CTA block:
+<h2 id="talk-to-a-${citySlug}-${topicSlug}-lawyer" class="font-semibold leading-tight text-pretty mb-2 mt-4 text-base">Talk to a ${resolvedCity} ${cleanTopic} Lawyer</h2>
 <p class="my-2">If you believe your workplace rights were violated, time limits apply under California law. <strong>Contact Atoyan Law at (888) 807-0077</strong> or through the online form at <a class="reset interactable cursor-pointer decoration-1 underline-offset-1 text-super-primary hover:underline" href="https://www.atoyanlaw.com/contact/" target="_blank" rel="noopener"><span class="text-box-trim-both">atoyanlaw.com</span></a> for a free, confidential case evaluation.</p>
 
 Output strictly valid JSON matching the schema.`;
 }
 
-/**
- * Generates California employment legal content using OpenAI.
- */
 async function generateAtoyanOpenAI(
   keyword: string,
   city: string,

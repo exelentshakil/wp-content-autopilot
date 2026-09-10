@@ -1,3 +1,4 @@
+import { decomposeKeyword } from "./keyword-utils";
 import { generateContextualCta, injectInternalLinks, formatHowDoContentWithLinks, formatCompensationContentWithLinks } from "./seo-linking";
 import { trackPublishedArticle } from "./article-tracker";
 import type { AtoyanLegalContent, AtoyanFaq } from "./types";
@@ -40,43 +41,48 @@ export function detectTopic(keyword: string): EmploymentTopic {
 }
 
 export function generateAtoyanSimulated(keyword: string, city: string): AtoyanLegalContent {
-  const safeSlug = keyword.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
-  const topic = detectTopic(keyword);
-  const shortcode = resolveDefaultAccordionShortcode(keyword, city);
+  const decomposed = decomposeKeyword(keyword, city);
+  const resolvedCity = decomposed.city;
+  const cleanTopic = decomposed.cleanTopic;
+  const safeSlug = decomposed.slug;
+  const heroTitle = decomposed.heroTitle;
+  const lawyerTitle = decomposed.lawyerTitle;
+  const topic = detectTopic(cleanTopic);
+  const shortcode = resolveDefaultAccordionShortcode(cleanTopic, resolvedCity);
 
   let raw: AtoyanLegalContent;
   switch (topic) {
     case "race_discrimination":
-      raw = buildRaceDiscriminationContent(keyword, city, safeSlug, shortcode);
+      raw = buildRaceDiscriminationContent(cleanTopic, resolvedCity, safeSlug, shortcode);
       break;
     case "wage_theft":
-      raw = buildWageTheftContent(keyword, city, safeSlug, shortcode);
+      raw = buildWageTheftContent(cleanTopic, resolvedCity, safeSlug, shortcode);
       break;
     case "meal_breaks":
-      raw = buildMealBreaksContent(keyword, city, safeSlug, shortcode);
+      raw = buildMealBreaksContent(cleanTopic, resolvedCity, safeSlug, shortcode);
       break;
     case "sexual_harassment":
-      raw = buildHarassmentContent(keyword, city, safeSlug, shortcode);
+      raw = buildHarassmentContent(cleanTopic, resolvedCity, safeSlug, shortcode);
       break;
     case "disability":
-      raw = buildDisabilityContent(keyword, city, safeSlug, shortcode);
+      raw = buildDisabilityContent(cleanTopic, resolvedCity, safeSlug, shortcode);
       break;
     case "family_medical_leave":
-      raw = buildLeaveContent(keyword, city, safeSlug, shortcode);
+      raw = buildLeaveContent(cleanTopic, resolvedCity, safeSlug, shortcode);
       break;
     case "workplace_retaliation":
-      raw = buildRetaliationContent(keyword, city, safeSlug, shortcode);
+      raw = buildRetaliationContent(cleanTopic, resolvedCity, safeSlug, shortcode);
       break;
     case "wrongful_termination":
     default:
-      raw = buildWrongfulTerminationContent(keyword, city, safeSlug, shortcode);
+      raw = buildWrongfulTerminationContent(cleanTopic, resolvedCity, safeSlug, shortcode);
       break;
   }
 
   // 1. Enforce 100% topic-specific, city-tailored CTAs with toll-free phone links
-  const earlyCta = generateContextualCta({ topic: keyword, city, position: "early" });
-  const midCta = generateContextualCta({ topic: keyword, city, position: "mid" });
-  const closingCta = generateContextualCta({ topic: keyword, city, position: "closing" });
+  const earlyCta = generateContextualCta({ topic: cleanTopic, city: resolvedCity, position: "early" });
+  const midCta = generateContextualCta({ topic: cleanTopic, city: resolvedCity, position: "mid" });
+  const closingCta = generateContextualCta({ topic: cleanTopic, city: resolvedCity, position: "closing" });
 
   let updatedServices = raw.servicesContent;
   const calloutRegex = /<p class="txt-hlt bg-bx ulk-bg pd_v-30 pd_h-30"[^>]*>[\s\S]*?<\/p>/g;
@@ -100,21 +106,21 @@ export function generateAtoyanSimulated(keyword: string, city: string): AtoyanLe
   // 2. Inject Contextual Internal Links into Services Content (3-5+ links, no self-links)
   const linkedServices = injectInternalLinks(updatedServices, {
     currentSlug: safeSlug,
-    city,
+    city: resolvedCity,
     maxLinks: 6,
   });
 
   // 3. Format How Do Section with diagnostic questions and contextual internal link
   const finalHowDo = formatHowDoContentWithLinks({
-    topic: keyword,
-    city,
+    topic: cleanTopic,
+    city: resolvedCity,
     currentSlug: safeSlug,
   });
 
   // 4. Format Compensation Section with rights and contact link + accordion shortcode
   const finalComp = formatCompensationContentWithLinks({
-    topic: keyword,
-    city,
+    topic: cleanTopic,
+    city: resolvedCity,
     accordionShortcode: shortcode,
   });
 
@@ -129,14 +135,383 @@ export function generateAtoyanSimulated(keyword: string, city: string): AtoyanLe
   trackPublishedArticle({
     slug: safeSlug,
     title: result.heroTitle,
-    keyword: result.keyword,
-    city: result.city,
+    keyword: cleanTopic,
+    city: resolvedCity,
     category: topic,
     url: "https://www.atoyanlaw.com/practice-areas/employment-law/" + safeSlug + "/",
     publishedAt: new Date().toISOString(),
   });
 
   return result;
+}
+
+
+// -----------------------------------------------------------------------------
+// DAVID ATOYAN APPROVED 10-QUESTION HIGH-INTENT GOOGLE SEARCH FAQ ENGINE
+// -----------------------------------------------------------------------------
+export function buildDavidAtoyanFaqs(
+  topic: EmploymentTopic,
+  city: string,
+  cleanTopic: string
+): AtoyanFaq[] {
+  const citySlug = city.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+  const topicSlug = cleanTopic.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+  const ctaBlock = `\r\n<h2 id="talk-to-a-${citySlug}-${topicSlug}-lawyer" class="font-semibold leading-tight text-pretty mb-2 mt-4 text-base">Talk to a ${city} ${cleanTopic} Lawyer</h2>\r\n<p class="my-2">If you believe your workplace rights were violated, time limits apply under California law. <strong>Contact Atoyan Law at (888) 807-0077</strong> or through the online form at <a class="reset interactable cursor-pointer decoration-1 underline-offset-1 text-super-primary hover:underline" href="https://www.atoyanlaw.com/contact/" target="_blank" rel="noopener"><span class="text-box-trim-both">atoyanlaw.com</span></a> for a free, confidential case evaluation.</p>`;
+
+  switch (topic) {
+    case "race_discrimination":
+      return [
+        {
+          question: `What Is Considered Race Discrimination in the Workplace in California?`,
+          answer: `Race discrimination occurs when an employer treats an employee or job applicant unfavorably because of race or characteristics associated with race. It may affect hiring, pay, promotions, assignments, discipline, benefits, layoffs, or termination.\n\nCalifornia's Fair Employment and Housing Act (FEHA, Gov Code § 12940(a)) prohibits employment discrimination based on protected characteristics, including race, color, ancestry, and national origin. Under California's CROWN Act (Gov Code § 12926(w)), race discrimination also includes discrimination based on hair texture and protective hairstyles such as braids, locs, twists, and afros.`
+        },
+        {
+          question: `What Are Common Examples of Race Discrimination at Work?`,
+          answer: `Race discrimination is not always obvious. Some cases involve direct racial comments or slurs, but most involve patterns of unequal treatment.\n\nCommon examples include paying employees of color less than colleagues of other races for substantially similar work, repeatedly promoting less-qualified white employees, imposing harsher discipline on minority workers for identical infractions, steering applicants of color to low-paying backroom positions, subjecting minority employees to hyper-scrutiny, and terminating employees for discriminatory reasons masked behind pretextual performance reviews.`
+        },
+        {
+          question: `Can I Sue My Employer for Race Discrimination in ${city}?`,
+          answer: `You may have the right to pursue a claim if your employer discriminated against you because of your race in ${city}. California's Fair Employment and Housing Act (FEHA) prohibits covered employers from discriminating against employees and applicants based on race and other protected characteristics.\n\nFederal law also prohibits race discrimination under Title VII of the Civil Rights Act of 1964. Under FEHA, employers with 5 or more employees are covered for discrimination, while harassment protections apply to all California employers regardless of size. An experienced ${city} race discrimination attorney can evaluate your claims and file in California Superior Court.`
+        },
+        {
+          question: `How Can I Prove Race Discrimination at Work?`,
+          answer: `Direct evidence is not required in every race discrimination case because employers rarely admit to racial bias in writing. A claim typically relies on circumstantial and comparator evidence.\n\nUseful evidence includes emails, text messages, workplace chat logs, performance evaluations, promotion records, witness statements, complaints to HR, and records showing that similarly situated employees of other races were treated more favorably. Suspicious timing—such as a sudden negative review following years of praise or after an employee opposes bias—is also critical evidence.`
+        },
+        {
+          question: `Can My Employer Fire Me Because of My Race?`,
+          answer: `An employer cannot lawfully terminate an employee because of the employee's race. While California is an at-will employment state, at-will rules never permit an employer to terminate someone for an unlawful discriminatory reason.\n\nEmployers frequently claim a discharge was due to 'restructuring,' 'downsizing,' or 'poor performance.' If evidence demonstrates that race was a motivating factor in the termination decision, the firing is unlawful under California law.`
+        },
+        {
+          question: `Is Racial Harassment the Same as Race Discrimination?`,
+          answer: `Racial harassment is a specific form of unlawful workplace conduct, but discrimination and harassment involve different legal standards.\n\nRacial harassment involves unwelcome verbal, visual, or physical conduct based on race—such as racial slurs, offensive jokes, derogatory comments, racist imagery, or intimidation—that creates a severe or pervasive hostile work environment. Race discrimination involves tangible adverse employment decisions such as discriminatory hiring, firing, pay disparities, or denied promotions. Under FEHA Gov Code § 12940(j), employers are strictly liable for supervisor harassment.`
+        },
+        {
+          question: `Can I File a Claim If a Coworker Is Making Racist Comments?`,
+          answer: `Yes. Workplace protections against racial harassment are not limited to misconduct by supervisors.\n\nA coworker may create unlawful liability by making racial slurs, racist jokes, threats, or offensive remarks. An employer is legally liable under California law if management or HR knew or reasonably should have known about the coworker's conduct and failed to take immediate, effective corrective action to stop the harassment.`
+        },
+        {
+          question: `Can My Employer Retaliate Against Me for Reporting Race Discrimination?`,
+          answer: `Employers cannot lawfully retaliate against employees for engaging in protected activities, including reporting racial discrimination, opposing harassment, or participating in an investigation.\n\nUnder California Senate Bill 497 (effective 2024), if an employer terminates, demotes, reduces the hours of, or disciplines an employee within 90 days of reporting race discrimination, California law establishes a statutory rebuttable presumption of unlawful retaliation. A retaliation claim exists independently of whether the underlying discrimination can be proven.`
+        },
+        {
+          question: `How Long Do I Have to File a Race Discrimination Claim in California?`,
+          answer: `Employment discrimination claims in California are subject to strict legal deadlines. Under California law, an employee generally has up to three years from the date of the unlawful discriminatory act to file an administrative complaint with the California Civil Rights Department (CRD) to secure a Right-to-Sue notice.\n\nUnder federal law, an EEOC charge generally must be filed within 300 days. Once the CRD issues a Right-to-Sue notice, the employee has one year to file a civil lawsuit in California Superior Court.`
+        },
+        {
+          question: `What Compensation Can I Recover in a Race Discrimination Case?`,
+          answer: `Victims of workplace race discrimination in California can recover substantial financial compensation and statutory remedies.\n\nRecoverable damages include economic damages (back pay for past lost earnings, front pay for future loss of income, and lost benefits), non-economic damages (emotional distress, mental anguish, humiliation, loss of reputation), punitive damages under California Civil Code § 3294 when the employer acted with malice, oppression, or fraud, and statutory recovery of attorneys' fees and litigation costs under Government Code § 12965.` + ctaBlock
+        }
+      ];
+
+    case "wage_theft":
+      return [
+        {
+          question: `What Qualifies as Wage Theft and Overtime Violations in ${city}, California?`,
+          answer: `Wage theft occurs whenever an employer fails to pay an employee all wages legally earned under the California Labor Code and Industrial Welfare Commission (IWC) Wage Orders.\n\nThis includes failing to pay 1.5 times the regular rate for hours worked over 8 in a day or 40 in a week, failing to pay double time for hours over 12 in a day, unpaid minimum wages, requiring off-the-clock work, misclassifying non-exempt hourly employees as salaried exempt or independent contractors, and making unlawful deductions from paychecks.`
+        },
+        {
+          question: `What Are Common Examples of Wage Theft at Work?`,
+          answer: `Wage theft takes many forms in California workplaces. Common examples include requiring workers to complete prep or cleanup tasks before clocking in or after clocking out, shaving timecard hours, paying flat salaries to workers whose duties are non-exempt, withholding final paychecks upon termination, confiscating employee tips, and failing to reimburse mandatory business expenses under California Labor Code § 2802.`
+        },
+        {
+          question: `Can I Sue My Employer for Unpaid Wages and Overtime in ${city}?`,
+          answer: `Yes. You have the legal right to file a civil lawsuit in California Superior Court or submit an administrative wage claim with the California Labor Commissioner's Office (DLSE).\n\nIn a civil lawsuit, employees can recover all unpaid wages, 10% annual interest, statutory waiting time penalties, liquidated damages, and mandatory attorneys' fees. If multiple workers were subjected to identical wage violations, claims can be pursued as a class action or under the California Private Attorneys General Act (PAGA).`
+        },
+        {
+          question: `Can My Employer Fire Me for Demanding My Unpaid Wages or Overtime?`,
+          answer: `No. California Labor Code §§ 98.6 and 1102.5 explicitly prohibit employers from discharging, demoting, or penalizing an employee for inquiring about their pay, asserting wage rights, or filing a wage claim.\n\nFiring an employee for demanding earned wages constitutes unlawful retaliation and wrongful termination in violation of fundamental California public policy.`
+        },
+        {
+          question: `Can My Employer Retaliate Against Me for Reporting Wage Theft?`,
+          answer: `No. California law strictly forbids employer retaliation. Under California Senate Bill 497 (Labor Code § 98.6), any adverse action—such as termination, demotion, hour reductions, or shift changes—taken against an employee within 90 days of complaining about unpaid wages carries an automatic statutory presumption of retaliation.`
+        },
+        {
+          question: `What Evidence Do I Need to Prove Unpaid Wages and Overtime in California?`,
+          answer: `Under California law and the Anderson v. Mt. Clemens Pottery doctrine, employers have a strict legal duty to maintain accurate time records. If an employer fails to maintain proper records, employee testimony and secondary records suffice.\n\nValuable evidence includes paystubs, personal time logs, work emails and text messages sent outside regular hours, Google Maps location data, security badge records, and coworker witness statements.`
+        },
+        {
+          question: `Can I Sue for Wage Theft If My Coworkers Were Also Denied Proper Pay?`,
+          answer: `Yes. Systematic wage violations affecting multiple employees can be pursued as a wage and hour class action or under the California Private Attorneys General Act (PAGA, Labor Code § 2698 et seq.).\n\nA PAGA action allows representative employees to recover civil penalties on behalf of all aggrieved coworkers and the State of California, forcing employers to correct systemic payroll abuses.`
+        },
+        {
+          question: `Do I Have to File a Labor Commissioner Wage Claim (DLSE) Before I Can Sue in Court?`,
+          answer: `No. California employees are not required to exhaust administrative remedies through the Labor Commissioner before filing a civil lawsuit in court for unpaid wages or overtime.\n\nFiling a lawsuit in California Superior Court often allows for broader discovery, faster resolution, and recovery of statutory attorneys' fees paid directly by the employer.`
+        },
+        {
+          question: `How Long Do I Have to File a Wage Theft or Overtime Claim in California?`,
+          answer: `Statutes of limitations vary by claim type: you have up to 3 years to file claims for unpaid wages and overtime under California Labor Code § 1194; up to 4 years under California's Unfair Competition Law (Business & Professions Code § 17200); and up to 1 year for statutory penalties such as waiting time penalties under Labor Code § 203.`
+        },
+        {
+          question: `How Much Is an Unpaid Wages and Overtime Case Worth in California?`,
+          answer: `The value includes all unpaid overtime premiums and base wages, 10% annual interest, liquidated damages (an amount equal to unpaid minimum wages under Labor Code § 1194.2), waiting time penalties up to 30 days of full daily wages under Labor Code § 203, wage statement penalties up to $4,000 under Labor Code § 226, and full recovery of your attorneys' fees.` + ctaBlock
+        }
+      ];
+
+    case "meal_breaks":
+      return [
+        {
+          question: `What Qualifies as a Meal and Rest Break Violation in ${city}, California?`,
+          answer: `Under California Labor Code § 512 and IWC Wage Orders, non-exempt employees working more than 5 hours must receive an uninterrupted, 30-minute off-duty meal break before the end of the 5th hour. A second 30-minute meal break is required when working more than 10 hours.\n\nAdditionally, employees are entitled to a paid 10-minute rest break for every 4 hours worked. A violation occurs whenever an employer denies, delays, interrupts, or discourages these breaks, or fails to relieve the employee of all work duties.`
+        },
+        {
+          question: `What Are Common Examples of Meal and Rest Break Violations at Work?`,
+          answer: `Common violations include requiring workers to remain on-call or carry radios during lunch, scheduling staffing so lean that taking breaks is impossible, pressuring employees to clock out for lunch while continuing to answer phones, delaying first meal breaks past the 5-hour mark, skipping 10-minute rest breaks during busy rushes, and failing to pay mandatory one-hour break premium penalties.`
+        },
+        {
+          question: `Can I Sue My Employer for Meal and Rest Break Violations in ${city}?`,
+          answer: `Yes. Under California Labor Code § 226.7, employees can file a legal claim to recover one additional hour of pay at their regular rate for each workday a meal break was denied, plus another hour of pay for each workday a rest break was missed—up to two full hours of premium pay per workday in ${city}.`
+        },
+        {
+          question: `Can My Employer Fire Me for Taking or Requesting My Legal Breaks?`,
+          answer: `No. Terminating, demoting, or disciplining an employee for requesting or taking statutory meal or rest breaks violates California Labor Code §§ 98.6 and 1102.5.\n\nFiring a worker for asserting break rights constitutes unlawful retaliation and wrongful termination in violation of California public policy.`
+        },
+        {
+          question: `Can My Employer Retaliate Against Me for Complaining About Missed Breaks?`,
+          answer: `No. Retaliation for asserting break rights is strictly illegal under California law. Under California Senate Bill 497, any adverse employment action taken within 90 days of an employee complaining about break violations is legally presumed to be retaliatory.`
+        },
+        {
+          question: `What Evidence Do I Need to Prove Missed Meal and Rest Breaks in California?`,
+          answer: `Valuable evidence includes electronic timecards showing missing or late meal punches, work logs, emails and text messages sent during scheduled break times, surveillance footage, witness statements from colleagues, and paystubs proving the employer failed to pay the required one-hour break premiums.`
+        },
+        {
+          question: `Can I Have a Case If My Supervisor Told Me to Skip Breaks Informally?`,
+          answer: `Yes. Under the California Supreme Court's ruling in Brinker Restaurant Corp. v. Superior Court, employers must affirmatively relieve employees of all duty and permit them to take uninterrupted breaks. If a manager pressures, schedules, or encourages an employee to skip breaks, the employer has violated California law.`
+        },
+        {
+          question: `Do I Have to Report Missed Breaks to HR Before Filing a Legal Claim?`,
+          answer: `No. There is no legal requirement to report missed breaks to human resources before filing a wage claim or civil lawsuit. The legal burden to provide compliant breaks and pay statutory premiums rests entirely upon the employer from the day the violation occurs.`
+        },
+        {
+          question: `How Long Do I Have to File a Meal and Rest Break Claim in California?`,
+          answer: `Under California law and Murphy v. Kenneth Cole Productions, claims for meal and rest break premium pay under Labor Code § 226.7 carry a three-year statute of limitations. When paired with a claim under California's Unfair Competition Law (B&P Code § 17200), claims can reach back four full years.`
+        },
+        {
+          question: `How Much Can I Recover for Meal and Rest Break Violations in California?`,
+          answer: `You can recover one hour of regular pay for each day a meal break was denied, and one hour for each day a rest break was denied. Over several years, these premium penalties often total tens of thousands of dollars per worker, plus 10% annual interest, wage statement penalties, and recovery of attorneys' fees.` + ctaBlock
+        }
+      ];
+
+    case "sexual_harassment":
+      return [
+        {
+          question: `What Qualifies as Workplace Sexual Harassment in ${city}, California?`,
+          answer: `Under California's Fair Employment and Housing Act (FEHA, Gov Code § 12940(j)), workplace sexual harassment includes unwelcome sexual advances, requests for sexual favors, inappropriate physical contact, sexual jokes, comments about body parts, or offensive graphic imagery. California law also prohibits gender-based harassment and harassment based on pregnancy, gender identity, or sexual orientation, regardless of whether sexual desire is involved.\n\nSexual harassment violates California law when it creates a hostile, intimidating, or abusive working environment, or when job benefits or continued employment are conditioned on submitting to sexual conduct (quid pro quo).`
+        },
+        {
+          question: `What Are the Most Common Examples of Sexual Harassment at Work?`,
+          answer: `Common examples include unwanted touching, hugging, or cornering; suggestive comments regarding clothing or appearance; repeated unwanted requests for dates; sending sexually explicit text messages, emails, or photos; making vulgar gestures; offering promotions or perks in exchange for sexual favors; and retaliating against an employee after romantic advances are rejected.`
+        },
+        {
+          question: `Can I Sue My Employer for Sexual Harassment in ${city}?`,
+          answer: `Yes. You have the right to file a civil lawsuit in California Superior Court after obtaining a Right-to-Sue notice from the California Civil Rights Department (CRD).\n\nUnder FEHA, California employers are strictly liable for sexual harassment committed by supervisors, regardless of whether upper management knew about it. For harassment by coworkers, employers are liable if they knew or should have known and failed to take immediate, effective corrective action.`
+        },
+        {
+          question: `Can My Boss Fire Me for Reporting Sexual Harassment?`,
+          answer: `No. Retaliating against an employee for reporting sexual harassment or participating in an investigation is illegal under California Government Code § 12940(h) and Labor Code § 1102.5.\n\nFiring, demoting, or disciplining a worker who reported sexual harassment constitutes unlawful retaliation and gives rise to an independent claim for wrongful termination.`
+        },
+        {
+          question: `Can My Employer Retaliate Against Me for Reporting Sexual Harassment?`,
+          answer: `No. Retaliation can take many forms beyond firing, including reducing work hours, assigning undesirable shifts, isolating the employee from team projects, issuing unwarranted disciplinary write-ups, or creating an intolerable work atmosphere. Under California Senate Bill 497, any adverse employment action taken within 90 days of a harassment report carries a statutory presumption of retaliation.`
+        },
+        {
+          question: `What Evidence Do I Need for a Workplace Sexual Harassment Case?`,
+          answer: `Valuable evidence includes text messages, voicemails, emails, chat messages (Slack/Teams), social media communications, photographs, written journals documenting dates and details of incidents, copies of formal or informal complaints submitted to HR or management, performance reviews, and statements from coworkers or third-party witnesses.`
+        },
+        {
+          question: `Can I Have a Sexual Harassment Case If My Coworker Harassed Me Instead of My Boss?`,
+          answer: `Yes. Workplace sexual harassment protections apply to misconduct by coworkers, contractors, and even non-employees like clients or vendors. The employer is legally liable if management or HR knew or reasonably should have known about the coworker's conduct and failed to take immediate, effective corrective steps to end the harassment.`
+        },
+        {
+          question: `Do I Have to Report Sexual Harassment to HR Before I Can Sue?`,
+          answer: `While following internal company complaint procedures is recommended when safe to do so, it is not an absolute legal barrier to filing a lawsuit. Under California law, an employer is strictly liable for supervisor harassment regardless of whether the employee reported it to HR. Furthermore, employees can file directly with the California Civil Rights Department (CRD) without first reporting to HR if reporting would be futile or unsafe.`
+        },
+        {
+          question: `How Long Do I Have to File a Sexual Harassment Claim in California?`,
+          answer: `Under California law, you have up to three years from the date of the unlawful harassment to file an administrative complaint with the California Civil Rights Department (CRD) to secure a Right-to-Sue notice. Once the Right-to-Sue notice is issued, you have one year to file a civil lawsuit in California Superior Court.`
+        },
+        {
+          question: `How Much Is a Sexual Harassment Case Worth in California?`,
+          answer: `The value of a California sexual harassment case depends on economic losses (lost past and future wages, lost benefits), non-economic damages for emotional distress, mental anguish, physical symptoms, and medical treatment costs, punitive damages under Civil Code § 3294 for malicious or oppressive corporate misconduct, and statutory attorneys' fees paid by the employer under Government Code § 12965.` + ctaBlock
+        }
+      ];
+
+    case "disability":
+      return [
+        {
+          question: `What Qualifies as Disability Discrimination in ${city}, California?`,
+          answer: `Under California's Fair Employment and Housing Act (FEHA, Gov Code § 12940(a)), disability discrimination occurs when an employer treats an employee or applicant unfavorably because of a physical disability, mental health condition, or medical condition.\n\nCalifornia's definition of disability is far broader and more protective than federal law (ADA). In California, a condition qualifies as a disability if it simply 'limits' a major life activity, rather than 'substantially limits' it. Employers are also legally required to provide reasonable accommodations and engage in an interactive dialogue.`
+        },
+        {
+          question: `What Are Common Examples of Failure to Accommodate and Disability Bias?`,
+          answer: `Common examples include refusing to modify work schedules for medical appointments, refusing ergonomic equipment, denying requests for temporary light duty or telecommuting, penalizing workers for medical leave absences, terminating employees upon learning of a cancer diagnosis or chronic condition, refusing to engage in a good-faith interactive dialogue, and enforcing a '100% healed' policy before allowing an employee to return to work.`
+        },
+        {
+          question: `Can I Sue My Employer for Disability Discrimination in ${city}?`,
+          answer: `Yes. Under California law, an employee can bring three separate civil claims against an employer: (1) Unlawful Disability Discrimination (Gov Code § 12940(a)); (2) Failure to Provide Reasonable Accommodation (Gov Code § 12940(m)); and (3) Failure to Engage in a Timely, Good-Faith Interactive Process (Gov Code § 12940(n)).`
+        },
+        {
+          question: `Can My Employer Fire Me for Requesting a Reasonable Accommodation or Taking Medical Leave?`,
+          answer: `No. Requesting an accommodation or taking doctor-approved medical leave is a protected legal activity under California law. Firing an employee because they requested an accommodation or took medical leave violates FEHA and constitutes unlawful retaliation and wrongful termination.`
+        },
+        {
+          question: `Can My Employer Retaliate Against Me for Requesting Medical Accommodations?`,
+          answer: `No. California Government Code § 12940(l) explicitly prohibits retaliation against any employee for requesting an accommodation for a disability or medical condition, regardless of whether the accommodation was granted. Retaliation within 90 days of an accommodation request carries a statutory presumption under California SB 497.`
+        },
+        {
+          question: `What Evidence Do I Need to Prove a Disability Discrimination Case in California?`,
+          answer: `Essential evidence includes doctor's notes and medical restrictions provided to the employer, written requests for accommodations (emails, forms), communications showing the employer's response or refusal, performance records prior to the disability disclosure, and documentation demonstrating the employee was capable of performing the essential functions of the job with or without accommodation.`
+        },
+        {
+          question: `Can I Have a Case If My Coworkers Harass Me About My Medical Condition?`,
+          answer: `Yes. Disability harassment is strictly illegal under FEHA (Gov Code § 12940(j)). If coworkers make derogatory remarks, mock physical limitations, disclose private medical information, or create a hostile environment because of your disability or medical condition, the employer is legally liable if management failed to take prompt corrective action.`
+        },
+        {
+          question: `Do I Have to Complete the "Interactive Process" with HR Before I Can Sue?`,
+          answer: `Under California law, the legal burden to initiate and participate in the interactive process is on the employer once an employee discloses a disability or need for accommodation. If the employer refuses to engage in good faith, dismisses requests out-of-hand, or stalls indefinitely, the employer has violated California Government Code § 12940(n), creating an immediate basis for legal action.`
+        },
+        {
+          question: `How Long Do I Have to File a Disability Discrimination Claim in California?`,
+          answer: `You have up to three years from the date of the discriminatory action, termination, or accommodation refusal to file a complaint with the California Civil Rights Department (CRD) to obtain a Right-to-Sue notice. After obtaining the notice, you have one year to file a civil lawsuit in court.`
+        },
+        {
+          question: `How Much Is a Disability Discrimination Case Worth in California?`,
+          answer: `Compensation can be substantial, including economic damages for lost past and future wages and medical benefits, non-economic damages for emotional distress and physical distress, punitive damages if the employer acted with conscious disregard for employee rights, and statutory recovery of attorneys' fees and litigation expenses under California Government Code § 12965.` + ctaBlock
+        }
+      ];
+
+    case "family_medical_leave":
+      return [
+        {
+          question: `What Qualifies as Unlawful Family and Medical Leave Interference in ${city}, California?`,
+          answer: `Under the California Family Rights Act (CFRA, Gov Code § 12945.2) and the federal Family and Medical Leave Act (FMLA), eligible employees have the right to take up to 12 weeks of job-protected leave per year for their own serious health condition, to care for a family member, or to bond with a new child. Under CFRA, employers with just 5 or more employees are covered.\n\nUnlawful interference occurs when an employer denies, discourages, delays, or penalizes the use of protected leave, or refuses to reinstate the employee to their prior position.`
+        },
+        {
+          question: `What Are Common Examples of FMLA and CFRA Violations at Work?`,
+          answer: `Common examples include telling employees that taking medical leave will hurt their career, refusing to hold their position open, demoting an employee upon their return, giving an employee inferior responsibilities or pay, counting protected leave absences toward disciplinary 'attendance points,' canceling healthcare coverage during leave, and firing an employee while on leave or shortly after their return.`
+        },
+        {
+          question: `Can I Sue My Employer for Denying CFRA or FMLA Medical Leave in ${city}?`,
+          answer: `Yes. You can sue for leave interference, failure to reinstate to the same or comparable position, retaliation for taking leave, and wrongful termination. Under California law, reinstatement must be to the exact same position or an equivalent position in terms of pay, benefits, location, and responsibilities.`
+        },
+        {
+          question: `Can My Employer Fire Me for Taking Medical Leave or Pregnancy Disability Leave?`,
+          answer: `No. Terminating an employee while on protected medical leave, pregnancy disability leave (PDL under Gov Code § 12945), or family care leave is strictly illegal under California law. Employers often claim layoffs or reorganizations occurred during the leave, but if taking protected leave was a motivating factor, the firing is unlawful.`
+        },
+        {
+          question: `Can My Employer Retaliate Against Me When I Return from Medical Leave?`,
+          answer: `No. California Government Code § 12945.2(k) makes it unlawful to discharge, fine, suspend, expel, or discriminate against any employee because they exercised their right to CFRA leave. Any negative shift in treatment upon return—such as exclusion from meetings, stripping of duties, or sudden negative reviews—constitutes actionable retaliation.`
+        },
+        {
+          question: `What Evidence Do I Need to Prove a Family and Medical Leave Violation in California?`,
+          answer: `Key evidence includes FMLA/CFRA leave request forms, medical certifications provided to the employer, written approvals or denials, communications regarding job reinstatement, performance evaluations before and after taking leave, and emails showing management frustration with the employee's absence.`
+        },
+        {
+          question: `Can My Employer Replace Me or Demote Me While I Am on Protected Medical Leave?`,
+          answer: `Under CFRA and FMLA, you are legally entitled to return to your original position or an equivalent position with identical pay, benefits, and working conditions. An employer cannot replace you with a permanent hire during your leave and then tell you your job is no longer available unless they can prove the job would have been eliminated regardless of your leave.`
+        },
+        {
+          question: `Do I Have to Give 30 Days' Notice to HR to Be Protected Under CFRA/FMLA?`,
+          answer: `If the need for leave is foreseeable (such as an expected childbirth or planned surgery), 30 days' advance notice is generally required. However, if the need for leave is sudden, unexpected, or a medical emergency, you are only required to give notice as soon as practicable. An employer cannot deny emergency medical leave simply because advance notice was impossible.`
+        },
+        {
+          question: `How Long Do I Have to File a Family and Medical Leave Claim in California?`,
+          answer: `For claims under the California Family Rights Act (CFRA), you have three years to file with the California Civil Rights Department (CRD) to receive a Right-to-Sue notice. For federal FMLA claims, the statute of limitations is two years for standard violations and three years for willful violations.`
+        },
+        {
+          question: `How Much Is a CFRA or FMLA Medical Leave Violation Case Worth in California?`,
+          answer: `Damages include back pay for lost wages, front pay for future loss of income, lost healthcare and retirement benefits, emotional distress damages, statutory damages and civil penalties, and full recovery of your attorneys' fees under California Government Code § 12965 and federal statutes.` + ctaBlock
+        }
+      ];
+
+    case "workplace_retaliation":
+      return [
+        {
+          question: `What Qualifies as Workplace Retaliation in ${city}, California?`,
+          answer: `Workplace retaliation occurs when an employer takes an adverse employment action against an employee because the employee engaged in a legally protected activity.\n\nProtected activities include reporting discrimination or harassment, complaining about unpaid wages, taking protected medical leave, blowing the whistle on illegal company practices, reporting OSHA workplace safety violations, or cooperating in a government investigation.`
+        },
+        {
+          question: `What Are Common Examples of Unlawful Workplace Retaliation?`,
+          answer: `Retaliation takes many forms beyond termination, including demotion, salary reduction, denial of deserved promotions, transfer to a remote or undesirable shift, stripping of job duties, sudden negative performance reviews after years of commendations, unwarranted disciplinary write-ups, exclusion from meetings, and verbal hostility or harassment designed to force the employee to quit.`
+        },
+        {
+          question: `Can I Sue My Employer for Retaliation in ${city}?`,
+          answer: `Yes. You can file a lawsuit under California Labor Code § 1102.5 (California's premier whistleblower statute), Government Code § 12940(h) (FEHA retaliation), Labor Code § 98.6 (wage complaint retaliation), and common law wrongful termination in violation of public policy. Under Labor Code § 1102.5, employers can also face civil penalties up to $10,000 per violation.`
+        },
+        {
+          question: `Can My Employer Fire Me for Reporting Illegal Activity or Safety Violations?`,
+          answer: `No. California Labor Code § 1102.5 prohibits an employer from firing, demoting, or retaliating against an employee who discloses information to a supervisor, government agency, or public body regarding suspected violations of state or federal laws, rules, or regulations. You do not even have to prove the employer actually broke the law—only that you had a reasonable belief.`
+        },
+        {
+          question: `How Does California's 90-Day Retaliation Presumption (SB 497) Protect Me?`,
+          answer: `Under California Senate Bill 497 (effective January 1, 2024), if an employer takes any adverse employment action against an employee within 90 days of the employee reporting a labor violation, wage issue, or discrimination, California law establishes a rebuttable legal presumption that the action was retaliatory. This shifts the burden to the employer to prove legitimate non-retaliatory reasons.`
+        },
+        {
+          question: `What Evidence Do I Need to Prove Workplace Retaliation in California?`,
+          answer: `Key evidence includes proof of your protected activity (dated copies of written complaints, emails, texts, incident reports), documentation of the adverse action, timeline evidence showing close temporal proximity between your complaint and the employer's retaliation, comparator evidence showing non-complaining colleagues were treated better, and evidence exposing the employer's stated reasons as false pretext.`
+        },
+        {
+          question: `Can I Sue for Retaliation If My Retaliatory Supervisor Was Demoted or Left the Company?`,
+          answer: `Yes. The legal claim is brought against the employer entity, not merely the individual supervisor. If the company took adverse action against you, permitted retaliatory treatment, or ratified the misconduct, the company remains legally liable even if the supervisor no longer works there.`
+        },
+        {
+          question: `Do I Have to Report Violations Internally to HR Before Contacting a Government Agency?`,
+          answer: `No. Under California Labor Code § 1102.5, employees are fully protected when disclosing information directly to government regulatory agencies (such as Cal/OSHA, DLSE, CRD, or law enforcement) without first reporting internally to their employer or human resources department.`
+        },
+        {
+          question: `How Long Do I Have to File a Workplace Retaliation Claim in California?`,
+          answer: `Deadlines depend on the specific statute: for FEHA retaliation claims, you have three years to file with the CRD; for Labor Code § 1102.5 whistleblower retaliation claims, you generally have three years to file in court; and for wrongful termination in violation of public policy, you have two years from the date of discharge.`
+        },
+        {
+          question: `How Much Is a Workplace Retaliation Case Worth in California?`,
+          answer: `Recoverable damages include back pay, front pay, compensation for emotional distress, civil penalties up to $10,000 per violation under California Labor Code § 1102.5(f), punitive damages under Civil Code § 3294, and statutory attorneys' fees paid by the employer.` + ctaBlock
+        }
+      ];
+
+    case "wrongful_termination":
+    default:
+      return [
+        {
+          question: `What Qualifies as Wrongful Termination in ${city}, California?`,
+          answer: `Wrongful termination occurs when an employer discharges an employee for an unlawful reason in violation of California or federal statutes, or in violation of fundamental California public policy.\n\nWhile California is an 'at-will' employment state, employers are strictly prohibited from firing workers based on protected traits (discrimination), in retaliation for reporting legal violations, for exercising wage and break rights, or for taking medical/family leave.`
+        },
+        {
+          question: `What Are Common Examples of Wrongful Termination in California?`,
+          answer: `Common examples include firing an employee after they report sexual harassment or racial bias, terminating a worker after they file a workers' compensation claim or take CFRA medical leave, firing an employee for complaining about unpaid overtime or missed rest breaks, firing an employee who refused to participate in illegal business activities, and terminating a worker after disclosing a disability or pregnancy.`
+        },
+        {
+          question: `Can I Sue My Employer for Wrongful Termination in ${city}?`,
+          answer: `Yes. You can bring a civil lawsuit in California Superior Court. Depending on the underlying facts, claims may include statutory wrongful termination under FEHA (Gov Code § 12940), whistleblower retaliation under Labor Code § 1102.5, and common law wrongful termination in violation of public policy (Tameny claim), which allows for full emotional distress and punitive damages.`
+        },
+        {
+          question: `Can My Employer Fire Me for No Reason Under California's 'At-Will' Law?`,
+          answer: `While at-will employment permits termination without cause, it never permits termination for an illegal cause. Employers often hide behind 'at-will' language, 'at-will clauses,' or 'restructuring' excuses to mask unlawful discrimination or retaliation. If an illegal factor was a motivating reason for the discharge, the termination is unlawful.`
+        },
+        {
+          question: `Can My Employer Fire Me in Retaliation for Complaining or Taking Leave?`,
+          answer: `No. Retaliatory discharge is illegal under both California statutes and California public policy. If you were fired shortly after making a complaint about illegal conduct, requesting disability accommodation, or taking protected leave, California's anti-retaliation laws and the 90-day statutory presumption under SB 497 protect your rights.`
+        },
+        {
+          question: `What Evidence Do I Need for a Workplace Wrongful Termination Case?`,
+          answer: `Valuable evidence includes termination letters, employment contracts, employee handbooks, performance reviews, written correspondence (emails, texts, Slack messages), comparator evidence showing how other employees were treated, timelines showing suspicious proximity to protected activity, and witness statements from colleagues.`
+        },
+        {
+          question: `What Is 'Constructive Discharge' and Can I Sue If I Was Forced to Quit?`,
+          answer: `Yes. Constructive discharge occurs when an employer deliberately creates or knowingly permits working conditions so intolerable, hostile, or aggravated that a reasonable person in the employee's position would feel compelled to resign. Under California law, a constructive discharge is legally treated as an involuntary wrongful termination.`
+        },
+        {
+          question: `Should I Sign a Severance Agreement or Report to HR Before Calling a Lawyer?`,
+          answer: `Do not sign a severance agreement without first consulting an employment litigation attorney. Severance agreements contain comprehensive liability waivers that permanently forfeit your right to sue the employer for discrimination, wage theft, or wrongful termination in exchange for a modest payout. An attorney can often negotiate a substantially larger settlement.`
+        },
+        {
+          question: `How Long Do I Have to File a Wrongful Termination Claim in California?`,
+          answer: `Statutes of limitations vary: for claims based on FEHA discrimination or retaliation, you have up to three years to file a complaint with the California Civil Rights Department (CRD); for common law wrongful termination in violation of public policy (Tameny claims), you have two years from the discharge date; and for breach of employment contract claims, you have two years for oral contracts or four years for written contracts.`
+        },
+        {
+          question: `How Much Is a Wrongful Termination Case Worth in California?`,
+          answer: `Damages in a California wrongful termination case include economic losses (past lost earnings, future lost earning capacity, lost 401(k) contributions, bonuses, and health insurance), non-economic damages for severe emotional distress, reputational harm, and mental anguish, punitive damages to punish company malice, and full recovery of statutory attorneys' fees paid by the employer.` + ctaBlock
+        }
+      ];
+  }
 }
 
 // -----------------------------------------------------------------------------
@@ -277,41 +652,7 @@ You have the right to work in an environment free from racial bias, harassment, 
 Workplace race discrimination takes a profound toll on everything. Your self-worth. Your career trajectory. Your earning capacity. Your physical health and your family's financial security. But California law gives you powerful legal tools to fight back and demand justice. If you experienced race discrimination, racial harassment, or unlawful retaliation in ${city}, call us. Atoyan Law offers confidential, no-obligation consultations. No pressure. Real answers. Call <a href="tel:8888070077">(888) 807-0077</a> or contact us online to schedule a free consultation with our <b>${city} race discrimination lawyers</b>.
 `.trim();
 
-  const faqs: AtoyanFaq[] = [
-    {
-      question: `What constitutes racial discrimination in the workplace in ${city}?`,
-      answer: `Under California's Fair Employment and Housing Act (FEHA), race discrimination occurs when an employer treats an employee or job applicant unfavorably in hiring, firing, pay, job assignments, promotions, or working conditions because of their race, skin color, ancestry, or national origin.`,
-    },
-    {
-      question: "Can an employer discriminate based on hair texture or protective hairstyles?",
-      answer: "No. California's CROWN Act (Gov Code § 12926(w)) explicitly prohibits workplace discrimination based on hair texture and protective hairstyles historically associated with race, including braids, locs, twists, afros, and cornrows.",
-    },
-    {
-      question: "How do I prove race discrimination if my employer never used a racial slur?",
-      answer: "Most race discrimination cases are proven through circumstantial evidence, including comparative treatment (showing colleagues of other races were treated more favorably for the same conduct), suspicious timing, sudden negative reviews after years of praise, and deviation from company disciplinary procedures.",
-    },
-    {
-      question: "What is the statute of limitations for filing a race discrimination claim in California?",
-      answer: "In California, employees have up to three years from the date of the discriminatory act to file an administrative complaint with the California Civil Rights Department (CRD) to secure a Right to Sue notice before filing a lawsuit in court.",
-    },
-    {
-      question: "What damages can I recover in a California race discrimination lawsuit?",
-      answer: "Victims of workplace race discrimination can recover back pay (lost past wages and benefits), front pay (future lost compensation), emotional distress damages, punitive damages for egregious malice, and attorney fees under California Government Code § 12965.",
-    },
-    {
-      question: "Can my boss fire or demote me for reporting racial bias to Human Resources?",
-      answer: "No. Retaliation is strictly illegal under FEHA and California Labor Code § 1102.5. Under California SB 497, any adverse employment action taken against you within 90 days of reporting discrimination is legally presumed to be retaliatory.",
-    },
-    {
-      question: "What should I do if HR ignores my complaints about racial harassment?",
-      answer: "Document your complaints in writing and preserve copies outside of your work computer. When HR fails to conduct an impartial investigation or take corrective action, the employer faces enhanced liability for failing to prevent workplace harassment under FEHA.",
-    },
-    {
-      question: "Does Atoyan Law Firm charge upfront attorney fees for race discrimination cases?",
-      answer: "No. Atoyan Law Firm represents employees on a strict contingency fee basis. You pay zero upfront costs or out-of-pocket attorney fees unless we successfully recover financial compensation through settlement or trial verdict.",
-    },
-  ];
-
+  const faqs: AtoyanFaq[] = buildDavidAtoyanFaqs("race_discrimination", city, keyword);
   return {
     keyword,
     city,
@@ -460,41 +801,7 @@ You have the right to be paid every cent you have earned through your hard work 
 Wage theft takes a devastating toll on your household. It strains your ability to pay rent, afford healthcare, provide for your children, and plan for your future. But California labor law provides severe financial penalties against employers who cheat their workers. If your employer withheld your wages, cheated your overtime, or misclassified your job in ${city}, call us. Atoyan Law offers confidential, no-pressure legal consultations. Real answers. Call <a href="tel:8888070077">(888) 807-0077</a> or contact us online to schedule a free consultation with our <b>${city} wage theft lawyers</b>.
 `.trim();
 
-  const faqs: AtoyanFaq[] = [
-    {
-      question: `How is overtime calculated under California law for workers in ${city}?`,
-      answer: `In California, non-exempt employees must be paid 1.5 times their regular rate of pay for hours worked beyond 8 in a workday or 40 in a workweek, and double time for hours worked beyond 12 in a single workday or beyond 8 on the seventh consecutive workday.`,
-    },
-    {
-      question: "Can an employer put me on salary to avoid paying overtime?",
-      answer: "No. Paying a salary does not automatically make an employee exempt from overtime. To be legally exempt, you must earn at least twice the state minimum wage on salary AND spend more than 50% of your time performing true executive, administrative, or professional duties.",
-    },
-    {
-      question: "What are California waiting time penalties under Labor Code § 203?",
-      answer: "If an employer willfully fails to pay all final wages immediately upon termination (or within 72 hours of quitting), the employee is entitled to receive their full daily wage for each calendar day the payment is late, up to a maximum of 30 days.",
-    },
-    {
-      question: "How far back can I recover unpaid wages in California?",
-      answer: "The statute of limitations for wage claims in California is generally three years under the California Labor Code, and can be extended to four years under California's Unfair Competition Law (Business and Professions Code § 17200).",
-    },
-    {
-      question: "What is off-the-clock work and is it illegal?",
-      answer: "Off-the-clock work is any labor performed without compensation before punching in, after punching out, or during unrecorded hours. The California Supreme Court ruled in Troester v. Starbucks that employers must pay for all time suffered or permitted to work, rejecting the federal de minimis doctrine.",
-    },
-    {
-      question: "Can my employer deduct money from my paycheck for cash shortages or broken items?",
-      answer: "No. Under California law, an employer cannot deduct money from an employee's wages for cash shortages, breakage, or equipment loss unless the employer can prove the loss resulted from the employee's dishonest or willful act, or gross negligence.",
-    },
-    {
-      question: "What can I do if my employer retaliates against me for asking about unpaid overtime?",
-      answer: "Retaliating against an employee for asserting wage rights is strictly illegal under California Labor Code § 98.6 and § 1102.5. You can file a lawsuit for wrongful termination, back pay, emotional distress, and statutory penalties up to $10,000 per violation.",
-    },
-    {
-      question: "Does Atoyan Law Firm take wage and hour claims on contingency?",
-      answer: "Yes. Atoyan Law Firm handles wage theft, overtime, and misclassification cases on a contingency fee basis. We advance all litigation costs and you pay nothing out of pocket unless we recover money for you.",
-    },
-  ];
-
+  const faqs: AtoyanFaq[] = buildDavidAtoyanFaqs("wage_theft", city, keyword);
   return {
     keyword,
     city,
@@ -626,41 +933,7 @@ You have the right to take full, uninterrupted meal and rest breaks without inte
 Denying workers their legal breaks takes a serious toll on your health, safety, and daily well-being. California labor laws were written to punish employers who extract unpaid labor by denying basic human rest. If your employer forced you to work through lunch or skip rest breaks in ${city}, call us. Atoyan Law offers confidential, no-obligation consultations. No pressure. Real answers. Call <a href="tel:8888070077">(888) 807-0077</a> or contact us online to schedule a free consultation with our <b>${city} meal and rest break lawyers</b>.
 `.trim();
 
-  const faqs: AtoyanFaq[] = [
-    {
-      question: `When must my employer provide a meal break under California law in ${city}?`,
-      answer: `Under California Labor Code § 512, an employer must provide an uninterrupted 30-minute meal break before the end of the fifth hour of work. If you work more than 10 hours in a day, you are entitled to a second uninterrupted 30-minute meal break before the end of the tenth hour.`,
-    },
-    {
-      question: "What is the penalty if an employer denies my meal or rest break?",
-      answer: "Under California Labor Code § 226.7, your employer must pay you one additional hour of pay at your regular rate for each workday that a meal break was denied, and one additional hour for each day a rest break was denied (up to two hours of premium pay per day).",
-    },
-    {
-      question: "Can an employer force me to stay on company premises during my lunch break?",
-      answer: "No. Under California Supreme Court precedent (Brinker), an employer must completely relieve you of all duty and relinquish all control over your activities, which includes allowing you to leave the premises. If you are required to remain on site, the break is on-duty and you are owed premium pay.",
-    },
-    {
-      question: "Are rest breaks paid under California law?",
-      answer: "Yes. California rest breaks (10 minutes for every 4 hours worked) are considered paid working hours. Employers cannot deduct rest break time from your paycheck, nor can they require you to remain on-call during rest breaks.",
-    },
-    {
-      question: "Can I be fired for complaining about missed meal breaks?",
-      answer: "No. Complaining about missed breaks or unpaid break premiums is protected concerted activity and protected whistleblowing under California Labor Code § 98.6 and § 1102.5. Retaliatory firing or schedule cuts are illegal and subject to severe civil damages.",
-    },
-    {
-      question: "How far back can I claim unpaid meal and rest break premiums in California?",
-      answer: "Under California law, claims for unpaid meal and rest break premiums under Labor Code § 226.7 carry a three-year statute of limitations, which can be extended to four years under California's Unfair Competition Law (Business and Professions Code § 17200).",
-    },
-    {
-      question: "What if my timesheet shows I took a break, but my boss made me work through it?",
-      answer: "This is a common form of wage theft known as off-the-clock work and timesheet falsification. We prove actual work through computer timestamps, customer interaction logs, emails, security cameras, and coworker testimony, overriding the falsified timesheets.",
-    },
-    {
-      question: "Does Atoyan Law Firm represent employees on contingency for break violation cases?",
-      answer: "Yes. Atoyan Law Firm handles California wage and break violation cases on a contingency fee basis, meaning you pay zero out-of-pocket legal fees unless we win financial recovery for you.",
-    },
-  ];
-
+  const faqs: AtoyanFaq[] = buildDavidAtoyanFaqs("meal_breaks", city, keyword);
   return {
     keyword,
     city,
@@ -789,41 +1062,7 @@ You have the right to work without being subjected to unwanted sexual advances, 
 Workplace sexual harassment inflicts deep emotional trauma. It causes anxiety, insomnia, panic attacks, depression, and tears apart your sense of professional security. But California law gives you powerful legal tools to fight back. If you experienced sexual harassment, assault, or retaliation in ${city}, call us. Atoyan Law offers completely confidential consultations. No judgment. No pressure. Real answers. Call <a href="tel:8888070077">(888) 807-0077</a> or contact us online to schedule a free consultation with our <b>${city} sexual harassment lawyers</b>.
 `.trim();
 
-  const faqs: AtoyanFaq[] = [
-    {
-      question: `What qualifies as sexual harassment under California law in ${city}?`,
-      answer: `Under California's Fair Employment and Housing Act (FEHA), sexual harassment includes unwelcome sexual advances, requests for sexual favors, and verbal, visual, or physical conduct of a sexual nature that is severe or pervasive enough to create a hostile, intimidating, or offensive work environment, or where submission is made a condition of employment (quid pro quo).`,
-    },
-    {
-      question: "Can an employer be held liable if a supervisor sexually harassed me?",
-      answer: "Yes. Under California Government Code § 12940(j)(1), employers are strictly liable for sexual harassment committed by a supervisor. The victim does not need to prove that company owners or HR knew about the harassment beforehand.",
-    },
-    {
-      question: "Can I sue the individual person who harassed me in California?",
-      answer: "Yes. California Government Code § 12940(j)(3) explicitly allows victims of workplace harassment to hold the individual harasser personally liable in civil court, separate and apart from the employer's liability.",
-    },
-    {
-      question: "Does a single incident of harassment qualify as a hostile work environment?",
-      answer: "Yes. Under California Senate Bill 1300 (Gov Code § 12923), a single incident of harassing conduct is legally sufficient to create a hostile work environment if it has unreasonably interfered with your work performance or created an intimidating working environment.",
-    },
-    {
-      question: "What damages can be recovered in a California sexual harassment lawsuit?",
-      answer: "Victims can recover past and future lost earnings (back pay and front pay), compensation for emotional distress and mental anguish, punitive damages to punish malicious corporate conduct, and reasonable attorney fees under Government Code § 12965.",
-    },
-    {
-      question: "Can an employer force me to sign a non-disclosure agreement about sexual harassment?",
-      answer: "No. Under California's Silenced No More Act (SB 331), employers are legally prohibited from enforcing non-disclosure agreements (NDAs) that prevent workers from disclosing factual information about sexual harassment, discrimination, or retaliation.",
-    },
-    {
-      question: "How long do I have to file a sexual harassment claim in California?",
-      answer: "In California, employees have up to three years from the date of the unlawful conduct to file an administrative complaint with the California Civil Rights Department (CRD) to obtain a Right to Sue notice before proceeding in civil court.",
-    },
-    {
-      question: "Does Atoyan Law Firm handle sexual harassment cases confidentially on contingency?",
-      answer: "Yes. All consultations at Atoyan Law Firm are 100% confidential. We represent sexual harassment victims on a contingency fee basis, meaning you pay zero out-of-pocket costs or attorney fees unless we successfully win your case.",
-    },
-  ];
-
+  const faqs: AtoyanFaq[] = buildDavidAtoyanFaqs("sexual_harassment", city, keyword);
   return {
     keyword,
     city,
@@ -982,41 +1221,7 @@ You have the right to work without being marginalized, pushed out, or fired simp
 Disability discrimination is deeply destabilizing. It strikes when you are most vulnerable, threatening your health insurance, your livelihood, and your family's financial stability. But California's FEHA statutes provide severe financial remedies against companies that discard injured or sick workers. If you were denied accommodations or terminated due to a medical condition in ${city}, call us. Atoyan Law offers confidential, no-obligation consultations. No pressure. Real answers. Call <a href="tel:8888070077">(888) 807-0077</a> or contact us online to schedule a free consultation with our <b>${city} disability discrimination lawyers</b>.
 `.trim();
 
-  const faqs: AtoyanFaq[] = [
-    {
-      question: `What is the difference between federal ADA and California FEHA disability laws in ${city}?`,
-      answer: `California's FEHA offers significantly broader protections than the federal ADA. While the ADA requires a condition to substantially limit a major life activity, California law only requires that a physical or mental impairment make achievement of a major life activity difficult.`,
-    },
-    {
-      question: "What is the 'interactive process' required under California law?",
-      answer: "The interactive process is an ongoing, good-faith dialogue between employer and employee to explore reasonable accommodations for a known disability. Failing to engage in this process in a timely manner is an independent violation of California Government Code § 12940(n).",
-    },
-    {
-      question: "Can an employer fire me for having medical work restrictions?",
-      answer: "No. An employer cannot terminate you simply because you have medical restrictions. They must engage in the interactive process to determine whether you can perform your essential job functions with reasonable accommodations, such as modified duties, equipment, or schedule adjustments.",
-    },
-    {
-      question: "Is extended medical leave considered a reasonable accommodation in California?",
-      answer: "Yes. Under California law, a finite leave of absence or extension beyond the standard 12-week CFRA/FMLA allotment can constitute a reasonable accommodation, provided it does not pose an undue hardship on the employer's business operations.",
-    },
-    {
-      question: "What is an 'undue hardship' defense?",
-      answer: "An undue hardship defense requires an employer to prove that providing a requested accommodation would create significant operational difficulty or expense, considering the company's overall financial resources, workforce size, and organizational structure.",
-    },
-    {
-      question: "Can my employer demand to know my exact medical diagnosis?",
-      answer: "No. Under California privacy and employment laws, employers are only entitled to know your functional work limitations and necessary accommodations from your physician. They have no legal right to your complete medical history or private diagnostic records.",
-    },
-    {
-      question: "What damages can I recover in a California disability discrimination lawsuit?",
-      answer: "You can recover past and future lost earnings, lost benefits, emotional distress compensation, punitive damages for malicious conduct, and attorney fees under California Government Code § 12965.",
-    },
-    {
-      question: "Does Atoyan Law Firm charge fees upfront for disability discrimination claims?",
-      answer: "No. Atoyan Law Firm represents disabled and injured California workers on a contingency fee basis. You pay nothing out of pocket unless we successfully win your case through settlement or verdict.",
-    },
-  ];
-
+  const faqs: AtoyanFaq[] = buildDavidAtoyanFaqs("disability", city, keyword);
   return {
     keyword,
     city,
@@ -1174,41 +1379,7 @@ You have the right to care for your health, heal from surgery, welcome a new chi
 Losing your job during a medical crisis or newborn bonding period is devastating. It threatens your health coverage and financial stability when you need it most. But California's CFRA and FEHA laws provide severe financial remedies against companies that retaliate against workers for taking leave. If your employer denied your medical leave or fired you while on leave in ${city}, call us. Atoyan Law offers confidential, no-obligation consultations. No pressure. Real answers. Call <a href="tel:8888070077">(888) 807-0077</a> or contact us online to schedule a free consultation with our <b>${city} medical leave lawyers</b>.
 `.trim();
 
-  const faqs: AtoyanFaq[] = [
-    {
-      question: `What are the eligibility requirements for CFRA medical leave in ${city}?`,
-      answer: `To qualify for California Family Rights Act (CFRA) leave, you must work for an employer with 5 or more employees, have at least 12 months of service with the company, and have worked at least 1,250 hours during the 12 months preceding the leave.`,
-    },
-    {
-      question: "Can an employer replace me or eliminate my position while I am on medical leave?",
-      answer: "No. Under the CFRA, employers must guarantee reinstatement to the same or a comparable position upon your return from leave. Claiming your position was eliminated while on leave is often an unlawful pretext for leave retaliation.",
-    },
-    {
-      question: "How much leave can a new mother take in California?",
-      answer: "A new mother in California can take up to 4 months of Pregnancy Disability Leave (PDL) for pregnancy and childbirth disability, plus an additional 12 weeks of CFRA bonding leave, for a total of nearly 7 months of job-protected leave.",
-    },
-    {
-      question: "Can my employer require me to work while on approved CFRA or FMLA leave?",
-      answer: "No. Requiring or pressuring an employee to answer emails, take calls, or complete assignments while on protected leave constitutes unlawful leave interference under California and federal law.",
-    },
-    {
-      question: "What should I do if my employer fires me right after I request medical leave?",
-      answer: "Document the timeline immediately. Under California SB 497, adverse action taken within 90 days of exercising your statutory rights creates a rebuttable presumption of unlawful retaliation.",
-    },
-    {
-      question: "Does my employer have to maintain my health insurance while on CFRA leave?",
-      answer: "Yes. Under California Government Code § 12945.2, employers must maintain your group health insurance coverage under the same conditions as if you had continued to work actively.",
-    },
-    {
-      question: "What damages can I recover in a CFRA leave violation lawsuit?",
-      answer: "You can recover past and future lost earnings (back pay and front pay), lost benefits, compensation for emotional distress, punitive damages for egregious employer conduct, and statutory attorney fees.",
-    },
-    {
-      question: "Does Atoyan Law Firm handle CFRA and medical leave cases on contingency?",
-      answer: "Yes. Atoyan Law Firm represents employees on a contingency fee basis. You pay zero upfront legal fees or out-of-pocket expenses unless we recover money for you.",
-    },
-  ];
-
+  const faqs: AtoyanFaq[] = buildDavidAtoyanFaqs("family_medical_leave", city, keyword);
   return {
     keyword,
     city,
@@ -1364,41 +1535,7 @@ You have the right to blow the whistle on illegal practices, report health and s
 Workplace retaliation takes a heavy toll. It punishes honest workers for doing the right thing, threatening your livelihood and professional reputation. But California law provides some of the strongest anti-retaliation protections in the country. If you faced retaliation or were fired after speaking up in ${city}, call us. Atoyan Law offers confidential, no-obligation consultations. No pressure. Real answers. Call <a href="tel:8888070077">(888) 807-0077</a> or contact us online to schedule a free consultation with our <b>${city} retaliation lawyers</b>.
 `.trim();
 
-  const faqs: AtoyanFaq[] = [
-    {
-      question: `What constitutes workplace retaliation under California law in ${city}?`,
-      answer: `Workplace retaliation occurs when an employer takes an adverse employment action (such as firing, demotion, salary reduction, or schedule cuts) against an employee because they engaged in protected activity, such as complaining about discrimination, harassment, wage theft, or reporting legal violations.`,
-    },
-    {
-      question: "Do I have to prove my employer actually violated the law to win a whistleblower claim?",
-      answer: "No. Under California Labor Code § 1102.5, you only need to show that you had a reasonable, good-faith belief that the conduct you reported violated a local, state, or federal law or regulation.",
-    },
-    {
-      question: "What is California SB 497 and how does it protect whistleblowers?",
-      answer: "California SB 497 creates a rebuttable presumption of retaliation if an employer takes an adverse action against an employee within 90 days of the employee engaging in protected activity or reporting violations.",
-    },
-    {
-      question: "What is the legal standard for proving retaliation in California courts?",
-      answer: "Under the California Supreme Court's Lawson v. PPG decision, an employee only needs to prove that their whistleblowing was a contributing factor in the adverse action. The employer must then prove by clear and convincing evidence that it would have taken the same action regardless.",
-    },
-    {
-      question: "Can I sue for retaliation if I was not fired?",
-      answer: "Yes. Under Yanowitz v. L'Oreal, any action that materially affects the terms, conditions, or privileges of employment—such as demotions, pay cuts, unfair write-ups, or undesirable transfers—constitutes actionable retaliation.",
-    },
-    {
-      question: "What compensation can I recover in a California retaliation lawsuit?",
-      answer: "You can recover past and future lost earnings (back pay and front pay), emotional distress damages, civil penalties up to $10,000 per violation under Labor Code § 1102.5, punitive damages, and attorney fees.",
-    },
-    {
-      question: "How long do I have to file a workplace retaliation lawsuit in California?",
-      answer: "Depending on the underlying statute, retaliation claims under the Labor Code generally have a one to three-year statute of limitations, while FEHA retaliation claims allow up to three years to file with the California Civil Rights Department (CRD).",
-    },
-    {
-      question: "Does Atoyan Law Firm handle whistleblower cases on contingency?",
-      answer: "Yes. Atoyan Law Firm represents California whistleblowers on a contingency fee basis. You pay zero upfront attorney fees unless we successfully recover compensation for you.",
-    },
-  ];
-
+  const faqs: AtoyanFaq[] = buildDavidAtoyanFaqs("workplace_retaliation", city, keyword);
   return {
     keyword,
     city,
@@ -1557,41 +1694,7 @@ You have the right to work without being fired for an illegal reason. You have t
 Wrongful termination takes a toll on everything. Your income. Your health. Your family. But the law gives you tools to fight back. If you were fired in ${city} and you believe it was illegal, call us. Atoyan Law offers confidential consultations. No pressure. Real answers. Call <a href="tel:8888070077">(888) 807-0077</a> or contact us online to schedule a free consultation with our <b>${city} wrongful termination lawyers</b>.
 `.trim();
 
-  const faqs: AtoyanFaq[] = [
-    {
-      question: `What qualifies as wrongful termination in ${city} under California law?`,
-      answer: `Wrongful termination occurs when an employer fires an employee for an illegal reason, such as discrimination based on a protected trait (race, gender, age, disability), retaliation for reporting workplace violations or wage theft, taking protected medical leave (CFRA/FMLA), or in violation of public policy.`,
-    },
-    {
-      question: "Can an employer fire me for no reason in California?",
-      answer: "While California is an at-will employment state, an employer cannot fire you for an illegal reason. If your termination was motivated by discrimination, retaliation, or whistleblowing, it is unlawful regardless of at-will employment clauses.",
-    },
-    {
-      question: "What is 'constructive discharge' in California employment law?",
-      answer: "Constructive discharge occurs when an employer creates or knowingly permits working conditions that are so intolerable and abusive that a reasonable person in the employee's position would feel forced to quit. In the eyes of the law, this is treated as a wrongful termination.",
-    },
-    {
-      question: "How do I prove my termination was wrongful if my employer claims it was for poor performance?",
-      answer: "We prove wrongful termination through evidence of pretext, including suspicious timing (e.g., termination shortly after taking medical leave or complaining), past positive reviews, inconsistent explanations from management, and showing that other employees were not fired for identical conduct.",
-    },
-    {
-      question: "What compensation can I recover in a wrongful termination lawsuit?",
-      answer: "Damages include back pay (lost wages to date), front pay (future lost earnings), lost benefits, compensation for emotional distress, punitive damages to punish company wrongdoing, and statutory attorney fees.",
-    },
-    {
-      question: "Should I sign a severance agreement if I was wrongfully terminated?",
-      answer: "No, not before speaking with an employment litigation attorney. Severance agreements contain broad liability waivers that release your right to sue the employer for discrimination, unpaid wages, or wrongful termination in exchange for a relatively small payment.",
-    },
-    {
-      question: "How long do I have to file a wrongful termination claim in California?",
-      answer: "Statutes of limitations vary. For claims based on FEHA discrimination or retaliation, you have three years to file a complaint with the California Civil Rights Department (CRD). Claims for breach of public policy generally have a two-year deadline.",
-    },
-    {
-      question: "Does Atoyan Law Firm charge upfront fees for wrongful termination cases?",
-      answer: "No. Atoyan Law Firm handles wrongful termination cases on a contingency fee basis, meaning you pay zero out-of-pocket costs or attorney fees unless we successfully recover money for you.",
-    },
-  ];
-
+  const faqs: AtoyanFaq[] = buildDavidAtoyanFaqs("wrongful_termination", city, keyword);
   return {
     keyword,
     city,

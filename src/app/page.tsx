@@ -643,29 +643,7 @@ export default function Home() {
                 </div>
               </div>
 
-              {(publishResult.inpostHeadScript || result?.faqSchemaJsonLd) && (
-                <div className="rounded-xl border border-accent/30 bg-panel p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2 font-semibold text-text">
-                      <FileCode className="size-4 text-accent" />
-                      <span>Insert Script to &lt;head&gt;</span>
-                      <span className="font-mono text-[10px] px-1.5 py-0.5 rounded bg-accent/10 text-accent font-normal">
-                        _inpost_head_script
-                      </span>
-                    </div>
-                    <p className="text-muted">
-                      The code below will be inserted into the &lt;head&gt; section of this specific page/post.
-                    </p>
-                  </div>
-                  <button
-                    onClick={copySchemaJsonLd}
-                    className="inline-flex items-center gap-1.5 rounded-lg bg-accent text-white px-3 py-1.5 text-xs font-medium hover:opacity-90 transition shrink-0"
-                  >
-                    {copiedSchema ? <Check className="size-3.5" /> : <Copy className="size-3.5" />}
-                    {copiedSchema ? "Copied to Clipboard" : "Copy <head> Script"}
-                  </button>
-                </div>
-              )}
+
             </section>
           )}
 
@@ -871,6 +849,59 @@ export default function Home() {
                       dangerouslySetInnerHTML={{ __html: result.content.compensationIntro }}
                     />
 
+                    {/* Interactive FAQ Accordion Live Preview (Section 3 Integration) */}
+                    <div className="pt-2 space-y-3">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-accent/20 pb-2.5">
+                        <div className="flex items-center gap-2">
+                          <HelpCircle className="size-4 text-accent" />
+                          <h4 className="text-sm font-bold text-text">
+                            Interactive FAQ Accordion Preview ({result.content.faqs?.length || 0} High-Intent Questions)
+                          </h4>
+                        </div>
+                        <span className="text-xs text-muted">
+                          Click any question to preview accordion toggle
+                        </span>
+                      </div>
+
+                      <div className="space-y-2.5">
+                        {(result.content.faqs || []).map((faq, i) => (
+                          <details
+                            key={i}
+                            className="group border border-line bg-panel rounded-xl text-sm overflow-hidden transition shadow-2xs"
+                            open={i === 0}
+                          >
+                            <summary className="font-semibold cursor-pointer text-text px-4 py-3 flex items-center gap-3 select-none hover:bg-panel-2 transition list-none">
+                              <span className="text-xs font-mono font-bold text-accent w-6 h-6 rounded-full bg-accent/10 flex items-center justify-center shrink-0">
+                                {i + 1}
+                              </span>
+                              <span className="text-xs sm:text-sm font-semibold flex-1 text-text">{faq.question}</span>
+                              <span className="text-sm font-bold text-accent font-mono select-none px-1">
+                                <span className="group-open:hidden">+</span>
+                                <span className="hidden group-open:inline">&minus;</span>
+                              </span>
+                            </summary>
+                            <div className="p-4 sm:p-5 bg-panel-2 border-t border-line text-xs sm:text-sm text-muted leading-relaxed">
+                              <div
+                                className="text-text space-y-2 [&_h2]:text-sm [&_h2]:font-bold [&_h2]:text-accent [&_h2]:mt-3 [&_h2]:mb-1 [&_p]:my-1.5 [&_a]:text-accent [&_a]:underline"
+                                dangerouslySetInnerHTML={{ __html: faq.answer }}
+                              />
+                            </div>
+                          </details>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Publishing Compilation Confirmation Card */}
+                    <div className="p-4 rounded-xl border border-good/30 bg-good/5 space-y-2 text-xs">
+                      <div className="flex items-center gap-2 text-good font-semibold">
+                        <CheckCircle2 className="size-4" />
+                        <span>Publishing Compilation Status &bull; Native labor-law.php Accordion</span>
+                      </div>
+                      <p className="text-muted leading-relaxed">
+                        This interactive 10-question FAQ accordion is previewed live here. During publishing, the system compiles the complete native HTML accordion structure (matching <code className="text-accent">templates/labor-law.php</code> class conventions <code className="text-accent">sp-ea-one</code>) and David Atoyan's localized attorney CTA block directly into <code className="text-accent">compensation_content</code>, with zero raw scripts or stylesheets injected into WordPress.
+                      </p>
+                    </div>
+
                     {/* Clean Easy Accordion Embed Card */}
                     <div className="p-4 rounded-xl border border-line bg-panel space-y-2.5 shadow-xs">
                       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
@@ -1008,41 +1039,6 @@ export default function Home() {
               {/* TAB 3: EASY ACCORDION & FAQS */}
               {activeTab === "faqs" && (
                 <div className="space-y-6">
-                  {/* Insert Script to <head> (_inpost_head_script) Meta Box */}
-                  <div className="rounded-2xl border-2 border-accent/40 bg-panel p-6 space-y-4 shadow-sm">
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-line pb-3">
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <FileCode className="size-5 text-accent" />
-                          <h3 className="font-bold text-lg text-text">Insert Script to &lt;head&gt;</h3>
-                          <span className="text-xs font-mono px-2 py-0.5 rounded bg-accent/10 text-accent font-semibold">
-                            custom field: _inpost_head_script
-                          </span>
-                        </div>
-                        <p className="text-xs text-muted mt-1">
-                          The code below will be inserted into the &lt;head&gt; section of this specific page/post.
-                        </p>
-                      </div>
-
-                      <button
-                        onClick={copySchemaJsonLd}
-                        className="inline-flex items-center gap-2 rounded-xl bg-accent text-white px-4 py-2.5 text-xs font-bold hover:opacity-90 transition shadow-sm self-start sm:self-auto"
-                      >
-                        {copiedSchema ? <Check className="size-4" /> : <Copy className="size-4" />}
-                        {copiedSchema ? "Copied to Clipboard!" : "Copy Script for <head>"}
-                      </button>
-                    </div>
-
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between text-xs text-muted">
-                        <span className="font-medium text-text">Schema.org FAQPage JSON-LD Script</span>
-                        <span className="text-accent text-[11px] font-medium">Auto-injected into WordPress &lt;head&gt;</span>
-                      </div>
-                      <pre className="p-4 rounded-xl bg-panel-2 border border-line text-xs font-mono text-text/90 overflow-x-auto max-h-64 whitespace-pre">
-                        {result?.faqSchemaJsonLd || publishResult?.inpostHeadScript}
-                      </pre>
-                    </div>
-                  </div>
                   {/* Easy Accordion Integration Card */}
                   <div className="rounded-2xl border border-line bg-panel p-6 space-y-4 shadow-sm">
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -1118,7 +1114,10 @@ export default function Home() {
                             <span className="text-xs sm:text-sm font-semibold flex-1">{faq.question}</span>
                           </summary>
                           <div className="p-4 sm:p-5 bg-panel border-t border-line text-xs sm:text-sm text-muted leading-relaxed">
-                            <p className="m-0 text-text">{faq.answer}</p>
+                            <div
+                              className="text-text space-y-2 [&_h2]:text-sm [&_h2]:font-bold [&_h2]:text-accent [&_h2]:mt-3 [&_h2]:mb-1 [&_p]:my-1.5 [&_a]:text-accent [&_a]:underline"
+                              dangerouslySetInnerHTML={{ __html: faq.answer }}
+                            />
                           </div>
                         </details>
                       ))}

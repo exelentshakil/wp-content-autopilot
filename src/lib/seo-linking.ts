@@ -1,4 +1,5 @@
 import { getAllTrackedArticles, type TrackedArticle } from "./article-tracker";
+import { decomposeKeyword } from "./keyword-utils";
 
 export interface ContextualCtaOptions {
   topic: string;
@@ -13,93 +14,96 @@ export interface ContextualCtaOptions {
  */
 export function generateContextualCta(opts: ContextualCtaOptions): string {
   const { topic, city, position, phoneLink = "tel:8888070077" } = opts;
-  const lower = topic.toLowerCase();
+  const decomposed = decomposeKeyword(topic, city);
+  const resolvedCity = decomposed.city;
+  const cleanTopic = decomposed.cleanTopic;
+  const lower = cleanTopic.toLowerCase();
 
   // 1. WAGE & HOUR / OVERTIME / MEAL BREAKS
   if (lower.includes("overtime") || lower.includes("wage") || lower.includes("break") || lower.includes("theft")) {
     if (position === "early") {
-      return `<p class="txt-hlt bg-bx ulk-bg pd_v-30 pd_h-30" style="text-align:center;"><em><strong>If your employer failed to pay you for overtime, breaks, or full wages, Atoyan Law Firm is here to help. <a href="${phoneLink}">Contact our ${city} Wage and Hour Attorneys</a> today for a free consultation and fight back for what you’ve earned.</strong></em></p>`;
+      return `<p class="txt-hlt bg-bx ulk-bg pd_v-30 pd_h-30" style="text-align:center;"><em><strong>If your employer failed to pay you for overtime, breaks, or full wages, Atoyan Law Firm is here to help. <a href="${phoneLink}">Contact our ${resolvedCity} Wage and Hour Attorneys</a> today for a free consultation and fight back for what you’ve earned.</strong></em></p>`;
     }
     if (position === "mid") {
-      return `<p class="txt-hlt bg-bx ulk-bg pd_v-30 pd_h-30" style="text-align:center;"><em><strong>Unpaid overtime? Missed breaks? Illegal deductions? You may be entitled to compensation. Our ${city} Wage and Hour Lawyers are ready to fight for you. <a href="${phoneLink}">Reach out</a> now for your confidential case review.</strong></em></p>`;
+      return `<p class="txt-hlt bg-bx ulk-bg pd_v-30 pd_h-30" style="text-align:center;"><em><strong>Unpaid overtime? Missed breaks? Illegal deductions? You may be entitled to compensation. Our ${resolvedCity} Wage and Hour Lawyers are ready to fight for you. <a href="${phoneLink}">Reach out</a> now for your confidential case review.</strong></em></p>`;
     }
-    return `<p class="txt-hlt bg-bx ulk-bg pd_v-30 pd_h-30" style="text-align:center;"><em><strong>Wage theft and unpaid overtime are against the law. Don’t let your employer take advantage of you. <a href="${phoneLink}">Contact Atoyan Law Firm’s ${city} Wage and Hour team</a> today and take the first step toward justice.</strong></em></p>`;
+    return `<p class="txt-hlt bg-bx ulk-bg pd_v-30 pd_h-30" style="text-align:center;"><em><strong>Wage theft and unpaid overtime are against the law. Don’t let your employer take advantage of you. <a href="${phoneLink}">Contact Atoyan Law Firm’s ${resolvedCity} Wage and Hour team</a> today and take the first step toward justice.</strong></em></p>`;
   }
 
   // 2. WRONGFUL TERMINATION
   if (lower.includes("wrongful") || lower.includes("termination") || lower.includes("fired") || lower.includes("discharge")) {
     if (position === "early") {
-      return `<p class="txt-hlt bg-bx ulk-bg pd_v-30 pd_h-30" style="text-align:center;"><em><strong>Were you fired unfairly, abruptly, or in retaliation? Atoyan Law Firm is here to protect your rights. <a href="${phoneLink}">Contact our ${city} Wrongful Termination Lawyers</a> today for a confidential consultation and demand accountability.</strong></em></p>`;
+      return `<p class="txt-hlt bg-bx ulk-bg pd_v-30 pd_h-30" style="text-align:center;"><em><strong>Were you fired unfairly, abruptly, or in retaliation? Atoyan Law Firm is here to protect your rights. <a href="${phoneLink}">Contact our ${resolvedCity} Wrongful Termination Lawyers</a> today for a confidential consultation and demand accountability.</strong></em></p>`;
     }
     if (position === "mid") {
-      return `<p class="txt-hlt bg-bx ulk-bg pd_v-30 pd_h-30" style="text-align:center;"><em><strong>Sudden firing? Pretextual write-ups? Hostile exit? You may have a wrongful termination claim. Our ${city} Employment Attorneys are ready to fight for you. <a href="${phoneLink}">Reach out</a> now for your free case review.</strong></em></p>`;
+      return `<p class="txt-hlt bg-bx ulk-bg pd_v-30 pd_h-30" style="text-align:center;"><em><strong>Sudden firing? Pretextual write-ups? Hostile exit? You may have a wrongful termination claim. Our ${resolvedCity} Employment Attorneys are ready to fight for you. <a href="${phoneLink}">Reach out</a> now for your free case review.</strong></em></p>`;
     }
-    return `<p class="txt-hlt bg-bx ulk-bg pd_v-30 pd_h-30" style="text-align:center;"><em><strong>Unlawful termination can shatter your livelihood. Don’t let your employer silence you. <a href="${phoneLink}">Contact Atoyan Law Firm’s ${city} Wrongful Termination team</a> today and take the first step toward justice.</strong></em></p>`;
+    return `<p class="txt-hlt bg-bx ulk-bg pd_v-30 pd_h-30" style="text-align:center;"><em><strong>Unlawful termination can shatter your livelihood. Don’t let your employer silence you. <a href="${phoneLink}">Contact Atoyan Law Firm’s ${resolvedCity} Wrongful Termination team</a> today and take the first step toward justice.</strong></em></p>`;
   }
 
   // 3. SEXUAL HARASSMENT / HOSTILE WORK ENVIRONMENT
   if (lower.includes("harass") || lower.includes("sexual") || lower.includes("hostile")) {
     if (position === "early") {
-      return `<p class="txt-hlt bg-bx ulk-bg pd_v-30 pd_h-30" style="text-align:center;"><em><strong>Subjected to unwanted conduct, inappropriate comments, or a toxic environment? <a href="${phoneLink}">Contact our ${city} Sexual Harassment Lawyers</a> today for a confidential consultation and protect your dignity.</strong></em></p>`;
+      return `<p class="txt-hlt bg-bx ulk-bg pd_v-30 pd_h-30" style="text-align:center;"><em><strong>Subjected to unwanted conduct, inappropriate comments, or a toxic environment? <a href="${phoneLink}">Contact our ${resolvedCity} Sexual Harassment Lawyers</a> today for a confidential consultation and protect your dignity.</strong></em></p>`;
     }
     if (position === "mid") {
-      return `<p class="txt-hlt bg-bx ulk-bg pd_v-30 pd_h-30" style="text-align:center;"><em><strong>Unwanted advances? Retaliation for reporting? Hostile workplace? You have legal rights under California law. Our ${city} Harassment Attorneys are ready to fight for you. <a href="${phoneLink}">Reach out</a> now for your case evaluation.</strong></em></p>`;
+      return `<p class="txt-hlt bg-bx ulk-bg pd_v-30 pd_h-30" style="text-align:center;"><em><strong>Unwanted advances? Retaliation for reporting? Hostile workplace? You have legal rights under California law. Our ${resolvedCity} Harassment Attorneys are ready to fight for you. <a href="${phoneLink}">Reach out</a> now for your case evaluation.</strong></em></p>`;
     }
-    return `<p class="txt-hlt bg-bx ulk-bg pd_v-30 pd_h-30" style="text-align:center;"><em><strong>No one should have to endure sexual harassment to earn a paycheck. <a href="${phoneLink}">Contact Atoyan Law Firm’s ${city} Sexual Harassment team</a> today and let us stand between you and workplace abuse.</strong></em></p>`;
+    return `<p class="txt-hlt bg-bx ulk-bg pd_v-30 pd_h-30" style="text-align:center;"><em><strong>No one should have to endure sexual harassment to earn a paycheck. <a href="${phoneLink}">Contact Atoyan Law Firm’s ${resolvedCity} Sexual Harassment team</a> today and let us stand between you and workplace abuse.</strong></em></p>`;
   }
 
   // 4. RACE / ETHNIC / NATIONAL ORIGIN DISCRIMINATION
   if (lower.includes("race") || lower.includes("racial") || lower.includes("ethnic") || lower.includes("color") || lower.includes("origin")) {
     if (position === "early") {
-      return `<p class="txt-hlt bg-bx ulk-bg pd_v-30 pd_h-30" style="text-align:center;"><em><strong>Treated unfairly, passed over for promotions, or harassed because of your race or background? <a href="${phoneLink}">Contact our ${city} Race Discrimination Lawyers</a> today for a confidential consultation and fight back.</strong></em></p>`;
+      return `<p class="txt-hlt bg-bx ulk-bg pd_v-30 pd_h-30" style="text-align:center;"><em><strong>Treated unfairly, passed over for promotions, or harassed because of your race or background? <a href="${phoneLink}">Contact our ${resolvedCity} Race Discrimination Lawyers</a> today for a confidential consultation and fight back.</strong></em></p>`;
     }
     if (position === "mid") {
-      return `<p class="txt-hlt bg-bx ulk-bg pd_v-30 pd_h-30" style="text-align:center;"><em><strong>Racial bias? Unequal discipline? CROWN Act violation? You may be entitled to significant damages. Our ${city} Civil Rights Attorneys are prepared to advocate for you. <a href="${phoneLink}">Reach out</a> now for your free review.</strong></em></p>`;
+      return `<p class="txt-hlt bg-bx ulk-bg pd_v-30 pd_h-30" style="text-align:center;"><em><strong>Racial bias? Unequal discipline? CROWN Act violation? You may be entitled to significant damages. Our ${resolvedCity} Civil Rights Attorneys are prepared to advocate for you. <a href="${phoneLink}">Reach out</a> now for your free review.</strong></em></p>`;
     }
-    return `<p class="txt-hlt bg-bx ulk-bg pd_v-30 pd_h-30" style="text-align:center;"><em><strong>Workplace racial discrimination violates California law. <a href="${phoneLink}">Contact Atoyan Law Firm’s ${city} Race Discrimination team</a> today and demand the justice you deserve.</strong></em></p>`;
+    return `<p class="txt-hlt bg-bx ulk-bg pd_v-30 pd_h-30" style="text-align:center;"><em><strong>Workplace racial discrimination violates California law. <a href="${phoneLink}">Contact Atoyan Law Firm’s ${resolvedCity} Race Discrimination team</a> today and demand the justice you deserve.</strong></em></p>`;
   }
 
   // 5. DISABILITY DISCRIMINATION & ACCOMMODATIONS
   if (lower.includes("disability") || lower.includes("accommodation") || lower.includes("medical condition") || lower.includes("interactive")) {
     if (position === "early") {
-      return `<p class="txt-hlt bg-bx ulk-bg pd_v-30 pd_h-30" style="text-align:center;"><em><strong>Did your employer refuse your medical restrictions, ignore accommodation requests, or push you out? <a href="${phoneLink}">Contact our ${city} Disability Discrimination Attorneys</a> today for a confidential consultation.</strong></em></p>`;
+      return `<p class="txt-hlt bg-bx ulk-bg pd_v-30 pd_h-30" style="text-align:center;"><em><strong>Did your employer refuse your medical restrictions, ignore accommodation requests, or push you out? <a href="${phoneLink}">Contact our ${resolvedCity} Disability Discrimination Attorneys</a> today for a confidential consultation.</strong></em></p>`;
     }
     if (position === "mid") {
-      return `<p class="txt-hlt bg-bx ulk-bg pd_v-30 pd_h-30" style="text-align:center;"><em><strong>Denied accommodation? Terminated on medical leave? Failure to engage? You have strong protections under FEHA. Our ${city} Disability Lawyers are ready to stand with you. <a href="${phoneLink}">Reach out</a> now.</strong></em></p>`;
+      return `<p class="txt-hlt bg-bx ulk-bg pd_v-30 pd_h-30" style="text-align:center;"><em><strong>Denied accommodation? Terminated on medical leave? Failure to engage? You have strong protections under FEHA. Our ${resolvedCity} Disability Lawyers are ready to stand with you. <a href="${phoneLink}">Reach out</a> now.</strong></em></p>`;
     }
-    return `<p class="txt-hlt bg-bx ulk-bg pd_v-30 pd_h-30" style="text-align:center;"><em><strong>Medical conditions should be accommodated, not punished. <a href="${phoneLink}">Contact Atoyan Law Firm’s ${city} Disability Discrimination team</a> today and enforce your statutory workplace rights.</strong></em></p>`;
+    return `<p class="txt-hlt bg-bx ulk-bg pd_v-30 pd_h-30" style="text-align:center;"><em><strong>Medical conditions should be accommodated, not punished. <a href="${phoneLink}">Contact Atoyan Law Firm’s ${resolvedCity} Disability Discrimination team</a> today and enforce your statutory workplace rights.</strong></em></p>`;
   }
 
   // 6. WHISTLEBLOWER & WORKPLACE RETALIATION
   if (lower.includes("whistleblower") || lower.includes("retaliat")) {
     if (position === "early") {
-      return `<p class="txt-hlt bg-bx ulk-bg pd_v-30 pd_h-30" style="text-align:center;"><em><strong>Did your employer cut your hours, demote you, or fire you after you reported illegal activity? <a href="${phoneLink}">Contact our ${city} Whistleblower Retaliation Lawyers</a> today for a confidential case review.</strong></em></p>`;
+      return `<p class="txt-hlt bg-bx ulk-bg pd_v-30 pd_h-30" style="text-align:center;"><em><strong>Did your employer cut your hours, demote you, or fire you after you reported illegal activity? <a href="${phoneLink}">Contact our ${resolvedCity} Whistleblower Retaliation Lawyers</a> today for a confidential case review.</strong></em></p>`;
     }
     if (position === "mid") {
-      return `<p class="txt-hlt bg-bx ulk-bg pd_v-30 pd_h-30" style="text-align:center;"><em><strong>Punished for speaking up? Labor Code § 1102.5 protects you from employer retaliation. Our ${city} Retaliation Attorneys are prepared to advocate aggressively for you. <a href="${phoneLink}">Reach out</a> today.</strong></em></p>`;
+      return `<p class="txt-hlt bg-bx ulk-bg pd_v-30 pd_h-30" style="text-align:center;"><em><strong>Punished for speaking up? Labor Code § 1102.5 protects you from employer retaliation. Our ${resolvedCity} Retaliation Attorneys are prepared to advocate aggressively for you. <a href="${phoneLink}">Reach out</a> today.</strong></em></p>`;
     }
-    return `<p class="txt-hlt bg-bx ulk-bg pd_v-30 pd_h-30" style="text-align:center;"><em><strong>Speaking the truth should not cost you your job. <a href="${phoneLink}">Contact Atoyan Law Firm’s ${city} Retaliation team</a> today and hold your employer legally accountable.</strong></em></p>`;
+    return `<p class="txt-hlt bg-bx ulk-bg pd_v-30 pd_h-30" style="text-align:center;"><em><strong>Speaking the truth should not cost you your job. <a href="${phoneLink}">Contact Atoyan Law Firm’s ${resolvedCity} Retaliation team</a> today and hold your employer legally accountable.</strong></em></p>`;
   }
 
   // 7. FAMILY AND MEDICAL LEAVE (CFRA / FMLA / PREGNANCY)
   if (lower.includes("leave") || lower.includes("cfra") || lower.includes("fmla") || lower.includes("pregnancy") || lower.includes("maternity")) {
     if (position === "early") {
-      return `<p class="txt-hlt bg-bx ulk-bg pd_v-30 pd_h-30" style="text-align:center;"><em><strong>Was your medical leave denied, or were you demoted or terminated after caring for a sick family member or baby? <a href="${phoneLink}">Contact our ${city} Medical Leave Lawyers</a> today for a confidential review.</strong></em></p>`;
+      return `<p class="txt-hlt bg-bx ulk-bg pd_v-30 pd_h-30" style="text-align:center;"><em><strong>Was your medical leave denied, or were you demoted or terminated after caring for a sick family member or baby? <a href="${phoneLink}">Contact our ${resolvedCity} Medical Leave Lawyers</a> today for a confidential review.</strong></em></p>`;
     }
     if (position === "mid") {
-      return `<p class="txt-hlt bg-bx ulk-bg pd_v-30 pd_h-30" style="text-align:center;"><em><strong>Denied CFRA leave? Replaced while on pregnancy leave? Retaliated against? California provides robust job-protected leave. Our ${city} FMLA/CFRA Attorneys are here to help. <a href="${phoneLink}">Reach out</a> now.</strong></em></p>`;
+      return `<p class="txt-hlt bg-bx ulk-bg pd_v-30 pd_h-30" style="text-align:center;"><em><strong>Denied CFRA leave? Replaced while on pregnancy leave? Retaliated against? California provides robust job-protected leave. Our ${resolvedCity} FMLA/CFRA Attorneys are here to help. <a href="${phoneLink}">Reach out</a> now.</strong></em></p>`;
     }
-    return `<p class="txt-hlt bg-bx ulk-bg pd_v-30 pd_h-30" style="text-align:center;"><em><strong>Protecting your health and your family is your legal right. <a href="${phoneLink}">Contact Atoyan Law Firm’s ${city} Family & Medical Leave team</a> today to protect your job and your future.</strong></em></p>`;
+    return `<p class="txt-hlt bg-bx ulk-bg pd_v-30 pd_h-30" style="text-align:center;"><em><strong>Protecting your health and your family is your legal right. <a href="${phoneLink}">Contact Atoyan Law Firm’s ${resolvedCity} Family & Medical Leave team</a> today to protect your job and your future.</strong></em></p>`;
   }
 
   // DEFAULT / GENERAL EMPLOYMENT LAW
   if (position === "early") {
-    return `<p class="txt-hlt bg-bx ulk-bg pd_v-30 pd_h-30" style="text-align:center;"><em><strong>Facing unfair treatment, wage violations, or unlawful job actions in ${city}? Atoyan Law Firm is here to help. <a href="${phoneLink}">Contact our ${city} Employment Lawyers</a> today for a confidential legal consultation.</strong></em></p>`;
+    return `<p class="txt-hlt bg-bx ulk-bg pd_v-30 pd_h-30" style="text-align:center;"><em><strong>Facing unfair treatment, wage violations, or unlawful job actions in ${resolvedCity}? Atoyan Law Firm is here to help. <a href="${phoneLink}">Contact our ${resolvedCity} Employment Lawyers</a> today for a confidential legal consultation.</strong></em></p>`;
   }
   if (position === "mid") {
-    return `<p class="txt-hlt bg-bx ulk-bg pd_v-30 pd_h-30" style="text-align:center;"><em><strong>Unfair discipline? Lost wages? Workplace rights violated? You may be entitled to financial recovery. Our ${city} Labor Attorneys are ready to fight for you. <a href="${phoneLink}">Reach out</a> now for your case review.</strong></em></p>`;
+    return `<p class="txt-hlt bg-bx ulk-bg pd_v-30 pd_h-30" style="text-align:center;"><em><strong>Unfair discipline? Lost wages? Workplace rights violated? You may be entitled to financial recovery. Our ${resolvedCity} Labor Attorneys are ready to fight for you. <a href="${phoneLink}">Reach out</a> now for your case review.</strong></em></p>`;
   }
-  return `<p class="txt-hlt bg-bx ulk-bg pd_v-30 pd_h-30" style="text-align:center;"><em><strong>Workplace violations are against the law. Don’t let your employer take advantage of you. <a href="${phoneLink}">Contact Atoyan Law Firm’s ${city} Employment Law team</a> today and take the first step toward justice.</strong></em></p>`;
+  return `<p class="txt-hlt bg-bx ulk-bg pd_v-30 pd_h-30" style="text-align:center;"><em><strong>Workplace violations are against the law. Don’t let your employer take advantage of you. <a href="${phoneLink}">Contact Atoyan Law Firm’s ${resolvedCity} Employment Law team</a> today and take the first step toward justice.</strong></em></p>`;
 }
 
 interface LinkingTarget {
@@ -313,7 +317,10 @@ export function formatHowDoContentWithLinks(params: {
   currentSlug: string;
 }): string {
   const { topic, city, currentSlug } = params;
-  const lower = topic.toLowerCase();
+  const decomposed = decomposeKeyword(topic, city);
+  const resolvedCity = decomposed.city;
+  const cleanTopic = decomposed.cleanTopic;
+  const lower = cleanTopic.toLowerCase();
 
   // Pick appropriate related internal link for the diagnostic question
   let retaliationUrl = "https://www.atoyanlaw.com/practice-areas/employment-law/work-retaliation/";
@@ -346,7 +353,7 @@ export function formatHowDoContentWithLinks(params: {
     diagnosticQuestions = `Did the employee qualify under CFRA (Gov Code § 12945.2) or FMLA? Was the employee reinstated to the same or comparable position upon return? Did the employer count protected medical leave as unexcused absences? Did the <a href="${retaliationUrl}">employer retaliate after the employee requested leave?</a>`;
   }
 
-  return `<p><b>${topic} cases can become complicated quickly.</b></p>
+  return `<p><b>${cleanTopic} cases can become complicated quickly.</b></p>
 <p>The central question may seem simple: &ldquo;<b>${coreQuestion}</b>&rdquo;</p>
 <p>But a proper legal analysis may require additional questions.</p>
 <p>${diagnosticQuestions}</p>
@@ -363,7 +370,10 @@ export function formatCompensationContentWithLinks(params: {
   accordionShortcode: string;
 }): string {
   const { topic, city, accordionShortcode } = params;
-  const lower = topic.toLowerCase();
+  const decomposed = decomposeKeyword(topic, city);
+  const resolvedCity = decomposed.city;
+  const cleanTopic = decomposed.cleanTopic;
+  const lower = cleanTopic.toLowerCase();
 
   let lawFocus = "California's employment laws";
   if (lower.includes("overtime") || lower.includes("wage") || lower.includes("break")) {
@@ -379,6 +389,6 @@ export function formatCompensationContentWithLinks(params: {
   return `<p>If you suffered workplace violations, California law may require your employer to compensate you for all damages, lost wages, and statutory penalties. And if those violations were willful, the employer may be liable for substantial interest and attorney fees.</p>
 <p>Do not assume that an employer's internal explanation is always accurate. Do not assume that being salaried automatically makes you exempt from wage laws. And do not assume that a manager's verbal instructions override statutory employee protections.</p>
 <p>${lawFocus} are designed to protect workers from suffering career and financial harm.</p>
-<p>If you believe your workplace rights were violated in ${city}, Atoyan Employment Law can help you evaluate your claim. <a href="/contact/">Contact</a> the firm to discuss what happened and learn what options may be available to you.</p>
+<p>If you believe your workplace rights were violated in ${resolvedCity}, Atoyan Employment Law can help you evaluate your claim. <a href="/contact/">Contact</a> the firm to discuss what happened and learn what options may be available to you.</p>
 \r\n${accordionShortcode}`;
 }
