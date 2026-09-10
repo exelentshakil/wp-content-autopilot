@@ -399,9 +399,15 @@ async function tryOpenAiImage(opts: GenerateSingleImageOptions, key: string): Pr
 /**
  * Generates an image using available AI providers, falling back gracefully to authentic Atoyan photography.
  */
+function cleanApiKey(raw?: string): string | undefined {
+  if (!raw) return undefined;
+  const cleaned = raw.trim().replace(/^["'\s]+|["'\s]+$/g, "");
+  return cleaned.length > 5 ? cleaned : undefined;
+}
+
 async function generateSingleImage(opts: GenerateSingleImageOptions): Promise<AtoyanGeneratedImage> {
-  const geminiKey = process.env.GEMINI_API_KEY?.trim() || opts.apiKey?.trim() || undefined;
-  const openaiKey = process.env.OPENAI_API_KEY?.trim() || opts.openaiKey?.trim() || undefined;
+  const geminiKey = cleanApiKey(opts.apiKey || process.env.GEMINI_API_KEY);
+  const openaiKey = cleanApiKey(opts.openaiKey || process.env.OPENAI_API_KEY);
 
   if (geminiKey) {
     try {
@@ -441,9 +447,9 @@ export async function generateAtoyanImages(params: {
   const safeSlug = (slug || keyword.toLowerCase().replace(/[^a-z0-9]+/g, "-")).replace(/^-|-$/g, "");
   const category = providedCategory || deriveAtoyanCategory(keyword, city);
 
-  const bannerPrompt = `Cinematic professional 35mm photography of an empty California law firm partner office desk. Warm green banker desk lamp, stacked legal case files, leather-bound legal volumes on dark polished mahogany wood. Moody evening ambiance, soft bokeh, executive attorney aesthetic. STRICT NEGATIVE CONSTRAINT: Absolutely NO text, NO typography, NO letters, NO words, NO signs, NO watermark. 16:9 wide landscape orientation.`;
+  const bannerPrompt = `Cinematic professional 35mm photography of an empty California law firm partner office desk. Warm green banker desk lamp, stacked legal case files, leather-bound legal volumes on dark polished mahogany wood. Moody evening ambiance, soft bokeh, executive attorney aesthetic. A clean photograph with natural architectural composition and zero text, letters, signage, or watermarks. 16:9 wide landscape orientation.`;
 
-  const servicesPrompt = `Professional editorial corporate photograph of two legal professionals in business attire reviewing employment documents together in a sleek modern conference room. Natural light, clean architectural background, elegant navy and slate tones. STRICT NEGATIVE CONSTRAINT: Absolutely NO text, NO typography, NO letters, NO words, NO signage, NO overlays, NO watermarks. 3:2 landscape orientation (600x400).`;
+  const servicesPrompt = `Professional editorial corporate photograph of two legal professionals in business attire reviewing employment documents together in a sleek modern conference room. Natural light, clean architectural background, elegant navy and slate tones. A clean authentic editorial scene with natural composition and zero text, letters, signage, or overlays. 3:2 landscape orientation (600x400).`;
 
   const [rawBanner, rawServices] = await Promise.all([
     generateSingleImage({

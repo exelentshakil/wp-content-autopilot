@@ -16,41 +16,22 @@ const GEMINI_MODELS = (process.env.GEMINI_MODEL ?? "gemini-2.5-flash,gemini-2.0-
   .map((s) => s.trim())
   .filter(Boolean);
 
-const OPENAI_MODELS = (process.env.OPENAI_MODEL ?? "gpt-4o,gpt-4o-mini")
+const OPENAI_MODELS = (process.env.OPENAI_MODEL ?? "chatgpt-4o-latest,gpt-4o,o3-mini")
   .split(",")
   .map((s) => s.trim())
   .filter(Boolean);
+
+function cleanApiKey(raw?: string): string | undefined {
+  if (!raw) return undefined;
+  const cleaned = raw.trim().replace(/^["'\s]+|["'\s]+$/g, "");
+  return cleaned.length > 5 ? cleaned : undefined;
+}
 
 const ATOYAN_SYSTEM_PROMPT = `
 You are the senior legal content strategist and employment litigation attorney at Atoyan Law Firm (atoyanlaw.com).
 Your job is to generate authoritative, deeply compelling California employment practice area content matching the exact conversational, punchy tone and structure used by Atoyan Law.
 
 CRITICAL CLIENT RULES (CLIENT DAVID - ATOYAN LAW FIRM):
-
-7. CRITICAL INTERNAL SEO LINKING (INTERNAL SEO JUICE):
-   Every practice area page must actively harness and cross-link Atoyan Law Firm articles:
-   - In servicesContent (Tab 2):
-     Contextually weave 3 to 5+ natural internal links to related practice area and localized pages on atoyanlaw.com.
-     Examples:
-     * If you believe you were <a href="https://www.atoyanlaw.com/practice-areas/employment-law/overtime-pay/">not properly paid for overtime</a>, it is important...
-     * An employer might reduce hours or <a href="https://www.atoyanlaw.com/practice-areas/employment-law/burbank-wrongful-termination-lawyer/">terminate their employment</a> after they complain...
-     * Every <a href="https://www.atoyanlaw.com/practice-areas/employment-law/work-retaliation/">retaliation claim</a> depends on its particular facts...
-     * DO NOT link to the current page itself (no self-links).
-   - In howDoContent (Tab 4):
-     Format with diagnostic questions including internal link:
-     e.g., "Did the <a href=\"https://www.atoyanlaw.com/practice-areas/employment-law/work-retaliation/\">employer retaliate after the employee complained?</a>"
-   - In compensationIntro (Tab 6):
-     Must conclude with firm contact link:
-     "If you believe your workplace rights were violated in [City], Atoyan Employment Law can help you evaluate your claim. <a href=\"/contact/\">Contact</a> the firm to discuss what happened and learn what options may be available to you."
-
-8. 100% TOPIC-SPECIFIC CTAs & CALLOUT BOXES:
-   ALL CTAs and callouts MUST be 100% relevant to the specific violation and city (never generic):
-   - Early callout:
-     <p class="txt-hlt bg-bx ulk-bg pd_v-30 pd_h-30" style="text-align:center;"><em><strong>If your employer [topic-specific issue in City], Atoyan Law Firm is here to help. <a href="tel:8888070077">Contact our [City] [Topic] Attorneys</a> today for a free consultation and fight back for what you’ve earned.</strong></em></p>
-   - Mid callout:
-     <p class="txt-hlt bg-bx ulk-bg pd_v-30 pd_h-30" style="text-align:center;"><em><strong>[Punchy topic questions]? You may be entitled to compensation. Our [City] [Topic] Lawyers are ready to fight for you. <a href="tel:8888070077">Reach out</a> now for your confidential case review.</strong></em></p>
-   - Closing callout:
-     <p class="txt-hlt bg-bx ulk-bg pd_v-30 pd_h-30" style="text-align:center;"><em><strong>[Topic violation] is against the law. Don’t let your employer take advantage of you. <a href="tel:8888070077">Contact Atoyan Law Firm’s [City] [Topic] team</a> today and take the first step toward justice.</strong></em></p>
 
 1. TITLE FORMULA:
    Hero title MUST follow this exact formula:
@@ -65,40 +46,86 @@ CRITICAL CLIENT RULES (CLIENT DAVID - ATOYAN LAW FIRM):
 2. THREE UNIQUE CONTENT SECTIONS (ACF TABS 2, 4, 6):
    - 1ST: SERVICES CONTENT (Tab 2 - servicesContent):
      Must be 2,500-3,500+ words of deep, high-authority California employment legal analysis ("strictly huge content").
-     Analyze the exact topic under California law with thorough real-world scenarios, legal standards, employer tactics, employee rights, and evidence gathering.
+     Analyze the exact topic under California law across 7 MANDATORY SECTIONS (detailed below).
      Structure with:
        * Short punchy paragraphs (1-3 sentences max). No dense walls of text.
        * Question-based subheadings formatted with <h2 class="h2dav"> and <h3 class="h3dav">.
        * Bold key phrases for readability (e.g. <strong>That timeline matters.</strong>, <strong>First</strong>, <strong>Second</strong>).
        * Bullet lists (<ul><li>...</li></ul>).
-       * 2-3 topic-specific callout boxes (see rule 3 below).
-       * California statutory depth (FEHA, CRD, Labor Code §§ 98.6, 203, 226.7, 510, 512, 1102.5, SB 497 90-day presumption, Gov Code § 12940, case law).
+       * 3 topic-specific callout boxes (Early, Mid, and Closing).
+       * California statutory depth (FEHA Gov Code § 12940, CRD/DFEH, Labor Code §§ 98.6, 201-203, 226.7, 510, 512, 1102.5, SB 497 90-day presumption, CROWN Act SB 188, case law).
+
+     MANDATORY 7-SECTION LEGAL LITIGATION FRAMEWORK (4-6 SUBSTANTIAL PARAGRAPHS PER SECTION):
+     * SECTION 1: STATUTORY FRAMEWORK & DEFINITIONS UNDER CALIFORNIA LAW
+       Heading: <h2 class="h2dav">Understanding [Topic] Under California Law: Rights, Definitions, and Statutory Protections</h2>
+       Detail California Fair Employment and Housing Act (FEHA) Gov Code § 12940(a), protected classes, the CROWN Act (SB 188) if applicable, strict employer liability for supervisors vs negligence standard for coworkers under Gov Code § 12940(j), and relevant Labor Code protections.
+       Include Early Callout Box:
+       <p class="txt-hlt bg-bx ulk-bg pd_v-30 pd_h-30" style="text-align:center;"><em><strong>If your employer has subjected you to [topic] in [City], Atoyan Law Firm is here to fight for your rights. <a href="tel:8888070077">Contact our [City] [Topic] Attorneys</a> at (888) 807-0077 today for a free, confidential case evaluation.</strong></em></p>
+
+     * SECTION 2: WORKPLACE MANIFESTATIONS & UNLAWFUL CONDUCT IN [CITY]
+       Heading: <h2 class="h2dav">Common Forms of [Topic] in California Workplaces</h2>
+       Subheadings with <h3 class="h3dav"> for Direct vs. Indirect/Disparate Impact, Adverse Employment Actions (demotion, pay cuts, denial of promotion, constructive discharge), and Hostile Work Environment standards.
+       Include a concrete <ul> bulleted list with 6-8 real-world workplace scenarios specific to the industry in [City] (entertainment, logistics, healthcare, tech, retail, hospitality).
+
+     * SECTION 3: EMPLOYER PRETEXT, SHAM INVESTIGATIONS & PAPER TRAILS
+       Heading: <h2 class="h2dav">How California Employers Mask [Topic]: Pretext, Paper Trails, and Sham HR Investigations</h2>
+       Detail the McDonnell Douglas burden-shifting framework (Guz v. Bechtel National), how employers fabricate performance critiques right after complaints, sudden "restructuring" or "reductions in force" (RIF), HR's institutional bias to protect management, and the creation of pretextual disciplinary paper trails.
+       Include Mid Callout Box:
+       <p class="txt-hlt bg-bx ulk-bg pd_v-30 pd_h-30" style="text-align:center;"><em><strong>Facing sudden write-ups, bogus disciplinary reviews, or employer retaliation in [City]? You have legal rights under California law. Our [City] [Topic] Lawyers are prepared to hold them accountable. <a href="tel:8888070077">Call (888) 807-0077</a> for an immediate consultation.</strong></em></p>
+
+     * SECTION 4: WORKPLACE RETALIATION & CALIFORNIA'S STATUTORY 90-DAY PRESUMPTION
+       Heading: <h2 class="h2dav">Workplace Retaliation Under California Law: Labor Code § 1102.5 & Senate Bill 497</h2>
+       Analyze California Labor Code § 1102.5 whistleblower protections, Labor Code § 98.6, and California Senate Bill 497 (SB 497) establishing a rebuttable presumption of retaliation if adverse action occurs within 90 days of engaging in protected activity. Contrast California's employee-protective standard (Lawson v. PPG Architectural Finishes) with federal law.
+
+     * SECTION 5: EVIDENTIARY BLUEPRINT: HOW TO DOCUMENT & PROVE YOUR CASE
+       Heading: <h2 class="h2dav">How to Document and Prove a [Topic] Claim in California</h2>
+       Subheadings with <h3 class="h3dav"> on Documentary Evidence, Digital Communications, Comparator Evidence, and Contemporaneous Journaling.
+       Bulleted list of records to preserve: emails, text messages, Slack/Teams chats, performance evaluations, payroll records, and comparator employee data.
+       Warning on California's two-party wiretapping law (Penal Code § 632) regarding audio recordings.
+
+     * SECTION 6: ADMINISTRATIVE FILINGS & CRITICAL STATUTES OF LIMITATIONS
+       Heading: <h2 class="h2dav">California Civil Rights Department (CRD), EEOC Filings, and Deadlines</h2>
+       Explain administrative exhaustion under California Government Code § 12960: filing with the California Civil Rights Department (CRD, formerly DFEH), immediate Right-to-Sue notice, dual filing with EEOC.
+       Detailed breakdown of the 3-year statute of limitations to file with CRD (Gov Code § 12960(e)), followed by 1 year from the Right-to-Sue notice to file in Superior Court. Also cover Labor Commissioner / DLSE wage claim deadlines.
+
+     * SECTION 7: RECOVERABLE DAMAGES AND FINANCIAL COMPENSATION
+       Heading: <h2 class="h2dav">What Compensation and Financial Damages Can You Recover in California?</h2>
+       Subheadings with <h3 class="h3dav"> covering:
+         - Economic Damages (Back Pay, Front Pay, Lost Benefits, Stock Options)
+         - Non-Economic Damages (Emotional Distress, Mental Anguish, Reputational Harm)
+         - Punitive Damages under California Civil Code § 3294 (oppression, fraud, malice)
+         - Statutory Attorneys' Fees and Costs under California Government Code § 12965(b) (fee-shifting)
+         - Waiting time penalties under California Labor Code § 203 (up to 30 days) and Labor Code § 226.7 if applicable.
+       Include Closing Callout Box:
+       <p class="txt-hlt bg-bx ulk-bg pd_v-30 pd_h-30" style="text-align:center;"><em><strong>[Topic] is an unacceptable violation of California labor protections. Don’t face your employer alone. <a href="tel:8888070077">Contact Atoyan Law Firm’s [City] [Topic] team</a> today at (888) 807-0077 to demand the full compensation you are owed.</strong></em></p>
+
    - 2ND: HOW DO SECTION (Tab 4 - howDoHeading & howDoContent):
      Unique heading (e.g., "How Can a [City] [Topic] Lawyer at Atoyan Law Help?") and actionable guidance:
-     Specific steps for an employee facing this exact issue (e.g. do not sign severance or releases without counsel, do not quit prematurely, how to preserve evidence, what damages are recoverable).
+     Specific steps for an employee facing this exact issue (do not sign severance or releases without counsel, do not quit prematurely, how to preserve evidence, what damages are recoverable).
+     Format with diagnostic questions including internal link:
+     e.g., "Did the <a href=\"https://www.atoyanlaw.com/practice-areas/employment-law/work-retaliation/\">employer retaliate after the employee complained?</a>"
+
    - 3RD: COMPENSATION SECTION (Tab 6 - compensationHeading & compensationIntro):
      Unique heading (e.g., "What Results and Compensation Can I Expect from a California [Topic] Claim?")
      and compensation intro composed of:
      Paragraph 1: Employee rights regarding this topic with an internal link (e.g. You have the right to work in an environment free from unlawful discrimination. You have the right to <a href="https://www.atoyanlaw.com/practice-areas/employment-law/what-is-employment-discrimination/">report discrimination</a> without losing your job...).
      Paragraph 2: Impact statement and topic-tailored CTA:
-       "[Topic] takes a toll on everything. Your career. Your income. Your dignity. Your family. But California law gives you tools to fight back. If you experienced [topic] in [City], call us. Atoyan Law offers confidential consultations. No pressure. Real answers. Call <a href=\"tel:747888-0077\">(747) 888-0077</a> or contact us online to schedule a free consultation with our <b>[City] [topic] lawyers</b>."
+       "[Topic] takes a toll on everything. Your career. Your income. Your dignity. Your family. But California law gives you tools to fight back. If you experienced [topic] in [City], call us. Atoyan Law offers confidential consultations. No pressure. Real answers. Call <a href=\"tel:8888070077\">(888) 807-0077</a> or contact us online to schedule a free consultation with our <b>[City] [topic] lawyers</b>."
+     Conclude with firm contact link:
+     "If you believe your workplace rights were violated in [City], Atoyan Employment Law can help you evaluate your claim. <a href=\"/contact/\">Contact</a> the firm to discuss what happened and learn what options may be available to you."
 
-3. STRICT TOPIC-SPECIFIC CTAs & CALLOUT BOXES:
-   CTAs and Callout Boxes must be 100% relevant to the specific practice area.
-   DO NOT use generic wrongful termination copy if the topic is race discrimination, wage theft, sexual harassment, meal breaks, or disability.
-   Format callout boxes as:
-   <p class="txt-hlt bg-bx ulk-bg pd_v-30 pd_h-30" style="text-align:center;"><em><strong>[Topic-specific problem in City]? That's not just unfair - it's illegal. Call Atoyan Law at <a href="tel:747888-0077">(747) 888-0077</a> or <a href="/contact/">contact us online</a> to schedule a confidential legal consultation.</strong></em></p>
+3. COMPREHENSIVE TOPIC-SPECIFIC FAQS (8 TO 10 IN-DEPTH QUESTIONS):
+   Produce 8 to 10 practical, multi-paragraph FAQs directly addressing real employee questions about this EXACT topic.
+   Every FAQ answer must contain 2-3 substantive paragraphs with California statutory citations and practical reality.
+   The 10th (or final) FAQ item MUST conclude with David Atoyan's localized attorney CTA block:
+   <h2 id="talk-to-a-[city]-[topic]-lawyer" class="font-semibold leading-tight text-pretty mb-2 mt-4 text-base">Talk to a [City] [Topic] Lawyer</h2>
+   <p class="my-2">If you believe your workplace rights were violated, time limits apply under California law. <strong>Contact Atoyan Law at (888) 807-0077</strong> or through the online form at <a class="reset interactable cursor-pointer decoration-1 underline-offset-1 text-super-primary hover:underline" href="https://www.atoyanlaw.com/contact/" target="_blank" rel="noopener"><span class="text-box-trim-both">atoyanlaw.com</span></a> for a free, confidential case evaluation.</p>
 
-4. COMPREHENSIVE TOPIC-SPECIFIC FAQS:
-   Produce 8 to 10 practical, in-depth FAQs directly addressing real employee questions about this EXACT topic.
-   No generic filler FAQs.
-
-5. DYNAMIC EASY ACCORDION & FAQS:
-   Every single practice area page requires a brand-new, unique WordPress Easy Accordion created dynamically from its FAQs.
+4. DYNAMIC EASY ACCORDION & FAQS:
    Set "accordionShortcode" to "" (empty string) in your JSON output.
-   DO NOT reuse old, existing, or hardcoded accordion IDs (such as 4176). The system will dynamically register a new WordPress sp_easy_accordion with your 8-10 FAQs.
+   DO NOT reuse old or hardcoded accordion IDs (such as 4176). The system dynamically renders and embeds native Easy Accordion HTML.
 
-6. SEO METADATA:
+5. SEO METADATA:
    Yoast title (< 60 chars), meta description (< 160 chars), focus keyword, clean URL slug.
 
 OUTPUT MUST BE VALID JSON with this exact schema:
@@ -109,16 +136,16 @@ OUTPUT MUST BE VALID JSON with this exact schema:
   "heroTitle": "string ([City] [Topic] Employment Lawyers - [Subtopic])",
   "servicesHeading": "string",
   "servicesSubHeading": "string",
-  "servicesContent": "string (2,500-3,500+ words HTML with <h2 class=\"h2dav\">, <h3 class=\"h3dav\">, <p>, <strong>, <ul><li>, and topic-specific callout boxes)",
+  "servicesContent": "string (2,500-3,500+ words HTML with <h2 class=\"h2dav\">, <h3 class=\"h3dav\">, <p>, <strong>, <ul><li>, and topic-specific callout boxes across all 7 mandatory sections)",
   "howDoHeading": "string",
   "howDoContent": "string",
   "compensationHeading": "string",
-  "compensationIntro": "string (Rights intro and topic CTA with (747) 888-0077)",
+  "compensationIntro": "string (Rights intro and topic CTA with (888) 807-0077)",
   "accordionShortcode": "string (leave empty \"\" for dynamic creation)",
   "faqs": [
     {
       "question": "string",
-      "answer": "string"
+      "answer": "string (2-3 paragraphs; final FAQ must include Talk to a [City] [Topic] Lawyer CTA block)"
     }
   ],
   "yoastTitle": "string",
@@ -218,6 +245,17 @@ function validateAndNormalizeAtoyanContent(
     finalCompIntro = finalCompIntro + " If you believe your rights were violated in " + resolvedCity + ', Atoyan Employment Law can evaluate your claim. <a href="/contact/">Contact</a> the firm to discuss what happened.';
   }
 
+  // Guarantee final FAQ item contains David Atoyan's localized attorney CTA block
+  if (finalFaqs.length > 0) {
+    const lastFaq = finalFaqs[finalFaqs.length - 1];
+    if (!lastFaq.answer.includes("Talk to a") && !lastFaq.answer.includes("807-0077")) {
+      const citySlug = resolvedCity.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+      const topicSlug = keyword.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+      const ctaBlock = `\r\n<h2 id="talk-to-a-${citySlug}-${topicSlug}-lawyer" class="font-semibold leading-tight text-pretty mb-2 mt-4 text-base">Talk to a ${resolvedCity} ${keyword} Lawyer</h2>\r\n<p class="my-2">If you believe your workplace rights were violated, time limits apply under California law. <strong>Contact Atoyan Law at (888) 807-0077</strong> or through the online form at <a class="reset interactable cursor-pointer decoration-1 underline-offset-1 text-super-primary hover:underline" href="https://www.atoyanlaw.com/contact/" target="_blank" rel="noopener"><span class="text-box-trim-both">atoyanlaw.com</span></a> for a free, confidential case evaluation.</p>`;
+      lastFaq.answer = lastFaq.answer.trim() + ctaBlock;
+    }
+  }
+
   const result: AtoyanLegalContent = {
     keyword: typeof obj.keyword === "string" && obj.keyword ? obj.keyword : keyword,
     city: resolvedCity,
@@ -295,6 +333,59 @@ export function buildActiveSystemPrompt(customDirectives?: string, chatContext?:
 }
 
 /**
+ * Builds the exhaustive user prompt mandating the 7 California litigation sections and 8-10 FAQs.
+ */
+function buildLegalPrompt(keyword: string, city: string, linkCatalog: string): string {
+  return `${linkCatalog}
+
+CRITICAL REQUIREMENT: servicesContent MUST be 2,500-3,500+ words of exhaustive, litigation-grade California employment law analysis for "${keyword}" in ${city}.
+DO NOT generate a short generic summary. Follow this mandatory 7-section framework with 4-6 substantial paragraphs per section:
+
+SECTION 1: STATUTORY FRAMEWORK & DEFINITIONS UNDER CALIFORNIA LAW
+- Heading: <h2 class="h2dav">Understanding ${keyword} Under California Law: Definitions, Rights, and Statutory Protections</h2>
+- Cite Fair Employment and Housing Act (FEHA) Gov Code § 12940, protected categories, CROWN Act SB 188 if applicable, strict liability for supervisors vs negligence for coworkers under Gov Code § 12940(j), relevant California Labor Code sections.
+- Include Early Callout Box:
+<p class="txt-hlt bg-bx ulk-bg pd_v-30 pd_h-30" style="text-align:center;"><em><strong>If your employer has subjected you to ${keyword} in ${city}, Atoyan Law Firm is here to fight for your rights. <a href="tel:8888070077">Contact our ${city} ${keyword} Attorneys</a> at (888) 807-0077 today for a free, confidential case evaluation.</strong></em></p>
+
+SECTION 2: WORKPLACE MANIFESTATIONS & UNLAWFUL ADVERSE ACTIONS IN ${city.toUpperCase()}
+- Heading: <h2 class="h2dav">Common Forms of ${keyword} in ${city} Workplaces</h2>
+- Subheadings with <h3 class="h3dav"> for Direct vs Disparate Impact, Adverse Employment Actions (demotion, pay reduction, constructive discharge), Hostile Work Environment legal standards.
+- Detailed <ul> bulleted list with 6-8 concrete workplace examples typical in ${city}.
+
+SECTION 3: EMPLOYER PRETEXT, SHAM INVESTIGATIONS & PAPER TRAILS
+- Heading: <h2 class="h2dav">How California Employers Mask ${keyword}: Pretext, Bogus Write-Ups, and Sham HR Investigations</h2>
+- Explain the McDonnell Douglas burden-shifting framework (Guz v. Bechtel National), retaliatory write-ups, bogus PIPs (performance improvement plans), sudden restructuring/RIFs, and HR bias protecting the employer.
+- Include Mid Callout Box:
+<p class="txt-hlt bg-bx ulk-bg pd_v-30 pd_h-30" style="text-align:center;"><em><strong>Facing sudden write-ups, bogus disciplinary reviews, or employer retaliation in ${city}? You have legal rights under California law. Our ${city} ${keyword} Lawyers are prepared to hold them accountable. <a href="tel:8888070077">Call (888) 807-0077</a> for an immediate consultation.</strong></em></p>
+
+SECTION 4: WORKPLACE RETALIATION & CALIFORNIA'S 90-DAY STATUTORY PRESUMPTION (SB 497)
+- Heading: <h2 class="h2dav">Workplace Retaliation Under California Law: Labor Code § 1102.5 & Senate Bill 497</h2>
+- Explain Labor Code § 1102.5 whistleblower rights, Labor Code § 98.6, and California Senate Bill 497 (SB 497) establishing a rebuttable presumption of retaliation if adverse action happens within 90 days of protected activity. Contrast California's employee-protective standard (Lawson v. PPG Architectural Finishes) with federal standards.
+
+SECTION 5: EVIDENTIARY BLUEPRINT: HOW TO DOCUMENT & PROVE YOUR CASE
+- Heading: <h2 class="h2dav">How to Document and Prove a ${keyword} Claim in California</h2>
+- Subheadings with <h3 class="h3dav"> on Documentary Evidence, Digital Communications (emails, texts, Slack/Teams), Comparator Evidence, and Contemporaneous Journaling.
+- Detail what records to preserve and caution regarding California Penal Code § 632 two-party consent wiretapping laws.
+
+SECTION 6: ADMINISTRATIVE PREREQUISITES & CRITICAL STATUTES OF LIMITATIONS
+- Heading: <h2 class="h2dav">California Civil Rights Department (CRD), EEOC Filings, and Deadlines</h2>
+- Detail California Government Code § 12960 administrative exhaustion with the California Civil Rights Department (CRD, formerly DFEH), immediate Right-to-Sue notice, dual filing with EEOC, the 3-year CRD filing deadline (Gov Code § 12960(e)), and the 1-year window to file in Superior Court after the Right-to-Sue notice.
+
+SECTION 7: RECOVERABLE DAMAGES AND FINANCIAL COMPENSATION
+- Heading: <h2 class="h2dav">What Compensation and Financial Damages Can You Recover in California?</h2>
+- Subheadings with <h3 class="h3dav"> for Economic Damages (Back Pay, Front Pay, Lost Benefits, Stock Options), Non-Economic Damages (Emotional Distress, Mental Anguish), Punitive Damages under California Civil Code § 3294 (oppression, fraud, malice), and Statutory Attorneys' Fees under Gov Code § 12965(b).
+- Include Concluding Callout Box:
+<p class="txt-hlt bg-bx ulk-bg pd_v-30 pd_h-30" style="text-align:center;"><em><strong>${keyword} is an unacceptable violation of California labor protections. Don’t face your employer alone. <a href="tel:8888070077">Contact Atoyan Law Firm’s ${city} ${keyword} team</a> today at (888) 807-0077 to demand the full compensation you are owed.</strong></em></p>
+
+ALSO INCLUDE:
+- 8 to 10 in-depth, multi-paragraph FAQs specifically addressing real employee questions about ${keyword} in California. Every answer must have 2-3 substantive paragraphs citing California statutes and practical realities. The final FAQ must end with David Atoyan's localized attorney CTA block:
+<h2 id="talk-to-a-${city.toLowerCase().replace(/[^a-z0-9]+/g, "-")}-${keyword.toLowerCase().replace(/[^a-z0-9]+/g, "-")}-lawyer" class="font-semibold leading-tight text-pretty mb-2 mt-4 text-base">Talk to a ${city} ${keyword} Lawyer</h2>
+<p class="my-2">If you believe your workplace rights were violated, time limits apply under California law. <strong>Contact Atoyan Law at (888) 807-0077</strong> or through the online form at <a class="reset interactable cursor-pointer decoration-1 underline-offset-1 text-super-primary hover:underline" href="https://www.atoyanlaw.com/contact/" target="_blank" rel="noopener"><span class="text-box-trim-both">atoyanlaw.com</span></a> for a free, confidential case evaluation.</p>
+
+Output strictly valid JSON matching the schema.`;
+}
+
+/**
  * Generates California employment legal content using OpenAI.
  */
 async function generateAtoyanOpenAI(
@@ -306,29 +397,36 @@ async function generateAtoyanOpenAI(
 ): Promise<AtoyanLegalContent> {
   const safeSlug = keyword.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
   const linkCatalog = buildLinkingCatalogForLlm({ category: keyword, city, currentSlug: safeSlug });
-  const prompt = `${linkCatalog}\n\nWrite comprehensive, authoritative California employment law practice area content (strictly huge content: 2,500-3,500+ words in servicesContent) for the target topic/keyword: "${keyword}" in ${city}.\nEnsure all sections match Atoyan Law Firm\x27s punchy, compassionate tone, question-based <h2 class="h2dav"> and <h3 class="h3dav"> subheadings, statutory depth (FEHA, Labor Code §§ 98.6, 201-203, 226.7, 510, 512, 1102.5, SB 497, case law), topic callouts, and 8-10 FAQs. Output valid JSON matching the schema.`;
-
+  const prompt = buildLegalPrompt(keyword, city, linkCatalog);
   const activePrompt = buildActiveSystemPrompt(systemPrompt, chatContext);
 
   for (const model of OPENAI_MODELS) {
     try {
       console.log(`[Atoyan LLM] Calling OpenAI (${model}) for "${keyword}" in ${city}...`);
+      const isReasoningModel = model.startsWith("o1") || model.startsWith("o3");
+      const requestBody: Record<string, unknown> = {
+        model,
+        messages: [
+          { role: "system", content: activePrompt },
+          { role: "user", content: prompt },
+        ],
+        response_format: { type: "json_object" },
+      };
+
+      if (isReasoningModel) {
+        requestBody.max_completion_tokens = 16000;
+      } else {
+        requestBody.max_tokens = 16000;
+        requestBody.temperature = 0.65;
+      }
+
       const res = await fetch("https://api.openai.com/v1/chat/completions", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${apiKey}`,
         },
-        body: JSON.stringify({
-          model,
-          messages: [
-            { role: "system", content: activePrompt },
-            { role: "user", content: prompt },
-          ],
-          response_format: { type: "json_object" },
-          temperature: 0.65,
-          max_tokens: 16000,
-        }),
+        body: JSON.stringify(requestBody),
         signal: AbortSignal.timeout(120_000),
       });
 
@@ -374,8 +472,7 @@ async function generateAtoyanGemini(
 ): Promise<AtoyanLegalContent> {
   const safeSlug = keyword.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
   const linkCatalog = buildLinkingCatalogForLlm({ category: keyword, city, currentSlug: safeSlug });
-  const prompt = `${linkCatalog}\n\nTarget Topic: "${keyword}" in ${city}.\nWrite high-authority California employment legal practice area content (strictly huge content: 2,500-3,500+ words in servicesContent) for Atoyan Law Firm following all system guidelines. Output valid JSON matching the schema.`;
-
+  const prompt = buildLegalPrompt(keyword, city, linkCatalog);
   const activePrompt = buildActiveSystemPrompt(systemPrompt, chatContext);
 
   for (const model of GEMINI_MODELS) {
@@ -451,8 +548,8 @@ export async function generateAtoyanContent(params: {
   }
 
   // Prioritize client-provided API keys (from Settings modal) over server environment keys
-  const openaiKey = params.openaiKey?.trim() || process.env.OPENAI_API_KEY?.trim() || undefined;
-  const geminiKey = params.geminiKey?.trim() || process.env.GEMINI_API_KEY?.trim() || undefined;
+  const openaiKey = cleanApiKey(params.openaiKey || process.env.OPENAI_API_KEY);
+  const geminiKey = cleanApiKey(params.geminiKey || process.env.GEMINI_API_KEY);
 
   let preferredProvider: "openai" | "gemini" = params.provider === "gemini" ? "gemini" : "openai";
   if (openaiKey && !geminiKey) preferredProvider = "openai";
@@ -502,12 +599,13 @@ export async function generateAtoyanContent(params: {
 // -----------------------------------------------------------------------------
 
 export async function activeProvider(settings?: Settings): Promise<string> {
-  if (settings?.llm_provider === "openai" && (settings.openai_api_key || process.env.OPENAI_API_KEY))
-    return "openai";
-  if (settings?.llm_provider === "gemini" && (settings.gemini_api_key || process.env.GEMINI_API_KEY))
-    return "gemini";
-  if (settings?.openai_api_key || process.env.OPENAI_API_KEY) return "openai";
-  if (settings?.gemini_api_key || process.env.GEMINI_API_KEY) return "gemini";
+  const openaiKey = cleanApiKey(settings?.openai_api_key || process.env.OPENAI_API_KEY);
+  const geminiKey = cleanApiKey(settings?.gemini_api_key || process.env.GEMINI_API_KEY);
+
+  if (settings?.llm_provider === "openai" && openaiKey) return "openai";
+  if (settings?.llm_provider === "gemini" && geminiKey) return "gemini";
+  if (openaiKey) return "openai";
+  if (geminiKey) return "gemini";
   return "simulator";
 }
 
@@ -527,7 +625,7 @@ export async function generateArticle(title: string, settings: Settings): Promis
       title,
       body: `${atoyan.servicesContent}\n\n${atoyan.howDoContent}\n\n${atoyan.compensationIntro}`,
       provider,
-      model: provider === "openai" ? "gpt-4o" : provider === "gemini" ? "gemini-2.5-flash" : "deterministic",
+      model: provider === "openai" ? "chatgpt-4o-latest" : provider === "gemini" ? "gemini-2.5-flash" : "deterministic",
     };
   } catch {
     const sim = generateAtoyanSimulated(title, city);

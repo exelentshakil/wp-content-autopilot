@@ -26,6 +26,7 @@ import {
   EyeOff,
   AlertTriangle,
   X,
+  Image as ImageIcon,
 } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { useSettings } from "@/lib/useSettings";
@@ -756,6 +757,41 @@ export default function Home() {
                       </p>
                     </div>
                   </div>
+
+                  {/* Hero Panoramic Banner (1920x451) */}
+                  {result.images.banner?.dataUrl && (
+                    <div className="rounded-2xl border border-line bg-panel p-6 space-y-4">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                        <div className="flex items-center gap-2">
+                          <ImageIcon className="size-4 text-accent" />
+                          <h3 className="font-semibold text-base text-text">Panoramic Hero Banner (Tab 1)</h3>
+                          <span className="text-xs px-2 py-0.5 rounded bg-accent/10 text-accent border border-accent/20 font-mono">
+                            personal_injury_image
+                          </span>
+                        </div>
+                        <span className="text-xs font-mono px-2.5 py-1 rounded-md bg-panel-2 border border-line text-accent font-semibold">
+                          1920 &times; 451 (4.25:1)
+                        </span>
+                      </div>
+
+                      <div className="w-full aspect-[1920/451] rounded-xl overflow-hidden border border-line bg-panel-2 shadow-inner">
+                        <img
+                          src={result.images.banner.dataUrl}
+                          alt={result.images.banner.altText}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between text-xs gap-2 pt-1 border-t border-line">
+                        <div className="text-muted">
+                          <span className="font-semibold text-text">Alt Text:</span> {result.images.banner.altText}
+                        </div>
+                        <div className="text-muted font-mono text-[11px]">
+                          Filename: {result.images.banner.filename}
+                        </div>
+                      </div>
+                    </div>
+                  )}
 
                   {/* Section 1: Services Content (Tab 2) */}
                   <div className="rounded-2xl border border-line bg-panel p-6 sm:p-8 space-y-6">

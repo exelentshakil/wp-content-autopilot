@@ -68,6 +68,22 @@ export const PublishRequest = z.object({
   banner_attachment_id: z.number().optional(),
   services_image_url: z.string().optional(),
   services_attachment_id: z.number().optional(),
+  banner_image: z
+    .object({
+      base64: z.string().optional(),
+      filename: z.string().optional(),
+      mimeType: z.string().optional(),
+      altText: z.string().optional(),
+    })
+    .optional(),
+  services_image: z
+    .object({
+      base64: z.string().optional(),
+      filename: z.string().optional(),
+      mimeType: z.string().optional(),
+      altText: z.string().optional(),
+    })
+    .optional(),
   admin_password: z.string().optional(),
   accordion_shortcode: z.string().optional(),
   chat_context: z.string().optional(),
