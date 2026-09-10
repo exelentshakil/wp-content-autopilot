@@ -258,8 +258,14 @@ function validateAndNormalizeAtoyanContent(
     });
   }
 
-  // Guarantee Compensation Section has contact link
-  let finalCompIntro = typeof obj.compensationIntro === "string" && obj.compensationIntro ? obj.compensationIntro : sim.compensationIntro;
+  // Guarantee Compensation Section has clean editorial intro and contact link (no raw HTML accordions)
+  let rawCompIntro = typeof obj.compensationIntro === "string" && obj.compensationIntro ? obj.compensationIntro : sim.compensationIntro;
+  let finalCompIntro = rawCompIntro
+    .replace(/<div\s+id=["']sp-ea-[\s\S]*$/i, "")
+    .replace(/<div\s+class=["'][^"']*sp-easy-accordion[\s\S]*$/i, "")
+    .replace(/\[sp_easyaccordion\s+id=["']?\d+["']?\]/gi, "")
+    .trim();
+
   if (!finalCompIntro.includes('href="/contact/"') && !finalCompIntro.includes('href="https://www.atoyanlaw.com/contact/"')) {
     finalCompIntro = finalCompIntro + " If you believe your rights were violated in " + resolvedCity + ', Atoyan Employment Law can evaluate your claim. <a href="/contact/">Contact</a> the firm to discuss what happened.';
   }

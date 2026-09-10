@@ -30,13 +30,12 @@ export interface CreateAccordionResult {
  * Returns David Atoyan default Easy Accordion shortcode options matching the exact
  * styling, layout, typography, and color palette of atoyanlaw.com.
  */
-export function getDefaultShortcodeOptions(customUniqId?: string): Record<string, unknown>[] {
+export function getDefaultShortcodeOptions(customUniqId?: string): Record<string, unknown> {
   const uniqId =
     customUniqId ||
     `sp_easy_accordion-${Math.floor(1000000000 + Math.random() * 1147483647)}`;
 
-  return [
-    {
+  return {
       eap_accordion_layout: "vertical",
       accordion_margin_bottom: {
         all: 10,
@@ -148,8 +147,7 @@ export function getDefaultShortcodeOptions(customUniqId?: string): Record<string
         type: "google",
         unit: "px",
       },
-    },
-  ];
+  };
 }
 
 /**
@@ -165,7 +163,7 @@ export function buildDavidAccordionUploadOptions(params: {
   }>;
   city?: string;
   topic?: string;
-}): Record<string, unknown>[] {
+}): Record<string, unknown> {
   const { faqs, city = "California", topic = "Employment Law" } = params;
   const decomposed = decomposeKeyword(topic, city);
   const resolvedCity = decomposed.city || city || "California";
@@ -203,15 +201,13 @@ export function buildDavidAccordionUploadOptions(params: {
     }
   }
 
-  return [
-    {
-      eap_accordion_type: "content-accordion",
-      accordion_content_source: accordionContentSource,
-      eap_post_type: "sp_accordion_faqs",
-      post_order_by: "date",
-      post_order: "DESC",
-    },
-  ];
+  return {
+    eap_accordion_type: "content-accordion",
+    accordion_content_source: accordionContentSource,
+    eap_post_type: "sp_accordion_faqs",
+    post_order_by: "date",
+    post_order: "DESC",
+  };
 }
 
 /**
@@ -273,6 +269,28 @@ export async function createEasyAccordion(
     if (bridgeRes.ok) {
       const data = await bridgeRes.json();
       if (data.id && data.shortcode) {
+        // Run immediate sanitization via WP REST API to ensure upload_options and shortcode_options are unwrapped objects in wp_postmeta
+        try {
+          const defaultOpts = params.shortcode_options || getDefaultShortcodeOptions();
+          const uploadOpts = buildDavidAccordionUploadOptions({ faqs, city, topic });
+          await fetch(`${cleanBase}/wp-json/wp/v2/sp_easy_accordion/${data.id}`, {
+            method: "POST",
+            headers: {
+              Authorization: `Basic ${authHeader}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              meta: {
+                sp_eap_upload_options: uploadOpts,
+                sp_eap_shortcode_options: defaultOpts,
+              },
+            }),
+            signal: AbortSignal.timeout(10_000),
+          });
+        } catch (sanitizeErr) {
+          console.warn("Immediate accordion sanitization error (non-fatal):", sanitizeErr);
+        }
+
         return {
           id: data.id,
           title: data.title || title,

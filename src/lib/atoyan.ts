@@ -464,11 +464,20 @@ export function buildCompensationSection(
     if (match) {
       shortcode = match[0];
     } else {
-      shortcode = resolveDefaultAccordionShortcode(keyword, city);
+      const htmlIdMatch = compensationIntro.match(/sp-ea-(\d+)/i);
+      if (htmlIdMatch) {
+        shortcode = `[sp_easyaccordion id="${htmlIdMatch[1]}"]`;
+      } else {
+        shortcode = resolveDefaultAccordionShortcode(keyword, city);
+      }
     }
   }
 
+  // Strip any raw HTML accordion blocks (<div id="sp-ea-..." or <div class="...sp-easy-accordion...")
+  // and existing shortcodes so compensation_content strictly retains only the clean legal editorial intro
   let cleanIntro = compensationIntro
+    .replace(/<div\s+id=["']sp-ea-[\s\S]*$/i, "")
+    .replace(/<div\s+class=["'][^"']*sp-easy-accordion[\s\S]*$/i, "")
     .replace(/\[sp_easyaccordion\s+id=["']?\d+["']?\]/gi, "")
     .trim();
 

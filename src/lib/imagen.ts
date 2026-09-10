@@ -156,17 +156,54 @@ export async function compositeAtoyanBanner(
  */
 export async function compositeAtoyanServicesImage(
   imageBuffer: Buffer,
-  _params?: { headline: string; category: string }
+  params: { headline: string; category: string }
 ): Promise<{ buffer: Buffer; width: number; height: number }> {
   const width = 600;
   const height = 400;
+  const barTop = 32;
+  const barHeight = 64;
 
-  const cleanBuffer = await sharp(imageBuffer)
+  const escapeXml = (str: string) =>
+    str.replace(/[<>&'"]/g, (c) => {
+      switch (c) {
+        case "<": return "&lt;";
+        case ">": return "&gt;";
+        case "&": return "&amp;";
+        case "'": return "&apos;";
+        case '"': return "&quot;";
+        default: return c;
+      }
+    });
+
+  const category = escapeXml((params?.category || "CALIFORNIA EMPLOYMENT LAW").toUpperCase());
+  const headline = escapeXml((params?.headline || params?.category || "EMPLOYMENT LAWYER").toUpperCase());
+
+  const catLen = category.length;
+  const line1FontSize = catLen > 35 ? Math.max(13, Math.floor(560 / (catLen * 0.65))) : 17;
+
+  const hLen = headline.length;
+  const line2FontSize = hLen > 36 ? Math.max(14, Math.floor(560 / (hLen * 0.62))) : 20;
+
+  const svgOverlay = Buffer.from(`
+    <svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <filter id="shadow" x="-5%" y="-5%" width="110%" height="110%">
+          <feDropShadow dx="0" dy="1.5" stdDeviation="1.5" flood-color="#000000" flood-opacity="0.8"/>
+        </filter>
+      </defs>
+      <rect x="0" y="${barTop}" width="${width}" height="${barHeight}" fill="rgba(20, 25, 32, 0.78)" />
+      <text x="18" y="${barTop + 24}" fill="#FFFFFF" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="${line1FontSize}" font-weight="900" letter-spacing="0.5" filter="url(#shadow)">${category}</text>
+      <text x="18" y="${barTop + 50}" fill="#D7E434" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="${line2FontSize}" font-weight="900" letter-spacing="0.5" filter="url(#shadow)">${headline}</text>
+    </svg>
+  `);
+
+  const brandedBuffer = await sharp(imageBuffer)
     .resize(width, height, { fit: "cover" })
+    .composite([{ input: svgOverlay, top: 0, left: 0 }])
     .jpeg({ quality: 90 })
     .toBuffer();
 
-  return { buffer: cleanBuffer, width, height };
+  return { buffer: brandedBuffer, width, height };
 }
 
 /**

@@ -844,10 +844,23 @@ export default function Home() {
                       </span>
                       <h3 className="text-xl font-bold text-accent mt-2">{result.content.compensationHeading}</h3>
                     </div>
-                    <div
-                      className="text-sm text-text leading-relaxed whitespace-pre-line"
-                      dangerouslySetInnerHTML={{ __html: result.content.compensationIntro }}
-                    />
+                    <div className="space-y-3">
+                      <div
+                        className="text-sm text-text leading-relaxed whitespace-pre-line"
+                        dangerouslySetInnerHTML={{
+                          __html: (result.content.compensationIntro || "")
+                            .replace(/<div\s+id=["']sp-ea-[\s\S]*$/i, "")
+                            .replace(/<div\s+class=["'][^"']*sp-easy-accordion[\s\S]*$/i, "")
+                            .replace(/\[sp_easyaccordion\s+id=["']?\d+["']?\]/gi, "")
+                            .trim(),
+                        }}
+                      />
+                      <div className="pt-1">
+                        <span className="text-xs font-mono font-bold text-accent bg-accent/10 px-3 py-1.5 rounded border border-accent/20 inline-block">
+                          {result.content.accordionShortcode || accordionShortcode || '[sp_easyaccordion id="..."]'}
+                        </span>
+                      </div>
+                    </div>
 
                     {/* Interactive FAQ Accordion Live Preview (Section 3 Integration) */}
                     <div className="pt-2 space-y-3">
@@ -889,17 +902,6 @@ export default function Home() {
                           </details>
                         ))}
                       </div>
-                    </div>
-
-                    {/* Publishing Compilation Confirmation Card */}
-                    <div className="p-4 rounded-xl border border-good/30 bg-good/5 space-y-2 text-xs">
-                      <div className="flex items-center gap-2 text-good font-semibold">
-                        <CheckCircle2 className="size-4" />
-                        <span>Publishing Compilation Status &bull; Native labor-law.php Accordion</span>
-                      </div>
-                      <p className="text-muted leading-relaxed">
-                        This interactive 10-question FAQ accordion is previewed live here. During publishing, the system compiles the complete native HTML accordion structure (matching <code className="text-accent">templates/labor-law.php</code> class conventions <code className="text-accent">sp-ea-one</code>) and David Atoyan's localized attorney CTA block directly into <code className="text-accent">compensation_content</code>, with zero raw scripts or stylesheets injected into WordPress.
-                      </p>
                     </div>
 
                     {/* Clean Easy Accordion Embed Card */}

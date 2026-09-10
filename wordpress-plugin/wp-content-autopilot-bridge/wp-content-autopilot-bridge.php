@@ -88,9 +88,14 @@ class WP_Content_Autopilot_Bridge {
                 $post_type,
                 "sp_eap_shortcode_options",
                 array(
-                    "show_in_rest"  => true,
+                    "show_in_rest"  => array(
+                        "schema" => array(
+                            "type"                 => "object",
+                            "additionalProperties" => true,
+                        ),
+                    ),
                     "single"        => true,
-                    "type"          => "array",
+                    "type"          => "object",
                     "auth_callback" => function() {
                         return current_user_can( "edit_posts" );
                     },
@@ -101,9 +106,14 @@ class WP_Content_Autopilot_Bridge {
                 $post_type,
                 "sp_eap_upload_options",
                 array(
-                    "show_in_rest"  => true,
+                    "show_in_rest"  => array(
+                        "schema" => array(
+                            "type"                 => "object",
+                            "additionalProperties" => true,
+                        ),
+                    ),
                     "single"        => true,
-                    "type"          => "array",
+                    "type"          => "object",
                     "auth_callback" => function() {
                         return current_user_can( "edit_posts" );
                     },
@@ -185,16 +195,32 @@ class WP_Content_Autopilot_Bridge {
             return;
         }
 
+        $shortcode_opts = null;
         if ( ! empty( $body["meta"]["sp_eap_shortcode_options"] ) ) {
-            update_post_meta( $post_id, "sp_eap_shortcode_options", $body["meta"]["sp_eap_shortcode_options"] );
+            $shortcode_opts = $body["meta"]["sp_eap_shortcode_options"];
         } elseif ( ! empty( $body["sp_eap_shortcode_options"] ) ) {
-            update_post_meta( $post_id, "sp_eap_shortcode_options", $body["sp_eap_shortcode_options"] );
+            $shortcode_opts = $body["sp_eap_shortcode_options"];
         }
 
+        if ( $shortcode_opts ) {
+            if ( isset( $shortcode_opts[0] ) && is_array( $shortcode_opts[0] ) ) {
+                $shortcode_opts = $shortcode_opts[0];
+            }
+            update_post_meta( $post_id, "sp_eap_shortcode_options", $shortcode_opts );
+        }
+
+        $upload_opts = null;
         if ( ! empty( $body["meta"]["sp_eap_upload_options"] ) ) {
-            update_post_meta( $post_id, "sp_eap_upload_options", $body["meta"]["sp_eap_upload_options"] );
+            $upload_opts = $body["meta"]["sp_eap_upload_options"];
         } elseif ( ! empty( $body["sp_eap_upload_options"] ) ) {
-            update_post_meta( $post_id, "sp_eap_upload_options", $body["sp_eap_upload_options"] );
+            $upload_opts = $body["sp_eap_upload_options"];
+        }
+
+        if ( $upload_opts ) {
+            if ( isset( $upload_opts[0] ) && is_array( $upload_opts[0] ) ) {
+                $upload_opts = $upload_opts[0];
+            }
+            update_post_meta( $post_id, "sp_eap_upload_options", $upload_opts );
         }
 
         if ( function_exists( "rocket_clean_post" ) ) {
@@ -539,8 +565,7 @@ class WP_Content_Autopilot_Bridge {
 
         // Build exact Shortcode Options per David Atoyan specifications
         $shortcode_options = array(
-            array(
-                "eap_accordion_layout"            => "vertical",
+            "eap_accordion_layout"            => "vertical",
                 "accordion_margin_bottom"         => array( "all" => 10 ),
                 "eap_accordion_event"             => "ea-click",
                 "eap_accordion_mode"              => "ea-first-open",
@@ -641,12 +666,14 @@ class WP_Content_Autopilot_Bridge {
                     "type"           => "google",
                     "unit"           => "px",
                 ),
-            ),
         );
 
         // Allow overriding shortcode options if explicitly provided
         if ( ! empty( $params["shortcode_options"] ) && is_array( $params["shortcode_options"] ) ) {
             $shortcode_options = $params["shortcode_options"];
+            if ( isset( $shortcode_options[0] ) && is_array( $shortcode_options[0] ) ) {
+                $shortcode_options = $shortcode_options[0];
+            }
         }
 
         // Build FAQ Upload Options
@@ -696,14 +723,19 @@ class WP_Content_Autopilot_Bridge {
         }
 
         $upload_options = array(
-            array(
-                "eap_accordion_type"       => "content-accordion",
-                "accordion_content_source" => $accordion_content_source,
-                "eap_post_type"            => "sp_accordion_faqs",
-                "post_order_by"            => "date",
-                "post_order"               => "DESC",
-            ),
+            "eap_accordion_type"       => "content-accordion",
+            "accordion_content_source" => $accordion_content_source,
+            "eap_post_type"            => "sp_accordion_faqs",
+            "post_order_by"            => "date",
+            "post_order"               => "DESC",
         );
+
+        if ( ! empty( $params["upload_options"] ) && is_array( $params["upload_options"] ) ) {
+            $upload_options = $params["upload_options"];
+            if ( isset( $upload_options[0] ) && is_array( $upload_options[0] ) ) {
+                $upload_options = $upload_options[0];
+            }
+        }
 
         // Update post meta in wp_postmeta
         update_post_meta( $post_id, "sp_eap_shortcode_options", $shortcode_options );
