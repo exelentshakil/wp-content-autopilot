@@ -882,7 +882,7 @@ export default function Home() {
                             </summary>
                             <div className="p-4 sm:p-5 bg-panel-2 border-t border-line text-xs sm:text-sm text-muted leading-relaxed">
                               <div
-                                className="text-text space-y-2 [&_h2]:text-sm [&_h2]:font-bold [&_h2]:text-accent [&_h2]:mt-3 [&_h2]:mb-1 [&_p]:my-1.5 [&_a]:text-accent [&_a]:underline"
+                                className="text-text space-y-2 [&_h2]:text-sm [&_h2]:font-bold [&_h2]:text-accent [&_h2]:mt-3 [&_h2]:mb-1 [&_p]:my-1.5 [&_a]:text-accent [&_a]:underline [&_table]:w-full [&_table]:border-collapse [&_table]:my-2 [&_th]:border [&_th]:border-line [&_th]:p-2 [&_th]:bg-panel-2 [&_th]:text-left [&_th]:font-bold [&_td]:border [&_td]:border-line [&_td]:p-2 [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5"
                                 dangerouslySetInnerHTML={{ __html: faq.answer }}
                               />
                             </div>
@@ -1115,7 +1115,7 @@ export default function Home() {
                           </summary>
                           <div className="p-4 sm:p-5 bg-panel border-t border-line text-xs sm:text-sm text-muted leading-relaxed">
                             <div
-                              className="text-text space-y-2 [&_h2]:text-sm [&_h2]:font-bold [&_h2]:text-accent [&_h2]:mt-3 [&_h2]:mb-1 [&_p]:my-1.5 [&_a]:text-accent [&_a]:underline"
+                              className="text-text space-y-2 [&_h2]:text-sm [&_h2]:font-bold [&_h2]:text-accent [&_h2]:mt-3 [&_h2]:mb-1 [&_p]:my-1.5 [&_a]:text-accent [&_a]:underline [&_table]:w-full [&_table]:border-collapse [&_table]:my-2 [&_th]:border [&_th]:border-line [&_th]:p-2 [&_th]:bg-panel-2 [&_th]:text-left [&_th]:font-bold [&_td]:border [&_td]:border-line [&_td]:p-2 [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5"
                               dangerouslySetInnerHTML={{ __html: faq.answer }}
                             />
                           </div>

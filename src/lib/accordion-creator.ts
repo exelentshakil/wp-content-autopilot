@@ -1,4 +1,5 @@
 import { resolveDefaultAccordionShortcode } from "./atoyan";
+import { decomposeKeyword } from "./keyword-utils";
 import type { AtoyanFaq } from "./types";
 
 export interface CreateAccordionParams {
@@ -166,6 +167,9 @@ export function buildDavidAccordionUploadOptions(params: {
   topic?: string;
 }): Record<string, unknown>[] {
   const { faqs, city = "California", topic = "Employment Law" } = params;
+  const decomposed = decomposeKeyword(topic, city);
+  const resolvedCity = decomposed.city || city || "California";
+  const cleanTopic = decomposed.cleanTopic || topic || "Employment Law";
 
   const accordionContentSource: Array<{
     accordion_content_title: string;
@@ -191,8 +195,10 @@ export function buildDavidAccordionUploadOptions(params: {
       !last.accordion_content_description.includes("Talk to a") &&
       !last.accordion_content_description.includes("807-0077")
     ) {
-      const slug = `talk-to-a-${city.toLowerCase()}-${topic.toLowerCase()}`.replace(/[^a-z0-9]+/g, "-");
-      const ctaHtml = `\r\n<h2 id="${slug}" class="font-semibold leading-tight text-pretty mb-2 mt-4 text-base">Talk to a ${city} ${topic} Lawyer</h2>\r\n<p class="my-2">If you believe your workplace rights were violated, time limits apply under California law. <strong>Contact Atoyan Law at (888) 807-0077</strong> or through the online form at <a class="reset interactable cursor-pointer decoration-1 underline-offset-1 text-super-primary hover:underline" href="https://www.atoyanlaw.com/contact/" target="_blank" rel="noopener"><span class="text-box-trim-both">atoyanlaw.com</span></a> for a free, confidential case evaluation.</p>`;
+      const citySlug = resolvedCity.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+      const topicSlug = cleanTopic.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+      const slug = `talk-to-a-${citySlug}-${topicSlug}-lawyer`;
+      const ctaHtml = `\r\n<h2 id="${slug}" class="font-semibold leading-tight text-pretty mb-2 mt-4 [.has-inline-images_&]:clear-end text-base first:mt-0">Talk to a ${resolvedCity} ${cleanTopic} Lawyer</h2>\r\n<p class="my-2 [&+p]:mt-4 [&_strong:has(+br)]:inline-block [&_strong:has(+br)]:align-top">If you believe your workplace rights were violated in ${resolvedCity}, time limits apply under California law. <strong>Contact Atoyan Law at (888) 807-0077</strong> or through the online form at <a class="reset interactable cursor-pointer decoration-1 underline-offset-1 text-super-primary hover:underline" href="https://www.atoyanlaw.com/contact/" target="_blank" rel="noopener"><span class="text-box-trim-both">atoyanlaw.com</span></a> for a free, confidential case evaluation.</p>`;
       last.accordion_content_description += ctaHtml;
     }
   }
