@@ -6,7 +6,7 @@ import { generateAtoyanContent, extractCity } from "@/lib/llm";
 import { generateAtoyanImages } from "@/lib/imagen";
 
 export const runtime = "nodejs";
-export const maxDuration = 120;
+export const maxDuration = 300;
 
 
 function isPasswordValid(provided: string, expected: string): boolean {

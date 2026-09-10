@@ -426,12 +426,12 @@ export function resolveDefaultAccordionShortcode(keyword: string, city = "Califo
   if (kw.includes("sue") || kw.includes("on my own")) {
     return '[sp_easyaccordion id="3828"]'; // How Can I Sue My Employer on My Own in California?
   }
-  if (kw.includes("burbank") && (kw.includes("wrongful") || kw.includes("termination") || kw.includes("firing") || kw.includes("fired"))) {
-    return '[sp_easyaccordion id="4176"]'; // Burbank Wrongful Termination Lawyer
+  if (kw.includes("wrongful") || kw.includes("termination") || kw.includes("firing") || kw.includes("fired")) {
+    return '[sp_easyaccordion id="4176"]'; // Wrongful Termination Lawyer
   }
 
-  // Do NOT reuse Burbank 4176 for Glendale or other practice areas - return empty so a unique accordion is dynamically created
-  return "";
+  // Default firm-wide fallback if no topic matches
+  return '[sp_easyaccordion id="3932"]';
 }
 
 /**
@@ -506,16 +506,8 @@ export function buildCompensationSection(
     cleanIntro = `${cleanIntro}\r\n\r\n<p>If you believe your rights were violated in ${city}, Atoyan Employment Law can help you understand your rights and evaluate your potential claim. <a href="/contact/">Contact</a> the firm to discuss what happened and learn what options may be available to you.</p>`;
   }
 
-  // If FAQs are available, embed the native Easy Accordion HTML directly!
-  // This guarantees 100% FAQ visibility and interactive toggle behavior on templates/labor-law.php,
-  // completely eliminating empty accordion rendering when WordPress REST API drops meta.
-  if (faqs && faqs.length > 0) {
-    const idMatch = shortcode.match(/\d+/);
-    const uid = idMatch ? idMatch[0] : undefined;
-    const nativeAccordion = generateNativeEasyAccordionHtml(faqs, resolvedCity, cleanTopic, uid);
-    return `${cleanIntro}\r\n\r\n${nativeAccordion}`;
-  }
-
+  // Return compensation intro followed by the standard Easy Accordion shortcode
+  // [sp_easyaccordion id="..."] as required for WordPress templates/labor-law.php
   if (shortcode) {
     return `${cleanIntro}\r\n\r\n${shortcode}`;
   }

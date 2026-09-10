@@ -344,43 +344,62 @@ async function tryGeminiImagen(opts: GenerateSingleImageOptions, key: string): P
 }
 
 /**
- * Tries OpenAI DALL-E 3 image generation if OpenAI key is available.
+ * Tries OpenAI image generation (gpt-image-1-mini / gpt-image-1 / chatgpt-image-latest / dall-e-3)
+ * if OpenAI key is available.
  */
 async function tryOpenAiImage(opts: GenerateSingleImageOptions, key: string): Promise<AtoyanGeneratedImage | null> {
-  const res = await fetch("https://api.openai.com/v1/images/generations", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${key}`,
-    },
-    body: JSON.stringify({
-      model: "dall-e-3",
-      prompt: opts.prompt,
-      n: 1,
-      size: opts.width >= opts.height ? "1792x1024" : "1024x1024",
-      response_format: "b64_json",
-    }),
-    signal: AbortSignal.timeout(60_000),
-  });
+  const models = ["gpt-image-1-mini", "gpt-image-1", "chatgpt-image-latest", "dall-e-3"];
+  const size = opts.width >= opts.height ? "1536x1024" : "1024x1024";
 
-  if (!res.ok) {
-    const errText = await res.text();
-    console.warn(`DALL-E 3 request returned ${res.status}: ${errText.slice(0, 200)}`);
-    return null;
-  }
+  for (const model of models) {
+    try {
+      const res = await fetch("https://api.openai.com/v1/images/generations", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${key}`,
+        },
+        body: JSON.stringify({
+          model,
+          prompt: opts.prompt,
+          n: 1,
+          size,
+          ...(model.startsWith("dall-e") ? { response_format: "b64_json" } : {}),
+        }),
+        signal: AbortSignal.timeout(90_000),
+      });
 
-  const json = await res.json();
-  const b64 = json.data?.[0]?.b64_json;
-  if (b64) {
-    return {
-      base64: b64,
-      mimeType: "image/png",
-      prompt: opts.prompt,
-      filename: opts.filename.replace(/\.jpe?g$/, ".png"),
-      altText: opts.altText,
-      width: opts.width,
-      height: opts.height,
-    };
+      if (!res.ok) {
+        const errText = await res.text();
+        console.warn(`OpenAI image model ${model} returned ${res.status}: ${errText.slice(0, 150)}`);
+        continue;
+      }
+
+      const json = await res.json();
+      let b64 = json.data?.[0]?.b64_json;
+
+      if (!b64 && json.data?.[0]?.url) {
+        const imgRes = await fetch(json.data[0].url, { signal: AbortSignal.timeout(30_000) });
+        if (imgRes.ok) {
+          const ab = await imgRes.arrayBuffer();
+          b64 = Buffer.from(ab).toString("base64");
+        }
+      }
+
+      if (b64) {
+        return {
+          base64: b64,
+          mimeType: "image/png",
+          prompt: opts.prompt,
+          filename: opts.filename.replace(/\.jpe?g$/, ".png"),
+          altText: opts.altText,
+          width: opts.width,
+          height: opts.height,
+        };
+      }
+    } catch (err) {
+      console.warn(`OpenAI model ${model} attempt error:`, err);
+    }
   }
 
   return null;
@@ -396,8 +415,18 @@ function cleanApiKey(raw?: string): string | undefined {
 }
 
 async function generateSingleImage(opts: GenerateSingleImageOptions): Promise<AtoyanGeneratedImage> {
-  const geminiKey = cleanApiKey(opts.apiKey || process.env.GEMINI_API_KEY);
   const openaiKey = cleanApiKey(opts.openaiKey || process.env.OPENAI_API_KEY);
+  const geminiKey = cleanApiKey(opts.apiKey || process.env.GEMINI_API_KEY);
+
+  // Prioritize OpenAI as verified working image provider with active quotas
+  if (openaiKey) {
+    try {
+      const openaiImg = await tryOpenAiImage(opts, openaiKey);
+      if (openaiImg) return openaiImg;
+    } catch (e) {
+      console.warn("OpenAI image generation attempt failed:", e);
+    }
+  }
 
   if (geminiKey) {
     try {
@@ -405,15 +434,6 @@ async function generateSingleImage(opts: GenerateSingleImageOptions): Promise<At
       if (geminiImg) return geminiImg;
     } catch (e) {
       console.warn("Gemini image generation attempt failed:", e);
-    }
-  }
-
-  if (openaiKey) {
-    try {
-      const openaiImg = await tryOpenAiImage(opts, openaiKey);
-      if (openaiImg) return openaiImg;
-    } catch (e) {
-      console.warn("OpenAI image generation attempt failed:", e);
     }
   }
 

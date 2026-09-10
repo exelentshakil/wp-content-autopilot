@@ -7,7 +7,7 @@ import { generateEasyAccordionHtml, generateFaqSchemaJsonLd } from "@/lib/atoyan
 import { createEasyAccordion } from "@/lib/accordion-creator";
 
 export const runtime = "nodejs";
-export const maxDuration = 120;
+export const maxDuration = 300;
 
 export async function POST(req: Request) {
   let raw: unknown;
