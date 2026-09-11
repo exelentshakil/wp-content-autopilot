@@ -35,15 +35,24 @@ let cachedFont: opentype.Font | null = null;
 function getAtoyanFont(): opentype.Font | null {
   if (cachedFont) return cachedFont;
   try {
-    const fontPath = path.join(process.cwd(), "public/fonts/bold.ttf");
-    if (fs.existsSync(fontPath)) {
-      const buffer = fs.readFileSync(fontPath);
-      const arrayBuffer = buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength);
-      cachedFont = opentype.parse(arrayBuffer);
-      return cachedFont;
+    const candidates = [
+      path.join(process.cwd(), "public/fonts/bold.ttf"),
+      path.resolve("public/fonts/bold.ttf"),
+      path.join(__dirname, "../../../public/fonts/bold.ttf"),
+      path.join(__dirname, "../../public/fonts/bold.ttf"),
+      path.join(__dirname, "../public/fonts/bold.ttf"),
+      path.join(__dirname, "public/fonts/bold.ttf"),
+    ];
+    for (const fontPath of candidates) {
+      if (fs.existsSync(fontPath)) {
+        const buffer = fs.readFileSync(fontPath);
+        const arrayBuffer = buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength);
+        cachedFont = opentype.parse(arrayBuffer);
+        return cachedFont;
+      }
     }
   } catch (err) {
-    console.warn("Could not load public/fonts/bold.ttf:", err);
+    console.warn("Could not load bold.ttf:", err);
   }
   return null;
 }
@@ -175,14 +184,35 @@ export async function compositeAtoyanServicesImage(
       }
     });
 
-  const category = escapeXml((params?.category || "CALIFORNIA EMPLOYMENT LAW").toUpperCase());
-  const headline = escapeXml((params?.headline || params?.category || "EMPLOYMENT LAWYER").toUpperCase());
+  const rawCategory = (params?.category || "CALIFORNIA EMPLOYMENT LAW").toUpperCase();
+  const rawHeadline = (params?.headline || params?.category || "EMPLOYMENT LAWYER").toUpperCase();
 
-  const catLen = category.length;
-  const line1FontSize = catLen > 35 ? Math.max(13, Math.floor(560 / (catLen * 0.65))) : 17;
+  const font = getAtoyanFont();
+  let textElements = "";
 
-  const hLen = headline.length;
-  const line2FontSize = hLen > 36 ? Math.max(14, Math.floor(560 / (hLen * 0.62))) : 20;
+  if (font) {
+    // Render exact vector bezier paths so Sharp renders pure vectors without system font dependencies
+    // Baseline for line 1: barTop + 24 = 56px; Baseline for line 2: barTop + 51 = 83px
+    const line1 = renderTextAsSvgPath(font, rawCategory, 18, barTop + 24, 17, width - 36);
+    const line2 = renderTextAsSvgPath(font, rawHeadline, 18, barTop + 51, 20, width - 36);
+    textElements = `
+      <path d="${line1.pathData}" fill="#FFFFFF" filter="url(#shadow)" />
+      <path d="${line2.pathData}" fill="#D7E434" filter="url(#shadow)" />
+    `;
+  } else {
+    // Defensive fallback if font file could not be read
+    const category = escapeXml(rawCategory);
+    const headline = escapeXml(rawHeadline);
+    const catLen = category.length;
+    const line1FontSize = catLen > 35 ? Math.max(13, Math.floor(560 / (catLen * 0.65))) : 17;
+    const hLen = headline.length;
+    const line2FontSize = hLen > 36 ? Math.max(14, Math.floor(560 / (hLen * 0.62))) : 20;
+
+    textElements = `
+      <text x="18" y="${barTop + 24}" fill="#FFFFFF" font-family="Arial, Helvetica, sans-serif" font-size="${line1FontSize}" font-weight="900" letter-spacing="0.5" filter="url(#shadow)">${category}</text>
+      <text x="18" y="${barTop + 50}" fill="#D7E434" font-family="Arial, Helvetica, sans-serif" font-size="${line2FontSize}" font-weight="900" letter-spacing="0.5" filter="url(#shadow)">${headline}</text>
+    `;
+  }
 
   const svgOverlay = Buffer.from(`
     <svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg">
@@ -192,8 +222,7 @@ export async function compositeAtoyanServicesImage(
         </filter>
       </defs>
       <rect x="0" y="${barTop}" width="${width}" height="${barHeight}" fill="rgba(20, 25, 32, 0.78)" />
-      <text x="18" y="${barTop + 24}" fill="#FFFFFF" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="${line1FontSize}" font-weight="900" letter-spacing="0.5" filter="url(#shadow)">${category}</text>
-      <text x="18" y="${barTop + 50}" fill="#D7E434" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="${line2FontSize}" font-weight="900" letter-spacing="0.5" filter="url(#shadow)">${headline}</text>
+      ${textElements}
     </svg>
   `);
 
