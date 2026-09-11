@@ -368,18 +368,38 @@ export function buildActiveSystemPrompt(customDirectives?: string, chatContext?:
 /**
  * Builds the exhaustive user prompt mandating the 7 California litigation sections and 8-10 FAQs.
  */
-function buildLegalPrompt(keyword: string, city: string, linkCatalog: string): string {
+function buildLegalPrompt(keyword: string, city: string, linkCatalog: string, chatContext?: string): string {
   const decomposed = decomposeKeyword(keyword, city);
   const resolvedCity = decomposed.city;
   const cleanTopic = decomposed.cleanTopic;
   const citySlug = resolvedCity.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
   const topicSlug = cleanTopic.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 
-  return `${linkCatalog}
+  const customContextDirective = chatContext && chatContext.trim()
+    ? `\n\nCRITICAL ATTORNEY DIRECTIVE & CUSTOM PROMPT OVERRIDE:
+The attorney has provided specific prompt instructions, tone guidelines, and questions:
+"""
+${chatContext.trim()}
+"""
+You MUST strictly follow the attorney's tone and structure above:
+1. Use direct, bold question-based headings formatted as <h2 class="h2dav">Question?</h2> incorporating the exact questions and topics requested in the attorney's prompt.
+2. Maintain short, simple sentences in active voice with NO em dashes (replace with commas or hyphens).
+3. Weave in the requested local statistics, agency figures, and California statutory citations naturally.
+4. Distribute the comprehensive ~2,200-word analysis across the 3 WordPress ACF content sections:
+   - servicesContent: Main substantive discussion (questions 1 through 10-12 as <h2 class="h2dav">).
+   - howDoHeading: "Why should you speak with a ${resolvedCity} ${cleanTopic} lawyer?"
+   - howDoContent: Practical guidance and bullet points on when workers should reach out to Atoyan Law.
+   - compensationHeading: "Contact Atoyan Law for a Free Consultation"
+   - compensationIntro: Concluding rights summary and consultation call to action.
+   - faqs: 8-10 direct search-intent FAQs.
+`
+    : "";
 
-CRITICAL REQUIREMENT: servicesContent MUST be 2,500-3,500+ words of exhaustive, litigation-grade California employment law analysis for "${cleanTopic}" in ${resolvedCity}.
-Tone MUST replicate David Atoyan's conversational, worker-first style with direct question-based headings, concrete arithmetic examples ($25/hr -> $37.50 overtime, $3,600/yr off-the-clock, $11,000/yr break premiums, $6,000 waiting time penalties), and California Labor Code § 1171.5 undocumented worker protections.
-DO NOT generate a short generic summary. Follow this mandatory 7-section framework with 4-6 substantial paragraphs per section:
+  return `${linkCatalog}${customContextDirective}
+
+CRITICAL REQUIREMENT: servicesContent MUST be 2,200-3,500+ words of exhaustive, high-authority California employment law analysis for "${cleanTopic}" in ${resolvedCity}.
+Tone MUST replicate David Atoyan's conversational, worker-first style with direct question-based headings (<h2 class="h2dav">), short active-voice sentences, no em dashes, concrete arithmetic examples ($25/hr -> $37.50 overtime, $3,600/yr off-the-clock, $11,000/yr break premiums, $6,000 waiting time penalties), and California Labor Code § 1171.5 undocumented worker protections.
+DO NOT generate a short generic summary. Use question-based headings formatted with <h2 class="h2dav"> matching the topics below:
 
 SECTION 1: STATUTORY FRAMEWORK & DEFINITIONS UNDER CALIFORNIA LAW
 - Heading: <h2 class="h2dav">Understanding ${cleanTopic} Under California Law: Definitions, Rights, and Statutory Protections</h2>
@@ -447,7 +467,7 @@ async function generateAtoyanOpenAI(
 ): Promise<AtoyanLegalContent> {
   const safeSlug = keyword.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
   const linkCatalog = buildLinkingCatalogForLlm({ category: keyword, city, currentSlug: safeSlug });
-  const prompt = buildLegalPrompt(keyword, city, linkCatalog);
+  const prompt = buildLegalPrompt(keyword, city, linkCatalog, chatContext);
   const activePrompt = buildActiveSystemPrompt(systemPrompt, chatContext);
 
   for (const model of OPENAI_MODELS) {
@@ -522,7 +542,7 @@ async function generateAtoyanGemini(
 ): Promise<AtoyanLegalContent> {
   const safeSlug = keyword.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
   const linkCatalog = buildLinkingCatalogForLlm({ category: keyword, city, currentSlug: safeSlug });
-  const prompt = buildLegalPrompt(keyword, city, linkCatalog);
+  const prompt = buildLegalPrompt(keyword, city, linkCatalog, chatContext);
   const activePrompt = buildActiveSystemPrompt(systemPrompt, chatContext);
 
   for (const model of GEMINI_MODELS) {
