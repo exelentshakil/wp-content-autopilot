@@ -3,6 +3,7 @@ import { GenerateRequest } from "@/lib/types";
 import { generateAtoyanContent, extractCity, activeProvider } from "@/lib/llm";
 import { generateAtoyanImages } from "@/lib/imagen";
 import { formatArticle } from "@/lib/formatting";
+import { calculateWordAudit } from "@/lib/word-counter";
 import { generateEasyAccordionHtml, generateFaqSchemaJsonLd } from "@/lib/atoyan";
 import { createEasyAccordion } from "@/lib/accordion-creator";
 
@@ -87,6 +88,9 @@ export async function POST(req: Request) {
       openaiKey: settings?.openai_api_key,
     });
 
+    // Calculate substantive word audit across all ACF sections and FAQs
+    const wordAudit = calculateWordAudit(content);
+
     // 3. Generate Accordion & Schema.org JSON-LD
     const accordionHtml = content.accordionShortcode || generateEasyAccordionHtml(content.faqs);
     const faqSchemaJsonLd = generateFaqSchemaJsonLd(content.faqs);
@@ -102,6 +106,7 @@ export async function POST(req: Request) {
       city,
       provider,
       content,
+      wordAudit,
       images: {
         banner: {
           filename: images.banner.filename,

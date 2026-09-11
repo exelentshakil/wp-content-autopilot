@@ -33,6 +33,7 @@ import { useSettings } from "@/lib/useSettings";
 import { cn } from "@/lib/utils";
 import type { AtoyanLegalContent } from "@/lib/types";
 import { ClientReportsView, type GenerationReportItem } from "@/components/ClientReportsView";
+import { calculateWordAudit, type AtoyanWordAudit } from "@/lib/word-counter";
 
 interface ImageData {
   filename: string;
@@ -50,6 +51,7 @@ interface GenerateResponse {
   city: string;
   provider: string;
   content: AtoyanLegalContent;
+  wordAudit?: AtoyanWordAudit;
   images: {
     banner: ImageData;
     services: ImageData;
@@ -96,6 +98,7 @@ export default function Home() {
   const [activeTab, setActiveTab] = useState<"content" | "images" | "faqs" | "acf">("content");
   const [accordionShortcode, setAccordionShortcode] = useState("");
   const [copiedShortcode, setCopiedShortcode] = useState(false);
+  const wordAudit = result ? (result.wordAudit || calculateWordAudit(result.content)) : null;
 
   // Admin password protection for live publishing
   const [adminPassword, setAdminPassword] = useState("");
@@ -241,7 +244,7 @@ export default function Home() {
           city: targetData ? targetData.content.city : "California",
           slug: targetData ? targetData.content.slug : keyword.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
           provider: (settings?.llm_provider || "gemini-2.5-flash") + " + imagen-3",
-          contentWords: targetData ? (targetData.content.servicesContent || "").split(/\s+/).length + 450 : 1500,
+          contentWords: targetData ? (targetData.wordAudit?.totalWords || calculateWordAudit(targetData.content).totalWords) : 2200,
           tokensEstimate: 2000,
           costContent: 0.003,
           costImages: 0.040,
@@ -659,7 +662,15 @@ export default function Home() {
                       activeTab === "content" ? "bg-accent text-white" : "text-muted hover:text-text bg-panel-2 border border-line",
                     )}
                   >
-                    3 Content Sections
+                    <span>3 Content Sections</span>
+                    {wordAudit && (
+                      <span className={cn(
+                        "text-[10px] px-1.5 py-0.2 rounded-full font-mono font-semibold",
+                        activeTab === "content" ? "bg-white/20 text-white" : "bg-panel text-muted"
+                      )}>
+                        {wordAudit.servicesWords.toLocaleString()}w
+                      </span>
+                    )}
                   </button>
                   <button
                     onClick={() => setActiveTab("images")}
@@ -677,7 +688,15 @@ export default function Home() {
                       activeTab === "faqs" ? "bg-accent text-white" : "text-muted hover:text-text bg-panel-2 border border-line",
                     )}
                   >
-                    Easy Accordion &amp; FAQs
+                    <span>Easy Accordion &amp; FAQs</span>
+                    {wordAudit && (
+                      <span className={cn(
+                        "text-[10px] px-1.5 py-0.2 rounded-full font-mono font-semibold",
+                        activeTab === "faqs" ? "bg-white/20 text-white" : "bg-panel text-muted"
+                      )}>
+                        {wordAudit.faqWords.toLocaleString()}w
+                      </span>
+                    )}
                   </button>
                   <button
                     onClick={() => setActiveTab("acf")}
@@ -707,6 +726,189 @@ export default function Home() {
                   </button>
                 </div>
               </div>
+
+              {/* Substantive Word Count & Legal Criteria Audit Bar */}
+              {wordAudit && (
+                <div className={cn(
+                  "rounded-2xl border p-5 sm:p-6 transition shadow-xs space-y-4",
+                  wordAudit.meetsServicesCriteria
+                    ? "border-good/30 bg-good/5 dark:bg-good/5"
+                    : "border-bad/40 bg-bad/5 dark:bg-bad/5"
+                )}>
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-line/60 pb-3.5">
+                    <div className="flex items-center gap-3">
+                      <div className={cn(
+                        "size-9 rounded-xl flex items-center justify-center shrink-0 border",
+                        wordAudit.meetsServicesCriteria
+                          ? "bg-good/15 text-good border-good/30"
+                          : "bg-bad/15 text-bad border-bad/30"
+                      )}>
+                        {wordAudit.meetsServicesCriteria ? (
+                          <CheckCircle2 className="size-5" />
+                        ) : (
+                          <AlertTriangle className="size-5" />
+                        )}
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <h3 className="text-base font-bold text-text">
+                            Substantive Word Count &amp; Quality Criteria Audit
+                          </h3>
+                          {wordAudit.meetsServicesCriteria ? (
+                            <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-good/20 text-good border border-good/30 uppercase tracking-wider font-mono">
+                              ✓ Criteria Met (&ge; 2,200 Words in Tab 2)
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-bad/20 text-bad border border-bad/30 uppercase tracking-wider font-mono animate-pulse">
+                              ⚠️ Fails Criteria (&lt; 2,200 Words in Tab 2)
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-xs text-muted mt-0.5">
+                          Auditing pure reader-visible words (HTML tags, CSS, scripts, and markup stripped) against David Atoyan&apos;s editorial standards.
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 self-start sm:self-center shrink-0">
+                      <div className="text-right font-mono">
+                        <div className="text-xs text-muted">Total Article Package</div>
+                        <div className="text-lg font-extrabold text-accent">
+                          {wordAudit.totalWords.toLocaleString()}{" "}
+                          <span className="text-xs font-normal text-muted">words</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* 5-Column Criteria Grid */}
+                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+                    {/* Card 1: Tab 2 Services Content */}
+                    <div className={cn(
+                      "rounded-xl border p-3 bg-panel transition",
+                      wordAudit.meetsServicesCriteria ? "border-good/40" : "border-bad/50 ring-1 ring-bad/30"
+                    )}>
+                      <div className="flex items-center justify-between text-xs text-muted mb-1">
+                        <span className="font-semibold text-text truncate">ACF Tab 2 Services</span>
+                        <span className={cn(
+                          "text-[10px] font-mono font-bold px-1.5 py-0.5 rounded",
+                          wordAudit.meetsServicesCriteria ? "bg-good/15 text-good" : "bg-bad/15 text-bad"
+                        )}>
+                          {wordAudit.meetsServicesCriteria ? "PASS" : "FAIL"}
+                        </span>
+                      </div>
+                      <div className="text-xl font-extrabold font-mono text-text">
+                        {wordAudit.servicesWords.toLocaleString()}
+                      </div>
+                      <div className="text-[11px] text-muted mt-1 flex items-center justify-between">
+                        <span>Target: 2,200+</span>
+                        <span className={cn("font-semibold font-mono", wordAudit.meetsServicesCriteria ? "text-good" : "text-bad")}>
+                          {wordAudit.meetsServicesCriteria ? `+${wordAudit.servicesWords - 2200}` : `-${wordAudit.servicesDeficit}`}
+                        </span>
+                      </div>
+                      <div className="w-full bg-panel-2 h-1.5 rounded-full overflow-hidden mt-2 border border-line">
+                        <div
+                          className={cn("h-full transition-all duration-500", wordAudit.meetsServicesCriteria ? "bg-good" : "bg-bad")}
+                          style={{ width: `${Math.min(100, Math.round((wordAudit.servicesWords / 2200) * 100))}%` }}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Card 2: Tab 4 How Do We Stand */}
+                    <div className="rounded-xl border border-line p-3 bg-panel">
+                      <div className="flex items-center justify-between text-xs text-muted mb-1">
+                        <span className="font-semibold text-text truncate">ACF Tab 4 How Do</span>
+                        <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-panel-2 text-muted">
+                          {wordAudit.howDoWords >= 150 ? "PASS" : "OK"}
+                        </span>
+                      </div>
+                      <div className="text-xl font-extrabold font-mono text-text">
+                        {wordAudit.howDoWords.toLocaleString()}
+                      </div>
+                      <div className="text-[11px] text-muted mt-1 flex items-center justify-between">
+                        <span>Target: 150–250</span>
+                        <span className="text-good font-semibold font-mono">100%</span>
+                      </div>
+                      <div className="w-full bg-panel-2 h-1.5 rounded-full overflow-hidden mt-2 border border-line">
+                        <div
+                          className="h-full bg-accent transition-all duration-500"
+                          style={{ width: `${Math.min(100, Math.round((wordAudit.howDoWords / 150) * 100))}%` }}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Card 3: Tab 6 Compensation */}
+                    <div className="rounded-xl border border-line p-3 bg-panel">
+                      <div className="flex items-center justify-between text-xs text-muted mb-1">
+                        <span className="font-semibold text-text truncate">ACF Tab 6 Remedy</span>
+                        <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-panel-2 text-muted">
+                          {wordAudit.compensationWords >= 150 ? "PASS" : "OK"}
+                        </span>
+                      </div>
+                      <div className="text-xl font-extrabold font-mono text-text">
+                        {wordAudit.compensationWords.toLocaleString()}
+                      </div>
+                      <div className="text-[11px] text-muted mt-1 flex items-center justify-between">
+                        <span>Target: 150–200</span>
+                        <span className="text-good font-semibold font-mono">100%</span>
+                      </div>
+                      <div className="w-full bg-panel-2 h-1.5 rounded-full overflow-hidden mt-2 border border-line">
+                        <div
+                          className="h-full bg-accent transition-all duration-500"
+                          style={{ width: `${Math.min(100, Math.round((wordAudit.compensationWords / 150) * 100))}%` }}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Card 4: FAQs (10 Q&As) */}
+                    <div className="rounded-xl border border-line p-3 bg-panel">
+                      <div className="flex items-center justify-between text-xs text-muted mb-1">
+                        <span className="font-semibold text-text truncate">FAQ 10 Accordions</span>
+                        <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-panel-2 text-muted">
+                          {wordAudit.faqWords >= 1000 ? "PASS" : "OK"}
+                        </span>
+                      </div>
+                      <div className="text-xl font-extrabold font-mono text-text">
+                        {wordAudit.faqWords.toLocaleString()}
+                      </div>
+                      <div className="text-[11px] text-muted mt-1 flex items-center justify-between">
+                        <span>Target: 1,000+</span>
+                        <span className="text-good font-semibold font-mono">{result.content.faqs?.length || 10} Q&amp;As</span>
+                      </div>
+                      <div className="w-full bg-panel-2 h-1.5 rounded-full overflow-hidden mt-2 border border-line">
+                        <div
+                          className="h-full bg-accent transition-all duration-500"
+                          style={{ width: `${Math.min(100, Math.round((wordAudit.faqWords / 1000) * 100))}%` }}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Card 5: Complete Package */}
+                    <div className="rounded-xl border border-accent/40 bg-accent/5 p-3 col-span-2 sm:col-span-1">
+                      <div className="flex items-center justify-between text-xs text-muted mb-1">
+                        <span className="font-semibold text-accent truncate">Total Substantive</span>
+                        <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-accent/20 text-accent">
+                          {wordAudit.totalWords >= 3500 ? "EXCELLENT" : "GOOD"}
+                        </span>
+                      </div>
+                      <div className="text-xl font-extrabold font-mono text-accent">
+                        {wordAudit.totalWords.toLocaleString()}
+                      </div>
+                      <div className="text-[11px] text-muted mt-1 flex items-center justify-between">
+                        <span>Target: 3,500+</span>
+                        <span className="text-accent font-semibold font-mono">
+                          {Math.round((wordAudit.totalWords / 3500) * 100)}%
+                        </span>
+                      </div>
+                      <div className="w-full bg-panel-2 h-1.5 rounded-full overflow-hidden mt-2 border border-line">
+                        <div
+                          className="h-full bg-accent transition-all duration-500"
+                          style={{ width: `${Math.min(100, Math.round((wordAudit.totalWords / 3500) * 100))}%` }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* TAB 1: 3 UNIQUE CONTENT SECTIONS */}
               {activeTab === "content" && (
@@ -783,9 +985,17 @@ export default function Home() {
                         </h1>
                         <p className="text-xs text-muted mt-1">H1 Title mapped to personal_injury_title (Formula: [City] [Topic] Employment Lawyers - [Subtopic])</p>
                       </div>
-                      <span className="text-xs px-3 py-1 rounded-full bg-panel-2 border border-line text-muted font-mono">
-                        2,000+ Words Depth
-                      </span>
+                      {wordAudit && (wordAudit.meetsServicesCriteria ? (
+                        <span className="inline-flex items-center gap-1.5 text-xs px-3 py-1 rounded-full bg-good/15 text-good border border-good/30 font-semibold font-mono">
+                          <CheckCircle2 className="size-3.5" />
+                          {wordAudit.servicesWords.toLocaleString()} Pure Words (✓ Passed &ge; 2,200 Target)
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1.5 text-xs px-3 py-1 rounded-full bg-bad/15 text-bad border border-bad/30 font-semibold font-mono">
+                          <AlertTriangle className="size-3.5" />
+                          {wordAudit.servicesWords.toLocaleString()} / 2,200 Pure Words (⚠️ {wordAudit.servicesDeficit.toLocaleString()} Short)
+                        </span>
+                      ))}
                     </div>
 
                     {/* Services Heading */}
@@ -823,11 +1033,18 @@ export default function Home() {
 
                   {/* Section 2: How Do Section (Tab 4) */}
                   <div className="rounded-2xl border border-line bg-panel p-6 sm:p-8 space-y-4">
-                    <div className="border-b border-line pb-3">
-                      <span className="text-xs font-semibold uppercase tracking-wider text-accent bg-accent/10 px-2 py-0.5 rounded border border-accent/20">
-                        2nd Section &bull; ACF Tab 4 (How Do We Stand Section)
-                      </span>
-                      <h3 className="text-xl font-bold text-text mt-2">{result.content.howDoHeading}</h3>
+                    <div className="border-b border-line pb-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                      <div>
+                        <span className="text-xs font-semibold uppercase tracking-wider text-accent bg-accent/10 px-2 py-0.5 rounded border border-accent/20">
+                          2nd Section &bull; ACF Tab 4 (How Do We Stand Section)
+                        </span>
+                        <h3 className="text-xl font-bold text-text mt-2">{result.content.howDoHeading}</h3>
+                      </div>
+                      {wordAudit && (
+                        <span className="text-xs px-2.5 py-1 rounded-full bg-panel-2 border border-line text-muted font-mono self-start sm:self-auto">
+                          {wordAudit.howDoWords.toLocaleString()} pure words
+                        </span>
+                      )}
                     </div>
                     <p className="text-sm text-muted leading-relaxed whitespace-pre-line">{result.content.howDoContent}</p>
                     <div className="p-3.5 rounded-xl border border-line bg-panel-2 flex items-center justify-between text-xs">
@@ -838,11 +1055,18 @@ export default function Home() {
 
                   {/* Section 3: Compensation Section (Tab 6) */}
                   <div className="rounded-2xl border border-accent/30 bg-accent/5 p-6 sm:p-8 space-y-5">
-                    <div className="border-b border-accent/20 pb-3">
-                      <span className="text-xs font-semibold uppercase tracking-wider text-accent bg-accent/10 px-2 py-0.5 rounded border border-accent/20">
-                        3rd Section &bull; ACF Tab 6 (Compensation &amp; Remedies)
-                      </span>
-                      <h3 className="text-xl font-bold text-accent mt-2">{result.content.compensationHeading}</h3>
+                    <div className="border-b border-accent/20 pb-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                      <div>
+                        <span className="text-xs font-semibold uppercase tracking-wider text-accent bg-accent/10 px-2 py-0.5 rounded border border-accent/20">
+                          3rd Section &bull; ACF Tab 6 (Compensation &amp; Remedies)
+                        </span>
+                        <h3 className="text-xl font-bold text-accent mt-2">{result.content.compensationHeading}</h3>
+                      </div>
+                      {wordAudit && (
+                        <span className="text-xs px-2.5 py-1 rounded-full bg-panel-2 border border-line text-muted font-mono self-start sm:self-auto">
+                          {wordAudit.compensationWords.toLocaleString()} pure words
+                        </span>
+                      )}
                     </div>
                     <div className="space-y-3">
                       <div
@@ -871,9 +1095,16 @@ export default function Home() {
                             Interactive FAQ Accordion Preview ({result.content.faqs?.length || 0} High-Intent Questions)
                           </h4>
                         </div>
-                        <span className="text-xs text-muted">
-                          Click any question to preview accordion toggle
-                        </span>
+                        <div className="flex items-center gap-2">
+                          {wordAudit && (
+                            <span className="text-xs px-2.5 py-0.5 rounded-full bg-panel-2 border border-line text-muted font-mono">
+                              {wordAudit.faqWords.toLocaleString()} pure words
+                            </span>
+                          )}
+                          <span className="text-xs text-muted hidden sm:inline">
+                            Click question to toggle
+                          </span>
+                        </div>
                       </div>
 
                       <div className="space-y-2.5">

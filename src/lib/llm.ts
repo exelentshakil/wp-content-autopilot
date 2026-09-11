@@ -12,6 +12,8 @@ import {
 } from "./llm-simulated";
 import type { Settings, AtoyanLegalContent, AtoyanFaq } from "./types";
 import { resolveDefaultAccordionShortcode, ATOYAN_PHONE, ATOYAN_TOLL_FREE } from "./atoyan";
+import { countSubstantiveWords, calculateWordAudit } from "./word-counter";
+export { countSubstantiveWords, calculateWordAudit };
 
 export interface ArticleResult {
   title: string;
@@ -211,19 +213,7 @@ export function extractCity(keyword: string): string {
   return "California";
 }
 
-/**
- * Counts substantive words in an HTML string, stripping markup and extra whitespace.
- */
-export function countSubstantiveWords(html: string): number {
-  if (!html || typeof html !== "string") return 0;
-  const text = html
-    .replace(/<script[\s\S]*?<\/script>/gi, " ")
-    .replace(/<style[\s\S]*?<\/style>/gi, " ")
-    .replace(/<[^>]+>/g, " ")
-    .replace(/\s+/g, " ")
-    .trim();
-  return text ? text.split(/\s+/).length : 0;
-}
+// countSubstantiveWords and calculateWordAudit are imported & re-exported from ./word-counter
 
 /**
  * Enforces attorney David Atoyan's strict 2,200+ pure word requirement on servicesContent.
