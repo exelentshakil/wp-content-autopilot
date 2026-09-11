@@ -115,7 +115,101 @@ export function formatCalloutBox(
 }
 
 /**
+ * Strips all HTML markup, promotional CTA blocks, tables, and attributes from FAQ text,
+ * producing clean, compliant plain text for Schema.org JSON-LD FAQPage markup.
+ *
+ * Requirements:
+ * - NO HTML tags (<p>, <table>, <h2>, <a>, <span>, etc.)
+ * - NO double quotes or escaped quotes (\" in JSON)
+ * - NO promotional attorney CTA blocks inside Schema answers
+ * - Clean plain-text formatting for tables and lists
+ * - Normalizes whitespace and entities
+ */
+export function cleanFaqTextForSchema(raw: string): string {
+  if (!raw || typeof raw !== "string") return "";
+
+  let text = raw;
+
+  // 1. Strip the attorney CTA block (e.g., Talk to a ... Lawyer) and any trailing contact CTA
+  text = text.replace(/<h[1-6][\s\S]*?(?:talk-to-|Talk to a)[\s\S]*$/i, "");
+  text = text.replace(/If you believe your workplace rights were violated[\s\S]*?(?:807-0077|atoyanlaw\.com\/contact)[\s\S]*$/gi, "");
+  text = text.replace(/Contact Atoyan Law at \(888\) 807-0077[\s\S]*$/i, "");
+
+  // Tag stripping regex that safely ignores '>' inside quoted attributes (e.g., Tailwind [&>p]:mt-2)
+  const HTML_TAG_REGEX = /<(?:"[^"]*"|'[^']*'|[^"'>])+>/g;
+
+  // 2. Convert HTML tables into readable text lines
+  text = text.replace(/<table[\s\S]*?<\/table>/gi, (tableHtml) => {
+    const rows = [];
+    const rowRegex = /<tr[\s\S]*?<\/tr>/gi;
+    let rowMatch;
+    while ((rowMatch = rowRegex.exec(tableHtml)) !== null) {
+      const rowContent = rowMatch[0];
+      const cellRegex = /<(?:td|th)[^>]*>([\s\S]*?)<\/(?:td|th)>/gi;
+      const cells = [];
+      let cellMatch;
+      while ((cellMatch = cellRegex.exec(rowContent)) !== null) {
+        const cellText = cellMatch[1]
+          .replace(HTML_TAG_REGEX, " ")
+          .replace(/&nbsp;/gi, " ")
+          .replace(/\s+/g, " ")
+          .trim();
+        if (cellText) cells.push(cellText);
+      }
+      if (cells.length > 0) {
+        const joined = cells.join(" - ");
+        // Skip pure header rows like "Claim type - Where to file - Deadline"
+        if (!/^(?:claim type|type of claim)\s*-\s*where to file/i.test(joined)) {
+          rows.push(cells.join(": "));
+        }
+      }
+    }
+    return rows.length > 0 ? " " + rows.join("; ") + ". " : " ";
+  });
+
+  // 3. Format list items so sentences don't run together
+  text = text.replace(/<\/li>/gi, ". ");
+
+  // 4. Format block ends and line breaks
+  text = text.replace(/<br\s*\/?>/gi, " ");
+  text = text.replace(/<\/(?:p|div|h[1-6]|ul|ol|table|section|article|blockquote)>/gi, " ");
+
+  // 5. Strip all remaining HTML tags using quote-aware tag regex
+  text = text.replace(HTML_TAG_REGEX, " ");
+
+  // 6. Decode HTML entities
+  text = text
+    .replace(/&nbsp;/gi, " ")
+    .replace(/&amp;/gi, "&")
+    .replace(/&quot;/gi, "'")
+    .replace(/&#39;|&apos;/gi, "'")
+    .replace(/&lt;/gi, "<")
+    .replace(/&gt;/gi, ">")
+    .replace(/&mdash;|&#8212;/gi, ", ")
+    .replace(/&ndash;|&#8211;/gi, "-")
+    .replace(/&#(\d+);/g, (_, dec) => String.fromCharCode(Number(dec)));
+
+  // 7. Strip long em/en dashes (David rule: "No em dashes")
+  text = text.replace(/\s*[—–]\s*/g, ", ");
+
+  // 8. Replace double quotes with single quotes (Client feedback: "can't have \"")
+  text = text.replace(/["“”]/g, "'");
+
+  // 9. Normalize whitespace and punctuation
+  text = text
+    .replace(/\s+/g, " ")
+    .replace(/\s+([.,;:])/g, "$1")
+    .replace(/([.,;:])\1+/g, "$1")
+    .replace(/\.\s*\./g, ".")
+    .trim();
+
+  return text;
+}
+
+/**
  * Generates valid Schema.org FAQPage JSON-LD snippet for high SEO rich snippet rankings.
+ * All HTML tags, attributes, tables, and CTA blocks are stripped from Schema text,
+ * guaranteeing 100% clean, unescaped, compliant Schema.org JSON-LD output.
  */
 export function generateFaqSchemaJsonLd(faqs: AtoyanFaq[]): string {
   if (!faqs || faqs.length === 0) return "";
@@ -125,10 +219,10 @@ export function generateFaqSchemaJsonLd(faqs: AtoyanFaq[]): string {
     "@type": "FAQPage",
     mainEntity: faqs.map((f) => ({
       "@type": "Question",
-      name: f.question.trim(),
+      name: cleanFaqTextForSchema(f.question),
       acceptedAnswer: {
         "@type": "Answer",
-        text: f.answer.trim(),
+        text: cleanFaqTextForSchema(f.answer),
       },
     })),
   };
