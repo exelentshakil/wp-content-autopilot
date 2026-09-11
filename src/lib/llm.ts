@@ -270,19 +270,14 @@ function validateAndNormalizeAtoyanContent(
 
   const finalFaqs = faqs.length > 0 ? faqs : sim.faqs;
 
-  const validatedCity =
-    typeof obj.city === "string" && obj.city && obj.city.toLowerCase() !== "california"
-      ? obj.city
-      : resolvedCity;
+  const validatedCity = decomposed.isArticle
+    ? "California"
+    : typeof obj.city === "string" && obj.city && obj.city.toLowerCase() !== "california"
+    ? obj.city
+    : resolvedCity;
 
-  let finalSlug =
-    typeof obj.slug === "string" && obj.slug
-      ? obj.slug.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")
-      : sim.slug;
-  const citySlugPart = validatedCity.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
-  if (validatedCity !== "California" && !finalSlug.includes(citySlugPart)) {
-    finalSlug = decomposed.slug;
-  }
+  // Enforce canonical slug from decomposed keyword to eliminate collisions & malformed URLs
+  let finalSlug = decomposed.slug;
 
   let rawServices = typeof obj.servicesContent === "string" && obj.servicesContent ? obj.servicesContent : sim.servicesContent;
 
@@ -332,36 +327,30 @@ function validateAndNormalizeAtoyanContent(
     if (!lastFaq.answer.includes("Talk to a") && !lastFaq.answer.includes("807-0077")) {
       const citySlug = validatedCity.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
       const topicSlug = cleanTopic.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
-      const ctaBlock = `\r\n<h2 id="talk-to-a-${citySlug}-${topicSlug}-lawyer" class="font-semibold leading-tight text-pretty mb-2 mt-4 text-base">Talk to a ${validatedCity} ${cleanTopic} Lawyer</h2>\r\n<p class="my-2">If you believe your workplace rights were violated, time limits apply under California law. <strong>Contact Atoyan Law at (888) 807-0077</strong> or through the online form at <a class="reset interactable cursor-pointer decoration-1 underline-offset-1 text-super-primary hover:underline" href="https://www.atoyanlaw.com/contact/" target="_blank" rel="noopener"><span class="text-box-trim-both">atoyanlaw.com</span></a> for a free, confidential case evaluation.</p>`;
+      const ctaHeading = decomposed.isArticle
+        ? `Talk to a California ${cleanTopic} Lawyer`
+        : `Talk to a ${validatedCity} ${cleanTopic} Lawyer`;
+      const ctaBlock = `\r\n<h2 id="talk-to-a-${citySlug}-${topicSlug}-lawyer" class="font-semibold leading-tight text-pretty mb-2 mt-4 text-base">${ctaHeading}</h2>\r\n<p class="my-2">If you believe your workplace rights were violated, time limits apply under California law. <strong>Contact Atoyan Law at (888) 807-0077</strong> or through the online form at <a class="reset interactable cursor-pointer decoration-1 underline-offset-1 text-super-primary hover:underline" href="https://www.atoyanlaw.com/contact/" target="_blank" rel="noopener"><span class="text-box-trim-both">atoyanlaw.com</span></a> for a free, confidential case evaluation.</p>`;
       lastFaq.answer = lastFaq.answer.trim() + ctaBlock;
     }
   }
 
-  let finalHeroTitle =
-    typeof obj.heroTitle === "string" && obj.heroTitle.trim() ? obj.heroTitle.trim() : sim.heroTitle;
-  if (validatedCity !== "California" && !finalHeroTitle.toLowerCase().includes(validatedCity.toLowerCase())) {
-    finalHeroTitle = `${validatedCity} ${cleanTopic} Employment Lawyers - ${decomposed.subtopic}`;
-  }
+  let finalHeroTitle = decomposed.isArticle
+    ? decomposed.heroTitle
+    : typeof obj.heroTitle === "string" &&
+      obj.heroTitle.trim() &&
+      obj.heroTitle.toLowerCase().includes(validatedCity.toLowerCase())
+    ? obj.heroTitle.trim()
+    : decomposed.heroTitle;
 
-  let finalServicesHeading =
-    typeof obj.servicesHeading === "string" && obj.servicesHeading.trim()
-      ? obj.servicesHeading.trim()
-      : sim.servicesHeading;
-  if (validatedCity !== "California" && !finalServicesHeading.toLowerCase().includes(validatedCity.toLowerCase())) {
-    finalServicesHeading = `${validatedCity} ${cleanTopic} Lawyer`;
-  }
+  let finalServicesHeading = decomposed.isArticle
+    ? decomposed.heroTitle
+    : typeof obj.servicesHeading === "string" && obj.servicesHeading.trim()
+    ? obj.servicesHeading.trim()
+    : `${validatedCity} ${cleanTopic} Lawyer`;
 
-  let finalYoastTitle =
-    typeof obj.yoastTitle === "string" && obj.yoastTitle.trim() ? obj.yoastTitle.trim() : decomposed.yoastTitle;
-  if (validatedCity !== "California" && !finalYoastTitle.toLowerCase().includes(validatedCity.toLowerCase())) {
-    finalYoastTitle = decomposed.yoastTitle;
-  }
-
-  let finalYoastFocusKw =
-    typeof obj.yoastFocusKw === "string" && obj.yoastFocusKw.trim() ? obj.yoastFocusKw.trim() : decomposed.yoastFocusKw;
-  if (validatedCity !== "California" && !finalYoastFocusKw.toLowerCase().includes(validatedCity.toLowerCase())) {
-    finalYoastFocusKw = decomposed.yoastFocusKw;
-  }
+  let finalYoastTitle = decomposed.yoastTitle;
+  let finalYoastFocusKw = decomposed.yoastFocusKw;
 
   const result: AtoyanLegalContent = {
     keyword: typeof obj.keyword === "string" && obj.keyword ? obj.keyword : keyword,

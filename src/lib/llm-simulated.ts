@@ -126,6 +126,14 @@ export function generateAtoyanSimulated(keyword: string, city: string): AtoyanLe
 
   const result: AtoyanLegalContent = {
     ...raw,
+    heroTitle: heroTitle,
+    slug: safeSlug,
+    city: resolvedCity,
+    keyword: cleanTopic,
+    servicesHeading: decomposed.isArticle ? heroTitle : raw.servicesHeading,
+    yoastTitle: decomposed.yoastTitle,
+    yoastMetaDesc: decomposed.yoastMetaDesc,
+    yoastFocusKw: decomposed.yoastFocusKw,
     servicesContent: linkedServices,
     howDoContent: finalHowDo,
     compensationIntro: finalComp,

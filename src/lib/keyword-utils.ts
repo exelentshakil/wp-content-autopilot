@@ -26,6 +26,7 @@ export interface DecomposedKeyword {
   yoastTitle: string;
   yoastMetaDesc: string;
   yoastFocusKw: string;
+  isArticle?: boolean;
 }
 
 export const CALIFORNIA_CITIES = [
@@ -232,26 +233,79 @@ export const CALIFORNIA_CITIES = [
   "Saugus",
 ].sort((a, b) => b.length - a.length);
 
+/**
+ * Detects whether a keyword query is an informational question / legal guide
+ * (e.g. "What Should You Do If You're Wrongfully Terminated?", "How to Prove Wrongful Termination in Court?")
+ * rather than a geo-targeted practice area landing page (e.g. "Agoura Hills Sexual Harassment Lawyer").
+ */
+export function isInformationalQuery(text: string): boolean {
+  if (!text || typeof text !== "string") return false;
+  const trimmed = text.trim();
+  if (trimmed.endsWith("?")) return true;
+  if (/^(what|how|why|when|where|who|can|should|is|are|do|does|will|could|would)\b/i.test(trimmed)) return true;
+  if (/^\d+\s+(questions|things|types|steps|ways|signs|reasons|mistakes|tips|facts|rights|rules)\b/i.test(trimmed)) return true;
+  if (/:\s*(your\s+)?(legal\s+)?rights\s+explained/i.test(trimmed)) return true;
+  if (/\b(explained|guide|overview|faqs?|checklist)\b/i.test(trimmed) && !/\b(lawyer|attorney|law\s*firm)\b/i.test(trimmed)) return true;
+  return false;
+}
+
+export interface PracticeAreaRule {
+  pattern: RegExp;
+  cleanTopic: string;
+  subtopic: string;
+  slugSuffix: string;
+  topicKey: DecomposedKeyword["topicKey"];
+}
+
+export const PRACTICE_AREA_RULES: PracticeAreaRule[] = [
+  { pattern: /\b(constructive\s+discharge|forced\s+resignation)\b/i, cleanTopic: "Constructive Discharge", subtopic: "Forced Resignation & Intolerable Conditions", slugSuffix: "constructive-discharge-lawyer", topicKey: "wrongful_termination" },
+  { pattern: /\b(severance\s+agreements?|severance\s+negotiation)\b/i, cleanTopic: "Severance Agreement", subtopic: "Agreement Review & Negotiation", slugSuffix: "severance-agreement-lawyer", topicKey: "employment_law" },
+  { pattern: /\b(employment\s+contracts?|employment\s+agreements?|breach\s+of\s+contract)\b/i, cleanTopic: "Employment Contract", subtopic: "Contract Disputes & Non-Competes", slugSuffix: "employment-contract-lawyer", topicKey: "employment_law" },
+  { pattern: /\b(fmla\b|cfra\b|leave\s+of\s+absence|medical\s+leave)\b/i, cleanTopic: "FMLA Leave of Absence", subtopic: "CFRA & Protected Leave Rights", slugSuffix: "fmla-leave-of-absence-lawyer", topicKey: "family_medical_leave" },
+  { pattern: /\b(pregnancy\s+discrimination|maternity\s+leave|pregnancy\s+leave)\b/i, cleanTopic: "Pregnancy Discrimination", subtopic: "Maternity Protections & Accommodations", slugSuffix: "pregnancy-discrimination-lawyer", topicKey: "family_medical_leave" },
+  { pattern: /\b(disability\s+discrimination|medical\s+condition|reasonable\s+accommodation)\b/i, cleanTopic: "Disability Discrimination", subtopic: "Reasonable Accommodation & FEHA Protections", slugSuffix: "disability-discrimination-lawyer", topicKey: "disability" },
+  { pattern: /\b(age\s+discrimination|older\s+workers?)\b/i, cleanTopic: "Age Discrimination", subtopic: "Older Worker Rights & ADEA Claims", slugSuffix: "age-discrimination-lawyer", topicKey: "age_discrimination" },
+  { pattern: /\b(race\s+discrimination|racial\s+discrimination|crown\s+act|racial\s+bias)\b/i, cleanTopic: "Race Discrimination", subtopic: "Racial Bias & Equal Workplace Rights", slugSuffix: "race-discrimination-lawyer", topicKey: "race_discrimination" },
+  { pattern: /\b(gender\s+discrimination|gender\s+bias)\b/i, cleanTopic: "Gender Discrimination", subtopic: "Gender Equity & Workplace Protections", slugSuffix: "gender-discrimination-lawyer", topicKey: "sexual_harassment" },
+  { pattern: /\b(sex\s+discrimination|sex\s+bias)\b/i, cleanTopic: "Sex Discrimination", subtopic: "Sex-Based Workplace Bias", slugSuffix: "sex-discrimination-lawyer", topicKey: "sexual_harassment" },
+  { pattern: /\b(employment\s+discrimination|workplace\s+discrimination)\b/i, cleanTopic: "Employment Discrimination", subtopic: "Workplace Bias & FEHA Violations", slugSuffix: "employment-discrimination-lawyer", topicKey: "employment_law" },
+  { pattern: /\b(whistleblower(\s+retaliation)?)\b/i, cleanTopic: "Whistleblower Retaliation", subtopic: "Reporting Violations & Worker Protections", slugSuffix: "whistleblower-lawyer", topicKey: "workplace_retaliation" },
+  { pattern: /\b(retaliation|retaliatory)\b/i, cleanTopic: "Workplace Retaliation", subtopic: "Worker Rights & Retaliation Claims", slugSuffix: "retaliation-lawyer", topicKey: "workplace_retaliation" },
+  { pattern: /\b(hostile\s+work\s+environment)\b/i, cleanTopic: "Hostile Work Environment", subtopic: "Severe & Pervasive Harassment", slugSuffix: "hostile-work-environment-lawyer", topicKey: "sexual_harassment" },
+  { pattern: /\b(workplace\s+harassment)\b/i, cleanTopic: "Workplace Harassment", subtopic: "Workplace Hostility & Bullying", slugSuffix: "workplace-harassment-lawyer", topicKey: "sexual_harassment" },
+  { pattern: /\b(sexual\s+harassment|quid\s+pro\s+quo)\b/i, cleanTopic: "Sexual Harassment", subtopic: "Misconduct & Quid Pro Quo Defense", slugSuffix: "sexual-harassment-lawyer", topicKey: "sexual_harassment" },
+  { pattern: /\b(unpaid\s+overtime|overtime\s+violations?)\b/i, cleanTopic: "Unpaid Overtime", subtopic: "Overtime Pay & Misclassification", slugSuffix: "unpaid-overtime-lawyer", topicKey: "wage_theft" },
+  { pattern: /\b(unpaid\s+wages|wage\s+theft)\b/i, cleanTopic: "Unpaid Wages", subtopic: "Earned Compensation & Wage Theft", slugSuffix: "unpaid-wages-lawyer", topicKey: "wage_theft" },
+  { pattern: /\b(wage\s+and\s+hour|labor\s+code\s+violations?)\b/i, cleanTopic: "Wage and Hour", subtopic: "Labor Code Violations & Rest Breaks", slugSuffix: "wage-and-hour-lawyer", topicKey: "wage_theft" },
+  { pattern: /\b(meal\s+and\s+rest|meal\s+breaks?|rest\s+breaks?)\b/i, cleanTopic: "Meal and Rest Breaks", subtopic: "Labor Code Violations & Meal Penalties", slugSuffix: "meal-and-rest-breaks-lawyer", topicKey: "meal_breaks" },
+  { pattern: /\b(wrongful\s+termination|unlawful\s+termination|wrongful\s+discharge|unlawful\s+firing)\b/i, cleanTopic: "Wrongful Termination", subtopic: "Unlawful Firing & Retaliation", slugSuffix: "wrongful-termination-lawyer", topicKey: "wrongful_termination" }
+];
+
 export function extractCityFromText(text: string): string {
   if (!text || typeof text !== "string") return "California";
 
+  // Informational guides and questions pertain to statewide California law
+  if (isInformationalQuery(text)) {
+    return "California";
+  }
+
   // 1. Exact match against known California cities & regions (sorted by length desc)
   for (const city of CALIFORNIA_CITIES) {
-    const pattern = new RegExp(`\\b${city.replace(/\\s+/g, "\\\\s+")}\\b`, "i");
+    const pattern = new RegExp(`\\b${city.replace(/\s+/g, "\\s+")}\\b`, "i");
     if (pattern.test(text)) {
       return city;
     }
   }
 
   // 2. Dynamic regex fallback: strip legal topic & suffixes to discover custom cities
-  const legalSuffixes = /\\b(employment\\s+lawyers?|employment\\s+attorneys?|labor\\s+lawyers?|labor\\s+attorneys?|lawyers?|attorneys?|law\\s*firm|legal\\s*representation|legal\\s*advocacy|law\\s*office|counsel|group|advocates?)\\b/gi;
-  const legalTopics = /\\b(sexual\\s+harassment|wrongful\\s+termination|unlawful\\s+termination|unlawful\\s+firing|wrongful\\s+discharge|wage\\s+theft|unpaid\\s+wages|overtime\\s+violations?|overtime|wage\\s+and\\s+hour|race\\s+discrimination|racial\\s+discrimination|disability\\s+discrimination|pregnancy\\s+discrimination|age\\s+discrimination|gender\\s+discrimination|sex\\s+discrimination|religious\\s+discrimination|national\\s+origin\\s+discrimination|workplace\\s+harassment|hostile\\s+work\\s+environment|quid\\s+pro\\s+quo|meal\\s+and\\s+rest\\s+breaks?|meal\\s+breaks?|rest\\s+breaks?|workplace\\s+retaliation|whistleblower\\s+retaliation|whistleblower|retaliation|severance\\s+agreements?|severance|family\\s+and\\s+medical\\s+leave|family\\s+medical\\s+leave|fmla|cfra|employment\\s+law|labor\\s+law)\\b/gi;
+  const legalSuffixes = /\b(employment\s+lawyers?|employment\s+attorneys?|labor\s+lawyers?|labor\s+attorneys?|lawyers?|attorneys?|law\s*firm|legal\s*representation|legal\s*advocacy|law\s*office|counsel|group|advocates?)\b/gi;
+  const legalTopics = /\b(sexual\s+harassment|wrongful\s+termination|unlawful\s+termination|unlawful\s+firing|wrongful\s+discharge|wage\s+theft|unpaid\s+wages|overtime\s+violations?|overtime|wage\s+and\s+hour|race\s+discrimination|racial\s+discrimination|disability\s+discrimination|pregnancy\s+discrimination|age\s+discrimination|gender\s+discrimination|sex\s+discrimination|religious\s+discrimination|national\s+origin\s+discrimination|workplace\s+harassment|hostile\s+work\s+environment|quid\s+pro\s+quo|meal\s+and\s+rest\s+breaks?|meal\s+breaks?|rest\s+breaks?|workplace\s+retaliation|whistleblower\s+retaliation|whistleblower|retaliation|severance\s+agreements?|severance|family\s+and\s+medical\s+leave|family\s+medical\s+leave|fmla|cfra|employment\s+law|labor\s+law)\b/gi;
 
   let candidate = text.trim();
-  candidate = candidate.replace(/\\b(in|for|near|around|at)\\s+/gi, " ");
+  candidate = candidate.replace(/\b(in|for|near|around|at)\s+/gi, " ");
   candidate = candidate.replace(legalSuffixes, " ");
   candidate = candidate.replace(legalTopics, " ");
-  candidate = candidate.replace(/[-–—:,]/g, " ").replace(/\\s+/g, " ").trim();
+  candidate = candidate.replace(/[-–—:,]/g, " ").replace(/\s+/g, " ").trim();
 
   if (
     candidate.length >= 2 &&
@@ -259,7 +313,7 @@ export function extractCityFromText(text: string): string {
     candidate.toLowerCase() !== "ca"
   ) {
     return candidate
-      .split(/\\s+/)
+      .split(/\s+/)
       .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
       .join(" ");
   }
@@ -269,130 +323,93 @@ export function extractCityFromText(text: string): string {
 
 export function decomposeKeyword(rawKeyword: string, rawCity?: string): DecomposedKeyword {
   const kwTrimmed = (rawKeyword || "").trim();
-  let city = (rawCity || "").trim();
 
+  // Branch 1: Informational legal guides / question articles
+  if (isInformationalQuery(kwTrimmed)) {
+    const city = "California";
+    const cleanQuestion = kwTrimmed.replace(/\?+$/, "").trim();
+
+    let cleanTopic = "Wrongful Termination";
+    let topicKey: DecomposedKeyword["topicKey"] = "wrongful_termination";
+
+    const rule = PRACTICE_AREA_RULES.find((r) => r.pattern.test(kwTrimmed));
+    if (rule) {
+      cleanTopic = rule.cleanTopic;
+      topicKey = rule.topicKey;
+    }
+
+    const slug = kwTrimmed
+      .toLowerCase()
+      .replace(/[\x27\x22\x60]/g, "")
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-|-$/g, "");
+
+    const heroTitle = cleanQuestion;
+    const lawyerTitle = `${cleanQuestion} | Atoyan Law`;
+    const yoastTitle = `${cleanQuestion} | Atoyan Law`;
+    const yoastMetaDesc = `Comprehensive California employee guide: ${cleanQuestion}. Learn your legal rights under California employment law & FEHA. Free consultation: (888) 807-0077.`;
+    const yoastFocusKw = `${cleanTopic.toLowerCase()} in California`;
+
+    return {
+      city,
+      cleanTopic,
+      lawyerTitle,
+      topicKey,
+      subtopic: "California Legal Guide",
+      heroTitle,
+      slug,
+      yoastTitle,
+      yoastMetaDesc,
+      yoastFocusKw,
+      isArticle: true,
+    };
+  }
+
+  // Branch 2: Geo-targeted practice area pages
+  let city = (rawCity || "").trim();
   if (!city || city === "California") {
     city = extractCityFromText(kwTrimmed);
   }
 
-  // Strip city from keyword text
-  let cleaned = kwTrimmed;
-  if (city && city !== "California") {
-    cleaned = cleaned.replace(new RegExp(`\\b${city.replace(/\s+/g, "\\s+")}\\b`, "gi"), "");
-  }
+  const rule = PRACTICE_AREA_RULES.find((r) => r.pattern.test(kwTrimmed));
 
-  // Strip legal terms and common prepositional phrases
-  cleaned = cleaned.replace(
-    /\b(employment\s+lawyers?|employment\s+attorneys?|labor\s+lawyers?|labor\s+attorneys?|lawyers?|attorneys?|law\s*firm|legal\s*representation|legal\s*advocacy|law\s*office|counsel|group|advocates?)\b/gi,
-    ""
-  );
-  cleaned = cleaned.replace(/\b(in|for|near|around)\s+[A-Za-z\s]+\b/gi, "");
-  cleaned = cleaned.trim().replace(/^[-–—:,\s]+|[-–—:,\s]+$/g, "");
-
-  const lower = cleaned.toLowerCase();
   let cleanTopic = "Employment Law";
   let topicKey: DecomposedKeyword["topicKey"] = "employment_law";
   let subtopic = "Worker Rights & Advocacy";
+  let slugSuffix = "employment-lawyer";
 
-  if (
-    lower.includes("wrongful") ||
-    lower.includes("termination") ||
-    lower.includes("firing") ||
-    lower.includes("discharg") ||
-    lower.includes("laid off")
-  ) {
-    cleanTopic = "Wrongful Termination";
-    topicKey = "wrongful_termination";
-    subtopic = "Unlawful Firing";
-  } else if (
-    lower.includes("harass") ||
-    lower.includes("sexual") ||
-    lower.includes("hostile work") ||
-    lower.includes("quid pro quo")
-  ) {
-    cleanTopic = "Sexual Harassment";
-    topicKey = "sexual_harassment";
-    subtopic = "Hostile Work Environment";
-  } else if (
-    lower.includes("race") ||
-    lower.includes("racial") ||
-    lower.includes("color") ||
-    lower.includes("ethnic") ||
-    lower.includes("crown act")
-  ) {
-    cleanTopic = "Race Discrimination";
-    topicKey = "race_discrimination";
-    subtopic = "Workplace Bias";
-  } else if (
-    lower.includes("wage") ||
-    lower.includes("theft") ||
-    lower.includes("unpaid") ||
-    lower.includes("overtime") ||
-    lower.includes("off the clock") ||
-    lower.includes("minimum wage") ||
-    lower.includes("paycheck")
-  ) {
-    cleanTopic = "Wage Theft";
-    topicKey = "wage_theft";
-    subtopic = "Unpaid Wages & Overtime";
-  } else if (
-    lower.includes("meal") ||
-    lower.includes("rest break") ||
-    lower.includes("break") ||
-    lower.includes("lunch")
-  ) {
-    cleanTopic = "Meal and Rest Breaks";
-    topicKey = "meal_breaks";
-    subtopic = "Labor Violations";
-  } else if (
-    lower.includes("disability") ||
-    lower.includes("medical condition") ||
-    lower.includes("accommodation") ||
-    lower.includes("interactive process") ||
-    lower.includes("handicap")
-  ) {
-    cleanTopic = "Disability Discrimination";
-    topicKey = "disability";
-    subtopic = "Reasonable Accommodation";
-  } else if (
-    lower.includes("retaliat") ||
-    lower.includes("whistleblow") ||
-    lower.includes("whistle")
-  ) {
-    cleanTopic = "Workplace Retaliation";
-    topicKey = "workplace_retaliation";
-    subtopic = "Whistleblower Rights";
-  } else if (
-    lower.includes("leave") ||
-    lower.includes("fmla") ||
-    lower.includes("cfra") ||
-    lower.includes("pregnancy") ||
-    lower.includes("maternity") ||
-    lower.includes("paternity") ||
-    lower.includes("family")
-  ) {
-    cleanTopic = "Family and Medical Leave";
-    topicKey = "family_medical_leave";
-    subtopic = "Protected Workplace Leave";
-  } else if (lower.includes("age") || lower.includes("older worker")) {
-    cleanTopic = "Age Discrimination";
-    topicKey = "age_discrimination";
-    subtopic = "Older Worker Rights";
-  } else if (cleaned.length >= 3) {
-    cleanTopic = cleaned
-      .split(/\s+/)
-      .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
-      .join(" ");
-    subtopic = "Workplace Justice";
+  if (rule) {
+    cleanTopic = rule.cleanTopic;
+    topicKey = rule.topicKey;
+    subtopic = rule.subtopic;
+    slugSuffix = rule.slugSuffix;
+  } else {
+    // Dynamic fallback for unlisted custom practice areas
+    let cleaned = kwTrimmed;
+    if (city && city !== "California") {
+      cleaned = cleaned.replace(new RegExp(`\\b${city.replace(/\s+/g, "\\s+")}\\b`, "gi"), "");
+    }
+    cleaned = cleaned.replace(
+      /\b(employment\s+lawyers?|employment\s+attorneys?|labor\s+lawyers?|labor\s+attorneys?|lawyers?|attorneys?|law\s*firm|legal\s*representation|legal\s*advocacy|law\s*office|counsel|group|advocates?)\b/gi,
+      ""
+    );
+    cleaned = cleaned.replace(/\b(in|for|near|around)\s+[A-Za-z\s]+\b/gi, "");
+    cleaned = cleaned.trim().replace(/^[-–—:,\s]+|[-–—:,\s]+$/g, "");
+    if (cleaned.length >= 3) {
+      cleanTopic = cleaned
+        .split(/\s+/)
+        .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+        .join(" ");
+      subtopic = "Workplace Justice";
+      const topicSlugPart = cleanTopic.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+      slugSuffix = `${topicSlugPart}-lawyer`;
+    }
   }
 
   const lawyerTitle = `${city} ${cleanTopic} Lawyer`;
   const heroTitle = `${city} ${cleanTopic} Employment Lawyers - ${subtopic}`;
   const citySlug = city.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
-  const topicSlug = cleanTopic.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
-  const slug = `${citySlug}-${topicSlug}-lawyer`
-    .replace(/-+/g, "-")
-    .replace(/^-|-$/g, "");
+  const slug = `${citySlug}-${slugSuffix}`.replace(/-+/g, "-").replace(/^-|-$/g, "");
 
   const yoastTitle = `${city} ${cleanTopic} Lawyer | Atoyan Law`;
   const yoastMetaDesc = `Experienced ${city} ${cleanTopic.toLowerCase()} attorney fighting for California workers. Protect your workplace rights & recover compensation. Call (888) 807-0077.`;
@@ -409,5 +426,6 @@ export function decomposeKeyword(rawKeyword: string, rawCity?: string): Decompos
     yoastTitle,
     yoastMetaDesc,
     yoastFocusKw,
+    isArticle: false,
   };
 }
