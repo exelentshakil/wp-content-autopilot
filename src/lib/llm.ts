@@ -1,5 +1,5 @@
 import { buildLinkingCatalogForLlm, trackPublishedArticle } from "./article-tracker";
-import { decomposeKeyword } from "./keyword-utils";
+import { decomposeKeyword, extractCityFromText } from "./keyword-utils";
 import { injectInternalLinks, formatHowDoContentWithLinks, formatCompensationContentWithLinks, generateContextualCta } from "./seo-linking";
 import {
   generateAtoyanSimulated,
@@ -185,32 +185,10 @@ OUTPUT MUST BE VALID JSON with this exact schema:
 
 /**
  * Extracts city from keyword or defaults to California.
+ * Utilizes the comprehensive 200+ California cities catalog and dynamic location fallback.
  */
 export function extractCity(keyword: string): string {
-  const commonCities = [
-    "Burbank",
-    "Los Angeles",
-    "Glendale",
-    "Pasadena",
-    "Visalia",
-    "Fresno",
-    "Van Nuys",
-    "Studio City",
-    "North Hollywood",
-    "Long Beach",
-    "San Fernando Valley",
-    "Orange County",
-    "Bakersfield",
-    "Sacramento",
-    "San Francisco",
-    "San Diego",
-  ];
-  for (const city of commonCities) {
-    if (new RegExp(`\\b${city}\\b`, "i").test(keyword)) {
-      return city;
-    }
-  }
-  return "California";
+  return extractCityFromText(keyword);
 }
 
 // countSubstantiveWords and calculateWordAudit are imported & re-exported from ./word-counter
@@ -292,11 +270,20 @@ function validateAndNormalizeAtoyanContent(
 
   const finalFaqs = faqs.length > 0 ? faqs : sim.faqs;
 
-  const resolvedSlug =
+  const validatedCity =
+    typeof obj.city === "string" && obj.city && obj.city.toLowerCase() !== "california"
+      ? obj.city
+      : resolvedCity;
+
+  let finalSlug =
     typeof obj.slug === "string" && obj.slug
       ? obj.slug.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")
       : sim.slug;
-  const validatedCity = typeof obj.city === "string" && obj.city ? obj.city : resolvedCity;
+  const citySlugPart = validatedCity.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+  if (validatedCity !== "California" && !finalSlug.includes(citySlugPart)) {
+    finalSlug = decomposed.slug;
+  }
+
   let rawServices = typeof obj.servicesContent === "string" && obj.servicesContent ? obj.servicesContent : sim.servicesContent;
 
   // Enforce David Atoyan's strict 2,200+ word requirement on servicesContent
@@ -304,7 +291,7 @@ function validateAndNormalizeAtoyanContent(
 
   // Guarantee internal SEO linking on services content
   const linkedServices = injectInternalLinks(rawServices, {
-    currentSlug: resolvedSlug,
+    currentSlug: finalSlug,
     city: validatedCity,
     maxLinks: 6,
   });
@@ -315,7 +302,7 @@ function validateAndNormalizeAtoyanContent(
     finalHowDoContent = formatHowDoContentWithLinks({
       topic: cleanTopic,
       city: validatedCity,
-      currentSlug: resolvedSlug,
+      currentSlug: finalSlug,
     });
   }
 
@@ -350,15 +337,38 @@ function validateAndNormalizeAtoyanContent(
     }
   }
 
+  let finalHeroTitle =
+    typeof obj.heroTitle === "string" && obj.heroTitle.trim() ? obj.heroTitle.trim() : sim.heroTitle;
+  if (validatedCity !== "California" && !finalHeroTitle.toLowerCase().includes(validatedCity.toLowerCase())) {
+    finalHeroTitle = `${validatedCity} ${cleanTopic} Employment Lawyers - ${decomposed.subtopic}`;
+  }
+
+  let finalServicesHeading =
+    typeof obj.servicesHeading === "string" && obj.servicesHeading.trim()
+      ? obj.servicesHeading.trim()
+      : sim.servicesHeading;
+  if (validatedCity !== "California" && !finalServicesHeading.toLowerCase().includes(validatedCity.toLowerCase())) {
+    finalServicesHeading = `${validatedCity} ${cleanTopic} Lawyer`;
+  }
+
+  let finalYoastTitle =
+    typeof obj.yoastTitle === "string" && obj.yoastTitle.trim() ? obj.yoastTitle.trim() : decomposed.yoastTitle;
+  if (validatedCity !== "California" && !finalYoastTitle.toLowerCase().includes(validatedCity.toLowerCase())) {
+    finalYoastTitle = decomposed.yoastTitle;
+  }
+
+  let finalYoastFocusKw =
+    typeof obj.yoastFocusKw === "string" && obj.yoastFocusKw.trim() ? obj.yoastFocusKw.trim() : decomposed.yoastFocusKw;
+  if (validatedCity !== "California" && !finalYoastFocusKw.toLowerCase().includes(validatedCity.toLowerCase())) {
+    finalYoastFocusKw = decomposed.yoastFocusKw;
+  }
+
   const result: AtoyanLegalContent = {
     keyword: typeof obj.keyword === "string" && obj.keyword ? obj.keyword : keyword,
     city: validatedCity,
-    slug: resolvedSlug,
-    heroTitle: typeof obj.heroTitle === "string" && obj.heroTitle ? obj.heroTitle : sim.heroTitle,
-    servicesHeading:
-      typeof obj.servicesHeading === "string" && obj.servicesHeading
-        ? obj.servicesHeading
-        : sim.servicesHeading,
+    slug: finalSlug,
+    heroTitle: finalHeroTitle,
+    servicesHeading: finalServicesHeading,
     servicesSubHeading:
       typeof obj.servicesSubHeading === "string" && obj.servicesSubHeading
         ? obj.servicesSubHeading
@@ -375,16 +385,12 @@ function validateAndNormalizeAtoyanContent(
         : sim.compensationHeading,
     compensationIntro: finalCompIntro,
     faqs: finalFaqs,
-    yoastTitle:
-      typeof obj.yoastTitle === "string" && obj.yoastTitle ? obj.yoastTitle : decomposed.yoastTitle,
+    yoastTitle: finalYoastTitle,
     yoastMetaDesc:
       typeof obj.yoastMetaDesc === "string" && obj.yoastMetaDesc
         ? obj.yoastMetaDesc
         : decomposed.yoastMetaDesc,
-    yoastFocusKw:
-      typeof obj.yoastFocusKw === "string" && obj.yoastFocusKw
-        ? obj.yoastFocusKw
-        : decomposed.yoastFocusKw,
+    yoastFocusKw: finalYoastFocusKw,
     accordionShortcode:
       typeof obj.accordionShortcode === "string" && obj.accordionShortcode
         ? obj.accordionShortcode
