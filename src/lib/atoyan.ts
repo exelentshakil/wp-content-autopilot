@@ -353,6 +353,22 @@ export function buildServicesContent(
     return cleanHtml;
   }
 
+  // Inject image directly after the primary </h2> heading (or </h1>/<h3> fallback)
+  // Per client requirement: <h2 class="h2dav">...</h2> <img src="..." ... />
+  const h2CloseRegex = /<\/h2>/i;
+  const h2Match = cleanHtml.match(h2CloseRegex);
+  if (h2Match && h2Match.index !== undefined) {
+    const insertPos = h2Match.index + h2Match[0].length;
+    return `${cleanHtml.slice(0, insertPos)} ${imgTag}${cleanHtml.slice(insertPos).trimStart()}`;
+  }
+
+  const anyHCloseRegex = /<\/(h[1-3])>/i;
+  const anyHMatch = cleanHtml.match(anyHCloseRegex);
+  if (anyHMatch && anyHMatch.index !== undefined) {
+    const insertPos = anyHMatch.index + anyHMatch[0].length;
+    return `${cleanHtml.slice(0, insertPos)} ${imgTag}${cleanHtml.slice(insertPos).trimStart()}`;
+  }
+
   return `${imgTag}${cleanHtml}`;
 }
 

@@ -1201,7 +1201,7 @@ export default function Home() {
                       <div className="flex items-center justify-between">
                         <div>
                           <h3 className="font-bold text-base text-text">Clean Services Graphic (Tab 2)</h3>
-                          <p className="text-xs text-muted">Injected at top-left of services body with <code className="text-accent">alignleft</code></p>
+                          <p className="text-xs text-muted">Injected directly after primary H2 heading with <code className="text-accent">alignleft</code></p>
                         </div>
                         <span className="text-xs font-mono px-2.5 py-1 rounded-md bg-panel-2 border border-line text-accent font-semibold">
                           600 x 400 (3:2)
@@ -1250,7 +1250,7 @@ export default function Home() {
                             <span className="font-mono text-accent">600 × 400 px</span>
                           </div>
                           <p className="text-muted text-[11px] leading-relaxed">
-                            Embedded inside <code className="text-accent">_personal_injury_services_content</code> with <code className="text-accent">alignleft size-full</code>. Clean image without text overlays or dark bars.
+                            Embedded inside <code className="text-accent">_personal_injury_services_content</code> directly after the primary H2 with <code className="text-accent">alignleft size-full</code>. Clean image without text overlays or dark bars.
                           </p>
                         </div>
 
