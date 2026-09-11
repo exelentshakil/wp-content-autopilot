@@ -1877,7 +1877,7 @@ Wrongful termination inflicts immense emotional trauma and financial devastation
 // COMPREHENSIVE CALIFORNIA EMPLOYMENT LITIGATION DEPTH EXPANSION (2,500-3,500+ WORDS)
 // -----------------------------------------------------------------------------
 
-function buildIndustryScenarios(topicName: string, city: string): string {
+export function buildIndustryScenarios(topicName: string, city: string): string {
   return `
 <h2 class="h2dav">Industry-Specific Scenarios Across ${city} Workplaces</h2>
 
@@ -1903,7 +1903,7 @@ In restaurants, boutique hotels, bars, and catering operations across ${city}, s
 `.trim();
 }
 
-function buildEvidentiaryDeepDive(topicName: string, city: string): string {
+export function buildEvidentiaryDeepDive(topicName: string, city: string): string {
   return `
 <h2 class="h2dav">How California Courts Evaluate Evidence in ${topicName} Lawsuits</h2>
 
@@ -1939,7 +1939,7 @@ California law imposes an affirmative legal duty on employers to preserve all re
 `.trim();
 }
 
-function buildCorporateDefensePlaybook(topicName: string, city: string): string {
+export function buildCorporateDefensePlaybook(topicName: string, city: string): string {
   return `
 <h2 class="h2dav">The Corporate Defense Playbook: How Employers Try to Defeat Claims</h2>
 
@@ -1970,7 +1970,7 @@ Corporate employers occasionally attempt to intimidate whistleblowers by threate
 `.trim();
 }
 
-function buildDamagesAndRemediesAnalysis(topicName: string, city: string): string {
+export function buildDamagesAndRemediesAnalysis(topicName: string, city: string): string {
   return `
 <h2 class="h2dav">Understanding Your Full Financial Recovery Under California Law</h2>
 
@@ -1996,7 +1996,7 @@ California employment statutes are deliberately designed to provide full financi
 `.trim();
 }
 
-function buildAdministrativeRoadmap(topicName: string, city: string): string {
+export function buildAdministrativeRoadmap(topicName: string, city: string): string {
   return `
 <h2 class="h2dav">The Legal Roadmap: From Agency Filing to California Superior Court</h2>
 

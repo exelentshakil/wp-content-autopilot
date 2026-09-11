@@ -1,7 +1,15 @@
 import { buildLinkingCatalogForLlm, trackPublishedArticle } from "./article-tracker";
 import { decomposeKeyword } from "./keyword-utils";
 import { injectInternalLinks, formatHowDoContentWithLinks, formatCompensationContentWithLinks, generateContextualCta } from "./seo-linking";
-import { generateAtoyanSimulated, buildStatutoryDeadlineTableHtml } from "./llm-simulated";
+import {
+  generateAtoyanSimulated,
+  buildStatutoryDeadlineTableHtml,
+  buildIndustryScenarios,
+  buildEvidentiaryDeepDive,
+  buildCorporateDefensePlaybook,
+  buildDamagesAndRemediesAnalysis,
+  buildAdministrativeRoadmap,
+} from "./llm-simulated";
 import type { Settings, AtoyanLegalContent, AtoyanFaq } from "./types";
 import { resolveDefaultAccordionShortcode, ATOYAN_PHONE, ATOYAN_TOLL_FREE } from "./atoyan";
 
@@ -61,14 +69,17 @@ CRITICAL CLIENT RULES (CLIENT DAVID - ATOYAN LAW FIRM):
 
 3. THREE UNIQUE CONTENT SECTIONS (ACF TABS 2, 4, 6):
    - 1ST: SERVICES CONTENT (Tab 2 - servicesContent):
-     Must be 2,500-3,500+ words of deep, high-authority California employment legal analysis ("strictly huge content").
+     Must be MINIMUM 2,200 to 3,500+ pure words of deep, high-authority California employment legal analysis ("strictly huge content").
+     David Atoyan strictly requires at least 2,200 words of pure substantive text (excluding HTML tags and callout boxes).
      Structure with:
        * Short punchy paragraphs (1-3 sentences max). No dense walls of text.
-       * Question-based subheadings formatted with <h2 class="h2dav"> and <h3 class="h3dav">.
+       * 14 direct question-based subheadings formatted with <h2 class="h2dav"> and <h3 class="h3dav">.
+       * Each of the 14 question sections MUST contain 3 to 5 substantial paragraphs (160-200 words per heading) to guarantee 2,200+ total words.
        * Bold key phrases for readability (e.g. <strong>That timeline matters.</strong>, <strong>First</strong>, <strong>Second</strong>).
        * Bullet lists (<ul><li>...</li></ul>) and numbered lists (<ol><li>...</li></ol>).
-       * 3 topic-specific callout boxes (Early, Mid, and Closing).
-       * California statutory depth (FEHA Gov Code § 12940, CRD, Labor Code §§ 98.6, 201-203, 226.7, 510, 512, 1102.5, SB 497 90-day presumption, CROWN Act SB 188, case law).
+       * 3 topic-specific callout boxes (Early, Mid, and Closing) matching David Atoyan's exact styling:
+         <p class="txt-hlt bg-bx ulk-bg pd_v-30 pd_h-30" style="text-align:center;"><em><strong>[Text with phone (888) 807-0077 and contact link]</strong></em></p>
+       * California statutory depth (FEHA Gov Code § 12940, CRD, Labor Code §§ 98.6, 201-203, 226, 226.7, 244, 510, 512, 1102.5, 1171.5, SB 497 90-day presumption, CROWN Act SB 188, case law).
 
      MANDATORY 7-SECTION LEGAL LITIGATION FRAMEWORK:
      * SECTION 1: STATUTORY FRAMEWORK & DEFINITIONS UNDER CALIFORNIA LAW
@@ -152,7 +163,7 @@ OUTPUT MUST BE VALID JSON with this exact schema:
   "heroTitle": "string ([City] [Topic] Employment Lawyers - [Subtopic])",
   "servicesHeading": "string",
   "servicesSubHeading": "string",
-  "servicesContent": "string (2,500-3,500+ words HTML with <h2 class=\"h2dav\">, <h3 class=\"h3dav\">, <p>, <strong>, <ul><li>, and topic-specific callout boxes across all 7 mandatory sections)",
+  "servicesContent": "string (MINIMUM 2,200 pure words HTML formatted across 14 question headings <h2 class=\"h2dav\">Question?</h2> with 3-5 substantial paragraphs each, excluding callout boxes and HTML tags)",
   "howDoHeading": "string",
   "howDoContent": "string",
   "compensationHeading": "string",
@@ -201,6 +212,63 @@ export function extractCity(keyword: string): string {
 }
 
 /**
+ * Counts substantive words in an HTML string, stripping markup and extra whitespace.
+ */
+export function countSubstantiveWords(html: string): number {
+  if (!html || typeof html !== "string") return 0;
+  const text = html
+    .replace(/<script[\s\S]*?<\/script>/gi, " ")
+    .replace(/<style[\s\S]*?<\/style>/gi, " ")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+  return text ? text.split(/\s+/).length : 0;
+}
+
+/**
+ * Enforces attorney David Atoyan's strict 2,200+ pure word requirement on servicesContent.
+ * If the generated HTML contains fewer than 2,200 words, it automatically appends
+ * deep California employment litigation modules to guarantee compliance.
+ */
+export function enforceMinimumServicesWordCount(
+  servicesHtml: string,
+  topic: string,
+  city: string,
+  minWords = 2200,
+): string {
+  let enriched = servicesHtml || "";
+  let words = countSubstantiveWords(enriched);
+
+  if (words >= minWords) {
+    return enriched;
+  }
+
+  console.log(`[Atoyan LLM] servicesContent has ${words} words (< ${minWords} target). Auto-enriching with California legal modules...`);
+
+  const modules = [
+    buildEvidentiaryDeepDive(topic, city),
+    buildCorporateDefensePlaybook(topic, city),
+    buildDamagesAndRemediesAnalysis(topic, city),
+    buildAdministrativeRoadmap(topic, city),
+    buildIndustryScenarios(topic, city),
+  ];
+
+  for (const mod of modules) {
+    if (words >= minWords) break;
+    const h2Match = mod.match(/<h2[^>]*>(.*?)<\/h2>/i);
+    const heading = h2Match ? h2Match[1].replace(/<[^>]+>/g, "").trim().toLowerCase() : "";
+    if (heading && enriched.toLowerCase().includes(heading.slice(0, 30))) {
+      continue;
+    }
+    enriched = enriched.trim() + "\n\n" + mod;
+    words = countSubstantiveWords(enriched);
+  }
+
+  console.log(`[Atoyan LLM] servicesContent enriched to ${words} words (Target: ${minWords}+).`);
+  return enriched;
+}
+
+/**
  * Validates and normalizes parsed LLM output, falling back to guaranteed high-quality defaults for any missing fields.
  */
 function validateAndNormalizeAtoyanContent(
@@ -239,7 +307,10 @@ function validateAndNormalizeAtoyanContent(
       ? obj.slug.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")
       : sim.slug;
   const validatedCity = typeof obj.city === "string" && obj.city ? obj.city : resolvedCity;
-  const rawServices = typeof obj.servicesContent === "string" && obj.servicesContent ? obj.servicesContent : sim.servicesContent;
+  let rawServices = typeof obj.servicesContent === "string" && obj.servicesContent ? obj.servicesContent : sim.servicesContent;
+
+  // Enforce David Atoyan's strict 2,200+ word requirement on servicesContent
+  rawServices = enforceMinimumServicesWordCount(rawServices, cleanTopic, validatedCity, 2200);
 
   // Guarantee internal SEO linking on services content
   const linkedServices = injectInternalLinks(rawServices, {
@@ -401,41 +472,59 @@ CRITICAL REQUIREMENT: servicesContent MUST be 2,200-3,500+ words of exhaustive, 
 Tone MUST replicate David Atoyan's conversational, worker-first style with direct question-based headings (<h2 class="h2dav">), short active-voice sentences, no em dashes, concrete arithmetic examples ($25/hr -> $37.50 overtime, $3,600/yr off-the-clock, $11,000/yr break premiums, $6,000 waiting time penalties), and California Labor Code § 1171.5 undocumented worker protections.
 DO NOT generate a short generic summary. Use question-based headings formatted with <h2 class="h2dav"> matching the topics below:
 
-SECTION 1: STATUTORY FRAMEWORK & DEFINITIONS UNDER CALIFORNIA LAW
-- Heading: <h2 class="h2dav">Understanding ${cleanTopic} Under California Law: Definitions, Rights, and Statutory Protections</h2>
-- Cite Fair Employment and Housing Act (FEHA) Gov Code § 12940, protected categories, CROWN Act SB 188 if applicable, strict liability for supervisors vs negligence for coworkers under Gov Code § 12940(j), relevant California Labor Code sections.
+CRITICAL CLIENT DIRECTIVE (ATTORNEY DAVID ATOYAN):
+servicesContent MUST contain a MINIMUM of 2,200 to 3,500 pure words of substantive legal analysis (counted strictly on body text, excluding HTML tags, classes, and callout boxes).
+DO NOT summarize or compress. Any generation under 2,200 pure words is strictly unacceptable.
+To guarantee reaching 2,200+ words, you MUST generate all 14 question sections below. Each question section MUST contain 3 to 5 substantial, multi-sentence paragraphs (160 to 200 words each):
+
+QUESTION 1: <h2 class="h2dav">What Counts as ${cleanTopic} Under California Law?</h2>
+- Detail California statutory definitions, Fair Employment and Housing Act (FEHA) Gov Code § 12940, protected categories, CROWN Act SB 188 if applicable, strict supervisor liability vs coworker negligence under Gov Code § 12940(j), and California Labor Code provisions.
 - Include Early Callout Box:
-<p class="txt-hlt bg-bx ulk-bg pd_v-30 pd_h-30" style="text-align:center;"><em><strong>If your employer has subjected you to ${cleanTopic.toLowerCase()} in ${resolvedCity}, Atoyan Law Firm is here to fight for your rights. <a href="tel:8888070077">Contact our ${resolvedCity} ${cleanTopic} Attorneys</a> at (888) 807-0077 today for a free, confidential case evaluation.</strong></em></p>
+<p class="txt-hlt bg-bx ulk-bg pd_v-30 pd_h-30" style="text-align:center;"><em><strong>If you or a loved one experienced ${cleanTopic.toLowerCase()} in ${resolvedCity}, call Atoyan Law. Call <a href="tel:8888070077">(888) 807-0077</a> or <a href="/contact/">contact us online</a> to set up a consultation with our ${resolvedCity} ${cleanTopic} lawyer.</strong></em></p>
 
-SECTION 2: WORKPLACE MANIFESTATIONS & UNLAWFUL ADVERSE ACTIONS IN ${resolvedCity.toUpperCase()}
-- Heading: <h2 class="h2dav">Common Forms of ${cleanTopic} in ${resolvedCity} Workplaces</h2>
-- Subheadings with <h3 class="h3dav"> for Direct vs Disparate Impact, Adverse Employment Actions (demotion, pay reduction, constructive discharge), Hostile Work Environment legal standards.
-- Detailed <ul> bulleted list with 6-8 concrete workplace examples typical in ${resolvedCity}.
+QUESTION 2: <h2 class="h2dav">How Does California Law Provide Stronger Protections Than Federal Law?</h2>
+- Contrast California FEHA and Labor Code against federal Title VII, ADA, and FLSA. Explain California's broader definitions, absence of statutory caps on emotional distress damages, lower legal threshold for proving hostile work environments, and mandatory prevailing-party attorney fees under Gov Code § 12965.
 
-SECTION 3: EMPLOYER PRETEXT, SHAM INVESTIGATIONS & PAPER TRAILS
-- Heading: <h2 class="h2dav">How California Employers Mask ${cleanTopic}: Pretext, Bogus Write-Ups, and Sham HR Investigations</h2>
-- Explain the McDonnell Douglas burden-shifting framework (Guz v. Bechtel National), retaliatory write-ups, bogus PIPs (performance improvement plans), sudden restructuring/RIFs, and HR bias protecting the employer.
+QUESTION 3: <h2 class="h2dav">What Are Common Examples of ${cleanTopic} in ${resolvedCity} Workplaces?</h2>
+- Provide 6-8 concrete, realistic workplace scenarios typical of ${resolvedCity} employers across key local industries (healthcare, warehousing, agriculture, logistics, retail, hospitality, tech, and corporate offices).
+- Use subheadings with <h3 class="h3dav"> for Direct Violations, Disparate Impact, and Hostile Work Environment patterns.
+
+QUESTION 4: <h2 class="h2dav">Can an Employer Fire, Demote, or Punish Me for Complaining About ${cleanTopic}?</h2>
+- Address unlawful employer retaliation under California Labor Code § 1102.5 (whistleblower protections) and Labor Code § 98.6. Explain adverse employment actions (demotion, pay cuts, shift stripping, isolation, hostile scrutiny, constructive discharge).
+
+QUESTION 5: <h2 class="h2dav">What Is the 90-Day Retaliation Presumption Under California Senate Bill 497?</h2>
+- Detail California Senate Bill 497 (SB 497, effective Jan 1, 2024), establishing a statutory rebuttable presumption of retaliation if an employer takes adverse action within 90 days of protected activity. Explain how the burden of proof immediately shifts to the employer under Lawson v. PPG Architectural Finishes.
+
+QUESTION 6: <h2 class="h2dav">How Do California Employers Mask ${cleanTopic} Behind Bogus Pretexts and Sham HR Investigations?</h2>
+- Explain the McDonnell Douglas burden-shifting framework (Guz v. Bechtel National), sudden negative performance reviews, bogus Performance Improvement Plans (PIPs), pretextual reorganizations/RIFs, and how internal HR investigations exist to shield corporate liability rather than protect workers.
 - Include Mid Callout Box:
 <p class="txt-hlt bg-bx ulk-bg pd_v-30 pd_h-30" style="text-align:center;"><em><strong>Facing sudden write-ups, bogus disciplinary reviews, or employer retaliation in ${resolvedCity}? You have legal rights under California law. Our ${resolvedCity} ${cleanTopic} Lawyers are prepared to hold them accountable. <a href="tel:8888070077">Call (888) 807-0077</a> for an immediate consultation.</strong></em></p>
 
-SECTION 4: WORKPLACE RETALIATION & CALIFORNIA'S 90-DAY STATUTORY PRESUMPTION (SB 497)
-- Heading: <h2 class="h2dav">Workplace Retaliation Under California Law: Labor Code § 1102.5 & Senate Bill 497</h2>
-- Explain Labor Code § 1102.5 whistleblower rights, Labor Code § 98.6, and California Senate Bill 497 (SB 497) establishing a rebuttable presumption of retaliation if adverse action happens within 90 days of protected activity. Contrast California's employee-protective standard (Lawson v. PPG Architectural Finishes) with federal standards.
+QUESTION 7: <h2 class="h2dav">What Steps Should I Take Immediately If My Rights Are Violated at Work?</h2>
+- Provide a clear, actionable checklist: preserving personal records, copying paystubs and timesheets, saving digital messages before losing access, journaling incidents contemporaneously, avoiding workplace confrontation, and seeking legal counsel before signing any documents.
 
-SECTION 5: EVIDENTIARY BLUEPRINT: HOW TO DOCUMENT & PROVE YOUR CASE
-- Heading: <h2 class="h2dav">How to Document and Prove a ${cleanTopic} Claim in California</h2>
-- Subheadings with <h3 class="h3dav"> on Documentary Evidence, Digital Communications (emails, texts, Slack/Teams), Comparator Evidence, and Contemporaneous Journaling.
-- Detail what records to preserve and caution regarding California Penal Code § 632 two-party consent wiretapping laws.
+QUESTION 8: <h2 class="h2dav">How Do I Document and Build an Evidentiary Paper Trail to Prove My Case?</h2>
+- Detail critical evidence: emails, Slack/Teams chats, text messages, comparator evidence (how coworkers outside protected group were treated), time records, and personnel files under Labor Code § 1198.5. Caution workers regarding California Penal Code § 632 two-party consent recording laws.
 
-SECTION 6: ADMINISTRATIVE PREREQUISITES & CRITICAL STATUTES OF LIMITATIONS
-- Heading: <h2 class="h2dav">California Civil Rights Department (CRD), EEOC Filings, and Deadlines</h2>
-- Detail California Government Code § 12960 administrative exhaustion with the California Civil Rights Department (CRD, formerly DFEH), immediate Right-to-Sue notice, dual filing with EEOC, the 3-year CRD filing deadline (Gov Code § 12960(e)), and the 1-year window to file in Superior Court after the Right-to-Sue notice.
+QUESTION 9: <h2 class="h2dav">Can Immigrant and Undocumented Workers Bring a ${cleanTopic} Claim in California?</h2>
+- Emphasize California Labor Code § 1171.5: all California labor, employment, civil rights, and worker protections apply equally to all workers regardless of immigration status. Highlight California Labor Code § 244 and Civil Code § 3339 making it illegal retaliation and extortion for employers to threaten immigration status.
 
-SECTION 7: RECOVERABLE DAMAGES AND FINANCIAL COMPENSATION
-- Heading: <h2 class="h2dav">What Compensation and Financial Damages Can You Recover in California?</h2>
-- Subheadings with <h3 class="h3dav"> for Economic Damages (Back Pay, Front Pay, Lost Benefits, Stock Options), Non-Economic Damages (Emotional Distress, Mental Anguish), Punitive Damages under California Civil Code § 3294 (oppression, fraud, malice), and Statutory Attorneys' Fees under Gov Code § 12965(b).
-- Include Concluding Callout Box:
+QUESTION 10: <h2 class="h2dav">What Is the Role of the California Civil Rights Department (CRD) and Administrative Exhaustion?</h2>
+- Detail California Government Code § 12960 administrative exhaustion with the California Civil Rights Department (CRD, formerly DFEH), immediate Right-to-Sue notice, dual filing with EEOC, and when to file an administrative complaint vs filing a lawsuit in Superior Court.
+
+QUESTION 11: <h2 class="h2dav">What Are the Critical Statutes of Limitations and Filing Deadlines in California?</h2>
+- Detail strict filing deadlines: FEHA claims (3 years to file with CRD + 1 year from Right-to-Sue letter), EEOC claims (300 days), Whistleblower Labor Code § 1102.5 (3 years), Wage claims (3-4 years), and public entity claims under Government Code § 911.2 (strict 6-month government tort claim deadline).
+
+QUESTION 12: <h2 class="h2dav">What Compensation and Financial Damages Can You Recover in California?</h2>
+- Break down economic damages (back pay, front pay, lost benefits, bonuses, retirement contributions), non-economic damages (emotional distress, mental anguish, reputational harm with NO statutory cap), statutory penalties (Labor Code §§ 203 waiting time, 226 paystub, 226.7 break premiums, 1102.5 whistleblower), 10% annual prejudgment interest under Civil Code § 3287, and mandatory statutory attorney fees under Gov Code § 12965.
+
+QUESTION 13: <h2 class="h2dav">When Can Punitive Damages Be Awarded Against an Employer Under California Civil Code § 3294?</h2>
+- Detail the legal standards for punitive damages under California Civil Code § 3294: proving oppression, fraud, or malice by clear and convincing evidence. Explain corporate managing agent liability under White v. Ultramar, Inc.
+- Include Closing Callout Box:
 <p class="txt-hlt bg-bx ulk-bg pd_v-30 pd_h-30" style="text-align:center;"><em><strong>${cleanTopic} is an unacceptable violation of California labor protections. Don’t face your employer alone. <a href="tel:8888070077">Contact Atoyan Law Firm’s ${resolvedCity} ${cleanTopic} team</a> today at (888) 807-0077 to demand the full compensation you are owed.</strong></em></p>
+
+QUESTION 14: <h2 class="h2dav">Why Choose Atoyan Law Firm to Fight for Your Workplace Rights in ${resolvedCity}?</h2>
+- Highlight Atoyan Law Firm's commitment: contingency fee representation (no recovery, no legal fees), aggressive litigation posture, thorough discovery strategies, direct attorney communication, and fearlessness in taking cases to trial against large corporate defense firms.
 
 MANDATORY 10-QUESTION HIGH-INTENT GOOGLE SEARCH FAQ STRUCTURE (DAVID ATOYAN APPROVED):
 You MUST generate EXACTLY 10 practical, multi-paragraph FAQs for "${cleanTopic}" in ${resolvedCity}, covering this exact searcher progression:
@@ -516,7 +605,7 @@ async function generateAtoyanOpenAI(
           typeof parsed.servicesContent === "string" &&
           parsed.servicesContent.trim().length > 500
         ) {
-          console.log(`[Atoyan LLM] Successfully generated ${parsed.servicesContent.length} chars via OpenAI (${model})`);
+          console.log(`[Atoyan LLM] Generated ${countSubstantiveWords(parsed.servicesContent)} words (${parsed.servicesContent.length} chars) via OpenAI (${model})`);
           return validateAndNormalizeAtoyanContent(parsed, keyword, city);
         } else {
           console.warn(`[Atoyan LLM] OpenAI (${model}) response missing servicesContent or length <= 500`);
@@ -580,7 +669,7 @@ async function generateAtoyanGemini(
           typeof parsed.servicesContent === "string" &&
           parsed.servicesContent.trim().length > 500
         ) {
-          console.log(`[Atoyan LLM] Successfully generated ${parsed.servicesContent.length} chars via Gemini (${model})`);
+          console.log(`[Atoyan LLM] Generated ${countSubstantiveWords(parsed.servicesContent)} words (${parsed.servicesContent.length} chars) via Gemini (${model})`);
           return validateAndNormalizeAtoyanContent(parsed, keyword, city);
         } else {
           console.warn(`[Atoyan LLM] Gemini (${model}) response missing servicesContent or length <= 500`);
