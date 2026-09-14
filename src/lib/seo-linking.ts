@@ -41,15 +41,26 @@ export function generateContextualCta(opts: ContextualCtaOptions): string {
     return `<p class="txt-hlt bg-bx ulk-bg pd_v-30 pd_h-30" style="text-align:center;"><em><strong>Unlawful termination can shatter your livelihood. Don’t let your employer silence you. <a href="${phoneLink}">Contact Atoyan Law Firm’s ${resolvedCity} Wrongful Termination team</a> today and take the first step toward justice.</strong></em></p>`;
   }
 
-  // 3. SEXUAL HARASSMENT / HOSTILE WORK ENVIRONMENT
-  if (lower.includes("harass") || lower.includes("sexual") || lower.includes("hostile")) {
+  // 3A. SEXUAL HARASSMENT
+  if (lower.includes("sexual") || lower.includes("quid pro quo") || lower.includes("sex harassment")) {
     if (position === "early") {
-      return `<p class="txt-hlt bg-bx ulk-bg pd_v-30 pd_h-30" style="text-align:center;"><em><strong>Subjected to unwanted conduct, inappropriate comments, or a toxic environment? <a href="${phoneLink}">Contact our ${resolvedCity} Sexual Harassment Lawyers</a> today for a confidential consultation and protect your dignity.</strong></em></p>`;
+      return `<p class="txt-hlt bg-bx ulk-bg pd_v-30 pd_h-30" style="text-align:center;"><em><strong>Subjected to unwanted sexual conduct, inappropriate comments, or a toxic work environment? <a href="${phoneLink}">Contact our ${resolvedCity} Sexual Harassment Lawyers</a> today for a confidential consultation and protect your dignity.</strong></em></p>`;
     }
     if (position === "mid") {
-      return `<p class="txt-hlt bg-bx ulk-bg pd_v-30 pd_h-30" style="text-align:center;"><em><strong>Unwanted advances? Retaliation for reporting? Hostile workplace? You have legal rights under California law. Our ${resolvedCity} Harassment Attorneys are ready to fight for you. <a href="${phoneLink}">Reach out</a> now for your case evaluation.</strong></em></p>`;
+      return `<p class="txt-hlt bg-bx ulk-bg pd_v-30 pd_h-30" style="text-align:center;"><em><strong>Unwanted advances? Retaliation for reporting? Hostile workplace? You have legal rights under California law. Our ${resolvedCity} Sexual Harassment Attorneys are ready to fight for you. <a href="${phoneLink}">Reach out</a> now for your case evaluation.</strong></em></p>`;
     }
     return `<p class="txt-hlt bg-bx ulk-bg pd_v-30 pd_h-30" style="text-align:center;"><em><strong>No one should have to endure sexual harassment to earn a paycheck. <a href="${phoneLink}">Contact Atoyan Law Firm’s ${resolvedCity} Sexual Harassment team</a> today and let us stand between you and workplace abuse.</strong></em></p>`;
+  }
+
+  // 3B. WORKPLACE HARASSMENT / HOSTILE WORK ENVIRONMENT (NON-SEXUAL)
+  if (lower.includes("workplace harassment") || lower.includes("harass") || lower.includes("hostile")) {
+    if (position === "early") {
+      return `<p class="txt-hlt bg-bx ulk-bg pd_v-30 pd_h-30" style="text-align:center;"><em><strong>Subjected to discriminatory hostility, offensive slurs, or persistent workplace bullying? <a href="${phoneLink}">Contact our ${resolvedCity} Workplace Harassment Lawyers</a> today for a confidential consultation.</strong></em></p>`;
+    }
+    if (position === "mid") {
+      return `<p class="txt-hlt bg-bx ulk-bg pd_v-30 pd_h-30" style="text-align:center;"><em><strong>Facing severe or pervasive harassment at work? California FEHA holds employers strictly liable. Our ${resolvedCity} Workplace Harassment Attorneys are ready to hold them accountable. <a href="${phoneLink}">Reach out</a> now for your case evaluation.</strong></em></p>`;
+    }
+    return `<p class="txt-hlt bg-bx ulk-bg pd_v-30 pd_h-30" style="text-align:center;"><em><strong>No worker should have to endure an abusive or hostile working environment to earn a living. <a href="${phoneLink}">Contact Atoyan Law Firm’s ${resolvedCity} Workplace Harassment team</a> today at (888) 807-0077 to demand justice.</strong></em></p>`;
   }
 
   // 4. RACE / ETHNIC / NATIONAL ORIGIN DISCRIMINATION
@@ -336,9 +347,12 @@ export function formatHowDoContentWithLinks(params: {
   if (lower.includes("wrongful") || lower.includes("termination") || lower.includes("fired")) {
     coreQuestion = "Was my termination illegal?";
     diagnosticQuestions = `Was the firing tied to a protected category like disability, race, gender, or age? Did the termination happen shortly after reporting harassment or requesting medical leave? Did the employer create false disciplinary write-ups to justify the discharge? Did the <a href="${retaliationUrl}">employer retaliate after the employee reported illegal conduct?</a>`;
-  } else if (lower.includes("harass") || lower.includes("sexual") || lower.includes("hostile")) {
+  } else if (lower.includes("sexual") || lower.includes("quid pro quo") || lower.includes("sex harassment")) {
     coreQuestion = "Does this conduct qualify as actionable sexual harassment?";
-    diagnosticQuestions = `Was the harassment severe or pervasive? Did supervisors participate in or ignore the behavior? Were inappropriate communications preserved? Did working conditions become intolerable? Did the <a href="${retaliationUrl}">employer retaliate after the employee reported the harassment to HR?</a>`;
+    diagnosticQuestions = `Was the misconduct sexual in nature or gender-based? Did a supervisor condition job benefits on sexual favors? Were inappropriate messages, advances, or touching preserved? Did the <a href="${retaliationUrl}">employer retaliate after the employee reported the sexual harassment?</a>`;
+  } else if (lower.includes("workplace harassment") || lower.includes("harass") || lower.includes("hostile")) {
+    coreQuestion = "Does this conduct meet the California legal standard for actionable workplace harassment?";
+    diagnosticQuestions = `Was the hostile conduct tied to a protected category like race, disability, religion, age, or sexual orientation? Was the behavior severe or pervasive enough to alter working conditions under FEHA § 12940(j)? Did management fail to take immediate corrective action under § 12940(k)? Did the <a href="${retaliationUrl}">employer retaliate after the employee opposed the hostile environment?</a>`;
   } else if (lower.includes("race") || lower.includes("racial")) {
     coreQuestion = "Was I treated differently because of my race or background?";
     diagnosticQuestions = `Were coworkers outside your protected group given better shifts or promotions? Did discipline escalate after you opposed racial jokes or remarks? Did the company violate the CROWN Act regarding natural hair or cultural traits? Did the <a href="${retaliationUrl}">employer retaliate after the employee complained of racial bias?</a>`;

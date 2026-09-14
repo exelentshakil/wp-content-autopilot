@@ -1,5 +1,6 @@
 import { buildLinkingCatalogForLlm, trackPublishedArticle } from "./article-tracker";
 import { decomposeKeyword, extractCityFromText } from "./keyword-utils";
+import { getTopicPromptBlueprint, getTopicEnrichmentModules } from "./topic-prompt-blueprints";
 import { injectInternalLinks, formatHowDoContentWithLinks, formatCompensationContentWithLinks, generateContextualCta } from "./seo-linking";
 import {
   generateAtoyanSimulated,
@@ -27,7 +28,7 @@ const GEMINI_MODELS = (process.env.GEMINI_MODEL ?? "gemini-2.5-flash,gemini-2.0-
   .map((s) => s.trim())
   .filter(Boolean);
 
-const OPENAI_MODELS = (process.env.OPENAI_MODEL ?? "chatgpt-4o-latest,gpt-4o,o3-mini")
+const OPENAI_MODELS = (process.env.OPENAI_MODEL ?? "gpt-4o,o3-mini,chatgpt-4o-latest")
   .split(",")
   .map((s) => s.trim())
   .filter(Boolean);
@@ -213,15 +214,14 @@ export function enforceMinimumServicesWordCount(
 
   console.log(`[Atoyan LLM] servicesContent has ${words} words (< ${minWords} target). Auto-enriching with California legal modules...`);
 
-  const modules = [
-    buildEvidentiaryDeepDive(topic, city),
-    buildCorporateDefensePlaybook(topic, city),
-    buildDamagesAndRemediesAnalysis(topic, city),
-    buildAdministrativeRoadmap(topic, city),
-    buildIndustryScenarios(topic, city),
-  ];
+  const decomposed = decomposeKeyword(topic, city);
+  const topicKey = decomposed.topicKey;
+  const cleanTopic = decomposed.cleanTopic;
+  const resolvedCity = decomposed.city || city;
 
-  for (const mod of modules) {
+  // 1. Topic-bespoke modules first (guarantees 100% unique practice area coverage)
+  const topicModules = getTopicEnrichmentModules(topicKey, cleanTopic, resolvedCity);
+  for (const mod of topicModules) {
     if (words >= minWords) break;
     const h2Match = mod.match(/<h2[^>]*>(.*?)<\/h2>/i);
     const heading = h2Match ? h2Match[1].replace(/<[^>]+>/g, "").trim().toLowerCase() : "";
@@ -230,6 +230,26 @@ export function enforceMinimumServicesWordCount(
     }
     enriched = enriched.trim() + "\n\n" + mod;
     words = countSubstantiveWords(enriched);
+  }
+
+  // 2. If still under target, append contextualized damages & industry modules
+  if (words < minWords) {
+    const fallbackModules = [
+      buildDamagesAndRemediesAnalysis(cleanTopic, resolvedCity),
+      buildAdministrativeRoadmap(cleanTopic, resolvedCity),
+      buildIndustryScenarios(cleanTopic, resolvedCity),
+    ];
+
+    for (const mod of fallbackModules) {
+      if (words >= minWords) break;
+      const h2Match = mod.match(/<h2[^>]*>(.*?)<\/h2>/i);
+      const heading = h2Match ? h2Match[1].replace(/<[^>]+>/g, "").trim().toLowerCase() : "";
+      if (heading && enriched.toLowerCase().includes(heading.slice(0, 30))) {
+        continue;
+      }
+      enriched = enriched.trim() + "\n\n" + mod;
+      words = countSubstantiveWords(enriched);
+    }
   }
 
   console.log(`[Atoyan LLM] servicesContent enriched to ${words} words (Target: ${minWords}+).`);
@@ -428,11 +448,16 @@ function buildLegalPrompt(keyword: string, city: string, linkCatalog: string, ch
   const decomposed = decomposeKeyword(keyword, city);
   const resolvedCity = decomposed.city;
   const cleanTopic = decomposed.cleanTopic;
+  const topicKey = decomposed.topicKey;
   const citySlug = resolvedCity.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
   const topicSlug = cleanTopic.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 
+  const blueprint = getTopicPromptBlueprint(topicKey, cleanTopic, resolvedCity);
+
   const customContextDirective = chatContext && chatContext.trim()
-    ? `\n\nCRITICAL ATTORNEY DIRECTIVE & CUSTOM PROMPT OVERRIDE:
+    ? `
+
+CRITICAL ATTORNEY DIRECTIVE & CUSTOM PROMPT OVERRIDE:
 The attorney has provided specific prompt instructions, tone guidelines, and questions:
 """
 ${chatContext.trim()}
@@ -451,6 +476,27 @@ You MUST strictly follow the attorney's tone and structure above:
 `
     : "";
 
+  const questionDirectives = blueprint.questions.map((q) => {
+    let callout = "";
+    if (q.questionNumber === 1) {
+      callout = `
+- Include Early Callout Box:
+${blueprint.earlyCtaText}`;
+    } else if (q.questionNumber === 6) {
+      callout = `
+- Include Mid Callout Box:
+${blueprint.midCtaText}`;
+    } else if (q.questionNumber === 13) {
+      callout = `
+- Include Closing Callout Box:
+${blueprint.closingCtaText}`;
+    }
+    return `QUESTION ${q.questionNumber}: <h2 class="h2dav">${q.heading}</h2>
+- ${q.instructions}${callout}`;
+  }).join("\n\n");
+
+  const faqDirectives = blueprint.faqs.map((f, i) => `${i + 1}. ${f.question} (${f.focus})`).join("\n");
+
   return `${linkCatalog}${customContextDirective}
 
 CRITICAL REQUIREMENT: servicesContent MUST be 2,200-3,500+ words of exhaustive, high-authority California employment law analysis for "${cleanTopic}" in ${resolvedCity}.
@@ -462,67 +508,11 @@ servicesContent MUST contain a MINIMUM of 2,200 to 3,500 pure words of substanti
 DO NOT summarize or compress. Any generation under 2,200 pure words is strictly unacceptable.
 To guarantee reaching 2,200+ words, you MUST generate all 14 question sections below. Each question section MUST contain 3 to 5 substantial, multi-sentence paragraphs (160 to 200 words each):
 
-QUESTION 1: <h2 class="h2dav">What Counts as ${cleanTopic} Under California Law?</h2>
-- Detail California statutory definitions, Fair Employment and Housing Act (FEHA) Gov Code § 12940, protected categories, CROWN Act SB 188 if applicable, strict supervisor liability vs coworker negligence under Gov Code § 12940(j), and California Labor Code provisions.
-- Include Early Callout Box:
-<p class="txt-hlt bg-bx ulk-bg pd_v-30 pd_h-30" style="text-align:center;"><em><strong>If you or a loved one experienced ${cleanTopic.toLowerCase()} in ${resolvedCity}, call Atoyan Law. Call <a href="tel:8888070077">(888) 807-0077</a> or <a href="/contact/">contact us online</a> to set up a consultation with our ${resolvedCity} ${cleanTopic} lawyer.</strong></em></p>
-
-QUESTION 2: <h2 class="h2dav">How Does California Law Provide Stronger Protections Than Federal Law?</h2>
-- Contrast California FEHA and Labor Code against federal Title VII, ADA, and FLSA. Explain California's broader definitions, absence of statutory caps on emotional distress damages, lower legal threshold for proving hostile work environments, and mandatory prevailing-party attorney fees under Gov Code § 12965.
-
-QUESTION 3: <h2 class="h2dav">What Are Common Examples of ${cleanTopic} in ${resolvedCity} Workplaces?</h2>
-- Provide 6-8 concrete, realistic workplace scenarios typical of ${resolvedCity} employers across key local industries (healthcare, warehousing, agriculture, logistics, retail, hospitality, tech, and corporate offices).
-- Use subheadings with <h3 class="h3dav"> for Direct Violations, Disparate Impact, and Hostile Work Environment patterns.
-
-QUESTION 4: <h2 class="h2dav">Can an Employer Fire, Demote, or Punish Me for Complaining About ${cleanTopic}?</h2>
-- Address unlawful employer retaliation under California Labor Code § 1102.5 (whistleblower protections) and Labor Code § 98.6. Explain adverse employment actions (demotion, pay cuts, shift stripping, isolation, hostile scrutiny, constructive discharge).
-
-QUESTION 5: <h2 class="h2dav">What Is the 90-Day Retaliation Presumption Under California Senate Bill 497?</h2>
-- Detail California Senate Bill 497 (SB 497, effective Jan 1, 2024), establishing a statutory rebuttable presumption of retaliation if an employer takes adverse action within 90 days of protected activity. Explain how the burden of proof immediately shifts to the employer under Lawson v. PPG Architectural Finishes.
-
-QUESTION 6: <h2 class="h2dav">How Do California Employers Mask ${cleanTopic} Behind Bogus Pretexts and Sham HR Investigations?</h2>
-- Explain the McDonnell Douglas burden-shifting framework (Guz v. Bechtel National), sudden negative performance reviews, bogus Performance Improvement Plans (PIPs), pretextual reorganizations/RIFs, and how internal HR investigations exist to shield corporate liability rather than protect workers.
-- Include Mid Callout Box:
-<p class="txt-hlt bg-bx ulk-bg pd_v-30 pd_h-30" style="text-align:center;"><em><strong>Facing sudden write-ups, bogus disciplinary reviews, or employer retaliation in ${resolvedCity}? You have legal rights under California law. Our ${resolvedCity} ${cleanTopic} Lawyers are prepared to hold them accountable. <a href="tel:8888070077">Call (888) 807-0077</a> for an immediate consultation.</strong></em></p>
-
-QUESTION 7: <h2 class="h2dav">What Steps Should I Take Immediately If My Rights Are Violated at Work?</h2>
-- Provide a clear, actionable checklist: preserving personal records, copying paystubs and timesheets, saving digital messages before losing access, journaling incidents contemporaneously, avoiding workplace confrontation, and seeking legal counsel before signing any documents.
-
-QUESTION 8: <h2 class="h2dav">How Do I Document and Build an Evidentiary Paper Trail to Prove My Case?</h2>
-- Detail critical evidence: emails, Slack/Teams chats, text messages, comparator evidence (how coworkers outside protected group were treated), time records, and personnel files under Labor Code § 1198.5. Caution workers regarding California Penal Code § 632 two-party consent recording laws.
-
-QUESTION 9: <h2 class="h2dav">Can Immigrant and Undocumented Workers Bring a ${cleanTopic} Claim in California?</h2>
-- Emphasize California Labor Code § 1171.5: all California labor, employment, civil rights, and worker protections apply equally to all workers regardless of immigration status. Highlight California Labor Code § 244 and Civil Code § 3339 making it illegal retaliation and extortion for employers to threaten immigration status.
-
-QUESTION 10: <h2 class="h2dav">What Is the Role of the California Civil Rights Department (CRD) and Administrative Exhaustion?</h2>
-- Detail California Government Code § 12960 administrative exhaustion with the California Civil Rights Department (CRD, formerly DFEH), immediate Right-to-Sue notice, dual filing with EEOC, and when to file an administrative complaint vs filing a lawsuit in Superior Court.
-
-QUESTION 11: <h2 class="h2dav">What Are the Critical Statutes of Limitations and Filing Deadlines in California?</h2>
-- Detail strict filing deadlines: FEHA claims (3 years to file with CRD + 1 year from Right-to-Sue letter), EEOC claims (300 days), Whistleblower Labor Code § 1102.5 (3 years), Wage claims (3-4 years), and public entity claims under Government Code § 911.2 (strict 6-month government tort claim deadline).
-
-QUESTION 12: <h2 class="h2dav">What Compensation and Financial Damages Can You Recover in California?</h2>
-- Break down economic damages (back pay, front pay, lost benefits, bonuses, retirement contributions), non-economic damages (emotional distress, mental anguish, reputational harm with NO statutory cap), statutory penalties (Labor Code §§ 203 waiting time, 226 paystub, 226.7 break premiums, 1102.5 whistleblower), 10% annual prejudgment interest under Civil Code § 3287, and mandatory statutory attorney fees under Gov Code § 12965.
-
-QUESTION 13: <h2 class="h2dav">When Can Punitive Damages Be Awarded Against an Employer Under California Civil Code § 3294?</h2>
-- Detail the legal standards for punitive damages under California Civil Code § 3294: proving oppression, fraud, or malice by clear and convincing evidence. Explain corporate managing agent liability under White v. Ultramar, Inc.
-- Include Closing Callout Box:
-<p class="txt-hlt bg-bx ulk-bg pd_v-30 pd_h-30" style="text-align:center;"><em><strong>${cleanTopic} is an unacceptable violation of California labor protections. Don’t face your employer alone. <a href="tel:8888070077">Contact Atoyan Law Firm’s ${resolvedCity} ${cleanTopic} team</a> today at (888) 807-0077 to demand the full compensation you are owed.</strong></em></p>
-
-QUESTION 14: <h2 class="h2dav">Why Choose Atoyan Law Firm to Fight for Your Workplace Rights in ${resolvedCity}?</h2>
-- Highlight Atoyan Law Firm's commitment: contingency fee representation (no recovery, no legal fees), aggressive litigation posture, thorough discovery strategies, direct attorney communication, and fearlessness in taking cases to trial against large corporate defense firms.
+${questionDirectives}
 
 MANDATORY 10-QUESTION HIGH-INTENT GOOGLE SEARCH FAQ STRUCTURE (DAVID ATOYAN APPROVED):
 You MUST generate EXACTLY 10 practical, multi-paragraph FAQs for "${cleanTopic}" in ${resolvedCity}, covering this exact searcher progression:
-1. What Qualifies as ${cleanTopic} in ${resolvedCity}, California?
-2. What Are Common Examples of ${cleanTopic} at Work?
-3. Can I Sue My Employer for ${cleanTopic} in ${resolvedCity}?
-4. Can My Employer Fire Me for Reporting ${cleanTopic}? (or for ${cleanTopic}?)
-5. Can My Employer Retaliate Against Me for Reporting ${cleanTopic}? (Must cite Labor Code § 1102.5, § 98.6, and SB 497's 90-day statutory presumption)
-6. What Evidence Do I Need for a Workplace ${cleanTopic} Case? (Must include 7-step actionable checklist and EDD unemployment benefits with link to edd.ca.gov)
-7. Can I Have a ${cleanTopic} Case If My Coworker Violated My Rights Instead of My Boss?
-8. Do I Have to Report ${cleanTopic} to HR Before I Can Sue?
-9. How Long Do I Have to File a ${cleanTopic} Claim in California? (MUST include the responsive comparison table comparing FEHA 3 years, EEOC 300 days, Tameny 2 years, Written Contract 4 years, Oral Contract 2 years, Whistleblower § 1102.5 3 years, Wage Theft 3-4 years, Workers' Comp § 132a 1 year, and links to calcivilrights.ca.gov and leginfo.legislature.ca.gov)
-10. How Much Is a ${cleanTopic} Case Worth in California? (MUST conclude with David Atoyan's localized attorney CTA block with clean slug and link to atoyanlaw.com)
+${faqDirectives}
 
 Every answer MUST contain 2-3 substantive paragraphs citing California Civil Rights Department (CRD), California Labor Code, and EEOC regulations.
 The 10th FAQ answer MUST conclude with David Atoyan's localized attorney CTA block:

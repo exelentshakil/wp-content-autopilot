@@ -3,12 +3,14 @@ import { generateContextualCta, injectInternalLinks, formatHowDoContentWithLinks
 import { trackPublishedArticle } from "./article-tracker";
 import type { AtoyanLegalContent, AtoyanFaq } from "./types";
 import { resolveDefaultAccordionShortcode, ATOYAN_PHONE, ATOYAN_CONTACT_URL } from "./atoyan";
+import { getTopicEnrichmentModules } from "./topic-prompt-blueprints";
 
 export type EmploymentTopic =
   | "race_discrimination"
   | "wage_theft"
   | "meal_breaks"
   | "sexual_harassment"
+  | "workplace_harassment"
   | "disability"
   | "family_medical_leave"
   | "workplace_retaliation"
@@ -25,8 +27,11 @@ export function detectTopic(keyword: string): EmploymentTopic {
   if (kw.includes("meal") || kw.includes("rest break") || kw.includes("break") || kw.includes("lunch")) {
     return "meal_breaks";
   }
-  if (kw.includes("harass") || kw.includes("sexual") || kw.includes("hostile") || kw.includes("toxic") || kw.includes("quid pro quo")) {
+  if (kw.includes("sexual") || kw.includes("quid pro quo")) {
     return "sexual_harassment";
+  }
+  if (kw.includes("harass") || kw.includes("hostile") || kw.includes("toxic")) {
+    return "workplace_harassment";
   }
   if (kw.includes("disability") || kw.includes("medical condition") || kw.includes("accommodation") || kw.includes("interactive process") || kw.includes("handicap")) {
     return "disability";
@@ -63,6 +68,9 @@ export function generateAtoyanSimulated(keyword: string, city: string): AtoyanLe
       break;
     case "sexual_harassment":
       raw = buildHarassmentContent(cleanTopic, resolvedCity, safeSlug, shortcode);
+      break;
+    case "workplace_harassment":
+      raw = buildWorkplaceHarassmentContent(cleanTopic, resolvedCity, safeSlug, shortcode);
       break;
     case "disability":
       raw = buildDisabilityContent(cleanTopic, resolvedCity, safeSlug, shortcode);
@@ -496,6 +504,84 @@ export function buildDavidAtoyanFaqs(
           answer: faqP(`Break premiums accumulate quickly. An employee earning $22 per hour who misses both a meal break and a rest break each day is owed $44 per day in statutory premiums—that equals $220 weekly and over $11,000 across a single year.`) +
             `\n\n` +
             faqP(`In addition to back premiums, claims can recover waiting time penalties under Labor Code § 203, wage statement penalties under § 226, and full attorneys' fees.`) +
+            ctaBlock
+        }
+      ];
+
+    case "workplace_harassment":
+      return [
+        {
+          question: `What Qualifies as Unlawful Workplace Harassment Under California FEHA?`,
+          answer: faqP(`Under the California Fair Employment and Housing Act (FEHA, <a href="https://calcivilrights.ca.gov" target="_blank" rel="nofollow noopener"><span class="text-box-trim-both">Gov Code § 12940(j)</span></a>), workplace harassment consists of unwelcome, discriminatory verbal, visual, or physical conduct directed at an employee because of a legally protected characteristic.`) +
+            `\n\n` +
+            faqP(`Unlike routine workplace friction or personality clashes, unlawful harassment targets an individual's protected identity and creates an intimidating, hostile, offensive, or abusive working environment that unreasonably interferes with their job performance.`)
+        },
+        {
+          question: `What Protected Characteristics Are Shielded from Harassment Under California Law?`,
+          answer: faqP(`California Government Code § 12940(a) and (j) protect employees from harassment based on any of the following protected categories:`) +
+            `\n\n` +
+            faqUl([
+              `<strong>Race, Color, Ancestry & National Origin</strong>: Racial slurs, xenophobic comments, mocking accents, or violations of the CROWN Act (Gov Code § 12926(w)) regarding natural hairstyles.`,
+              `<strong>Religious Creed</strong>: Mocking religious practices, derogatory remarks regarding observances, or coercing participation in conflicting events.`,
+              `<strong>Disability & Medical Conditions</strong>: Demeaning comments about physical mobility, mental health conditions, cancer history, or medical accommodation needs.`,
+              `<strong>Age (40 and Over)</strong>: Pervasive ageist insults, pressuring older workers to retire, or mocking technology adoption.`,
+              `<strong>Sex, Gender, Gender Identity & Sexual Orientation</strong>: Derogatory slurs, deadnaming, misgendering, or homophobic conduct.`,
+              `<strong>Military and Veteran Status</strong>: Disparaging military service or obligations.`
+            ])
+        },
+        {
+          question: `What Is the Legal Difference Between Workplace Harassment and Workplace Discrimination?`,
+          answer: faqP(`Under the California Supreme Court precedent in <em>Reno v. Baird</em> (1998), harassment and discrimination represent two distinct legal claims:`) +
+            `\n\n` +
+            faqUl([
+              `<strong>Discrimination</strong>: Relates to official corporate management decisions—such as firing, demoting, setting unequal pay, or denying promotions based on a protected status.`,
+              `<strong>Harassment</strong>: Relates to interpersonal workplace abuse, derogatory comments, hostility, or bullying that is outside the scope of legitimate managerial necessity.`
+            ]) +
+            `\n\n` +
+            faqP(`Crucially, under California Government Code § 12940(j)(3), individual harassers can be sued and held personally liable in civil court, whereas individual supervisors cannot be held personally liable for discrimination.`)
+        },
+        {
+          question: `What Is the "Severe or Pervasive" Legal Standard for Hostile Work Environments in California?`,
+          answer: faqP(`To establish a hostile work environment claim under FEHA, an employee must show that the abusive conduct was either <strong>severe OR pervasive</strong>.`) +
+            `\n\n` +
+            faqP(`Under California <strong>Senate Bill 1300</strong> (codified at Gov Code § 12923), the California Legislature explicitly affirmed that a <strong>single egregious incident</strong> of harassment can be sufficient to create an actionable hostile work environment. Furthermore, workplace harassment claims are rarely suited for summary judgment dismissals because whether an environment is hostile is an issue of fact reserved for a jury.`)
+        },
+        {
+          question: `When Is an Employer Strictly Liable for Supervisor Harassment in ${city}?`,
+          answer: faqP(`Under California Government Code § 12940(j)(1), if an unlawful harassment act is committed by a <strong>supervisor or manager</strong>, the employer is <strong>strictly liable</strong>.`) +
+            `\n\n` +
+            faqP(`Strict liability means the employer is automatically legally responsible for all financial damages, regardless of whether executive management or human resources was aware of the conduct. The company cannot avoid liability by claiming the supervisor violated company policy.`)
+        },
+        {
+          question: `Can My Employer Be Held Responsible If a Coworker or Customer Harassed Me?`,
+          answer: faqP(`Yes. If the harasser is a non-supervisory coworker, independent contractor, client, or customer, the employer is liable under FEHA if management or HR <strong>knew or should have known</strong> of the abusive conduct and failed to take immediate and appropriate corrective action.`)
+        },
+        {
+          question: `What Constitutes an Employer's "Failure to Prevent Harassment" Under Gov Code § 12940(k)?`,
+          answer: faqP(`California Government Code § 12940(k) creates an independent statutory cause of action against employers who fail to take all reasonable steps necessary to prevent harassment and discrimination.`) +
+            `\n\n` +
+            faqP(`When an employer ignores worker complaints, conducts a sham or one-sided HR investigation, fails to discipline known harassers, or fails to provide mandatory anti-harassment training under Assembly Bill 2053 (abusive conduct), the employer violates § 12940(k) and incurs independent legal liability.`)
+        },
+        {
+          question: `Can I Sue If Pervasive Harassment Forced Me to Quit (Constructive Discharge)?`,
+          answer: faqP(`Yes. Under California law (<em>Turner v. Anheuser-Busch, Inc.</em>), if an employer knowingly permits workplace harassment so intolerable that no reasonable worker could endure it, a resignation is treated as a forced termination, known as <strong>constructive discharge</strong>.`) +
+            `\n\n` +
+            faqP(`A constructive discharge allows you to pursue all lost wages, future earnings, emotional distress damages, and punitive damages as if the employer had formally fired you.`)
+        },
+        {
+          question: `How Long Do I Have to File a Workplace Harassment Claim in California?`,
+          answer: buildStatutoryDeadlineTableHtml(city)
+        },
+        {
+          question: `How Much Is a Workplace Harassment Case Worth in California?`,
+          answer: faqP(`Workplace harassment damages under California law compensate workers for both economic loss and personal trauma:`) +
+            `\n\n` +
+            faqUl([
+              `<strong>Past & Future Lost Wages</strong>: Back pay, front pay, lost benefits, and career disruption damages if forced to resign or terminated.`,
+              `<strong>Emotional Distress Damages</strong>: Compensation for severe psychological trauma, anxiety, depression, insomnia, and medical care, with <strong>no statutory cap</strong> under California FEHA.`,
+              `<strong>Punitive Damages</strong>: Under California Civil Code § 3294, awarded against malicious corporate employers to punish egregious misconduct or conscious disregard for worker safety.`,
+              `<strong>Mandatory Attorneys' Fees</strong>: California Government Code § 12965 requires the employer to pay all of your attorney fees and litigation costs when you prevail.`
+            ]) +
             ctaBlock
         }
       ];
@@ -1281,6 +1367,138 @@ Denied breaks lead to physical exhaustion, mental burnout, and workplace injurie
 // -----------------------------------------------------------------------------
 // TOPIC 4: SEXUAL HARASSMENT & HOSTILE WORK ENVIRONMENT
 // -----------------------------------------------------------------------------
+// -----------------------------------------------------------------------------
+// TOPIC 4B: WORKPLACE HARASSMENT & HOSTILE WORK ENVIRONMENT (NON-SEXUAL)
+// -----------------------------------------------------------------------------
+function buildWorkplaceHarassmentContent(keyword: string, city: string, slug: string, shortcode: string): AtoyanLegalContent {
+  const decomposed = decomposeKeyword(keyword, city);
+  const resolvedCity = decomposed.city || city;
+  const cleanTopic = decomposed.cleanTopic || "Workplace Harassment";
+  const heroTitle = `${resolvedCity} Workplace Harassment Lawyers - Hostile Work Environment Attorney`;
+  const servicesHeading = `What Constitutes Workplace Harassment and Hostile Work Environment Under California Law?`;
+  const servicesSubHeading = `Enforcing California FEHA Gov Code § 12940(j) and Holding Employers Accountable Across ${resolvedCity}`;
+
+  const topicModules = getTopicEnrichmentModules("workplace_harassment", cleanTopic, resolvedCity);
+
+  const servicesContent = `
+Every worker across California is legally entitled to earn a living without enduring pervasive hostility, discriminatory slurs, or psychological abuse. Yet across corporate offices, healthcare facilities, logistics hubs, retail establishments, and local enterprises in ${resolvedCity}, unlawful workplace harassment remains a pervasive and damaging reality.
+
+Under the California Fair Employment and Housing Act (FEHA), codified at California Government Code § 12940(j), workplace harassment based on any protected characteristic is strictly illegal. The law places an affirmative, non-delegable duty on every employer in ${resolvedCity} to maintain a work environment free from discriminatory abuse and to take all reasonable, immediate steps to stop misconduct when it occurs.
+
+<h3 class="h3dav">Protected Characteristics Under California FEHA</h3>
+
+California Government Code § 12940(j) extends broad protections against harassment targeting any of the following protected classes:
+<ul>
+  <li><strong>Race, Color, Ancestry, and National Origin</strong>: Slurs, derogatory stereotyping, mocking foreign accents, or discriminatory restrictions on natural hairstyles protected under California's CROWN Act (Gov Code § 12926(w)).</li>
+  <li><strong>Physical and Mental Disability</strong>: Demeaning remarks regarding physical limitations, learning disabilities, mobility devices, clinical depression, anxiety disorders, or medical leave history.</li>
+  <li><strong>Medical Condition and Genetic Information</strong>: Hostile commentary surrounding cancer diagnoses, autoimmune conditions, genetic traits, or rehabilitation.</li>
+  <li><strong>Religious Creed and Observance</strong>: Mocking religious garments, derogatory slurs regarding faith, or forcing employees to attend conflicting corporate functions.</li>
+  <li><strong>Age (40 and Over)</strong>: Pervasive ageist jokes, pushing senior employees toward early retirement, or hostile remarks regarding technological capabilities.</li>
+  <li><strong>Sexual Orientation, Gender Identity, and Gender Expression</strong>: Deadnaming, misgendering, derogatory slurs, or abusive conduct aimed at LGBTQ+ workers.</li>
+  <li><strong>Marital Status and Military/Veteran Status</strong>: Disparaging military deployment or veteran obligations.</li>
+</ul>
+
+<p class="txt-hlt bg-bx ulk-bg pd_v-30 pd_h-30" style="text-align:center;"><em><strong>Enduring slurs, hostile remarks, or severe harassment at your ${resolvedCity} workplace? You have enforceable rights under California FEHA. Call Atoyan Law Firm at <a href="tel:8888070077">(888) 807-0077</a> or <a href="/contact/">contact our legal team online</a>.</strong></em></p>
+
+<h2 class="h2dav">The Legal Standard: "Severe or Pervasive" Under California Senate Bill 1300</h2>
+
+Corporate defense attorneys frequently argue that abusive workplace conduct was merely "innocuous friction," "stray remarks," or "management style." California law firmly rejects these corporate excuses.
+
+Under <strong>California Senate Bill 1300</strong> (SB 1300, effective 2019, codifying Government Code § 12923), the California Legislature affirmed:
+<ul>
+  <li>An employee only needs to demonstrate that harassing conduct was severe <strong>OR</strong> pervasive. The legal standard is disjunctive, not conjunctive.</li>
+  <li>A <strong>single incident of harassing conduct</strong> is legally sufficient to create a hostile work environment if the conduct has unreasonably interfered with the employee's work performance or created an intimidating, hostile, or offensive working environment.</li>
+  <li>The existence of a hostile work environment must be judged based on the totality of circumstances from the perspective of a reasonable person in the plaintiff's position.</li>
+  <li>Workplace harassment claims are rarely appropriate for summary judgment dismissal because the determination of whether an environment is hostile presents an issue of fact that belongs before a jury.</li>
+</ul>
+
+<h2 class="h2dav">Distinguishing Harassment from Discrimination Under Reno v. Baird</h2>
+
+In the landmark decision <em>Reno v. Baird</em> (1998) 18 Cal.4th 640, the California Supreme Court established a vital legal distinction:
+<ul>
+  <li><strong>Employment Discrimination</strong>: Involves official managerial and personnel decisions—such as hiring, firing, job assignments, promotions, compensation, and performance reviews. Individual managers cannot be held personally liable for discrimination.</li>
+  <li><strong>Workplace Harassment</strong>: Consists of conduct outside the necessary scope of legitimate personnel management—such as derogatory jokes, verbal insults, mocking, physical intimidation, or digital bullying.</li>
+  <li><strong>Individual Personal Liability</strong>: Under California Government Code § 12940(j)(3), <strong>individual harassers can be sued directly in Superior Court and held personally liable</strong> for the damages they inflict, separate and apart from corporate employer liability.</li>
+</ul>
+
+<p class="txt-hlt bg-bx ulk-bg pd_v-30 pd_h-30" style="text-align:center;"><em><strong>Did a supervisor or coworker subject you to hostile comments or targeted abuse in ${resolvedCity}? Harassers can be held individually liable under Gov Code § 12940(j)(3). <a href="tel:8888070077">Call (888) 807-0077</a> to speak with Atoyan Law Firm.</strong></em></p>
+
+<h2 class="h2dav">Employer Liability: Strict Liability for Supervisors vs. Negligence for Coworkers</h2>
+
+Under California Government Code § 12940(j)(1), employer liability is determined by the workplace hierarchy of the harasser:
+<ul>
+  <li><strong>Supervisor Harassment (Strict Liability)</strong>: If a supervisor, manager, lead, or corporate officer commits the harassment, the employer is <strong>strictly liable</strong>. It is legally irrelevant whether upper management knew about the conduct or had written anti-harassment policies. The company is automatically responsible for all resulting damages.</li>
+  <li><strong>Coworker and Third-Party Harassment (Negligence Standard)</strong>: If the harasser is a non-supervisory coworker, client, vendor, or customer, the employer is liable if management or HR <strong>knew or should have known</strong> of the conduct and failed to take immediate and appropriate corrective action.</li>
+</ul>
+
+<h2 class="h2dav">The Standalone Claim: Failure to Prevent Harassment Under FEHA § 12940(k)</h2>
+
+California law imposes an independent affirmative duty on every employer under Government Code § 12940(k) to "take all reasonable steps necessary to prevent harassment and discrimination from occurring."
+
+When an employer fails to adopt clear complaint procedures, conducts a superficial or biased internal HR investigation, sweeps employee reports under the rug, fails to discipline known offenders, or fails to provide mandatory training under Assembly Bill 2053 (prevention of abusive conduct), the employer commits a standalone violation of California law that carries substantial statutory liability.
+
+<h2 class="h2dav">Constructive Discharge: When Pervasive Hostility Forces You to Quit</h2>
+
+Workers often ask whether they forfeit their legal claims if they resign because the workplace hostility became unbearable. Under the California Supreme Court standard in <em>Turner v. Anheuser-Busch, Inc.</em> (1994) 7 Cal.4th 1238, when an employer knowingly permits working conditions so intolerable that a reasonable person in the employee's position would be compelled to quit, the law treats the resignation as an unlawful termination, known as <strong>constructive discharge</strong>.
+
+A constructive discharge claim allows the victim to seek full wrongful termination remedies, including back pay, front pay, lost future benefits, and emotional distress compensation.
+
+<p class="txt-hlt bg-bx ulk-bg pd_v-30 pd_h-30" style="text-align:center;"><em><strong>Were you forced to resign because management refused to stop workplace harassment in ${resolvedCity}? You may have an actionable constructive discharge claim. Contact Atoyan Law at <a href="tel:8888070077">(888) 807-0077</a> for a free legal evaluation.</strong></em></p>
+
+<h2 class="h2dav">Workplace Retaliation and California Senate Bill 497</h2>
+
+Employers often retaliate against employees who report harassment by issuing manufactured write-ups, slashing hours, reassigning shifts, or terminating their employment.
+
+Under California Government Code § 12940(h) and Labor Code § 1102.5, retaliation against an employee for opposing unlawful harassment or participating in an investigation is strictly prohibited. Furthermore, under <strong>Senate Bill 497</strong> (effective January 1, 2024), if an employer takes an adverse employment action within <strong>90 days</strong> of an employee engaging in protected activity, California law establishes a <strong>rebuttable presumption of unlawful retaliation</strong>.
+
+${topicModules.join("\n\n")}
+
+${buildDamagesAndRemediesAnalysis("Workplace Harassment and Hostile Work Environment", resolvedCity)}
+
+${buildAdministrativeRoadmap("Workplace Harassment and Hostile Work Environment", resolvedCity)}
+
+${buildIndustryScenarios("Workplace Harassment and Hostile Work Environment", resolvedCity)}
+`.trim();
+
+  const howDoHeading = `How Can a ${resolvedCity} Workplace Harassment Lawyer at Atoyan Law Help?`;
+  const howDoContent = `
+<strong>Preserve contemporaneous evidence outside of employer systems</strong>. Save emails, Slack or Teams messages, text messages, voicemails, and personal journal notes on personal devices. Document dates, times, exact words spoken, and witnesses present before your network access is revoked.
+
+<strong>Submit your harassment complaint in writing</strong>. Follow your employer's handbook reporting procedures and submit your complaint in writing to HR or executive leadership. Explicitly identify that the hostility is based on your protected category to trigger the employer's mandatory duty under Gov Code § 12940(k).
+
+<strong>Do not resign abruptly without legal counsel</strong>. Quitting prematurely can give corporate defense lawyers grounds to argue that you departed voluntarily. Our attorneys can evaluate whether the conditions satisfy California's constructive discharge standard under Turner v. Anheuser-Busch.
+
+<strong>Let Atoyan Law Firm fight for you</strong>. We immediately secure your Right-to-Sue notice from the California Civil Rights Department (CRD), subpoena electronic records, depose supervisory personnel, and aggressively pursue the full compensation you deserve under California law.
+`.trim();
+
+  const compensationHeading = `What Results and Compensation Can I Expect from a ${resolvedCity} Workplace Harassment Claim?`;
+  const compensationIntro = `
+You have the fundamental right to earn a living in ${resolvedCity} without enduring targeted discrimination, hostile insults, or retaliatory punishment. California law provides comprehensive legal remedies to restore your dignity and compensate you for financial and emotional injury.
+
+Under California FEHA, you can recover economic damages for back pay, front pay, lost bonuses, and healthcare coverage, as well as uncapped non-economic damages for emotional distress, mental anguish, anxiety, depression, and reputational harm. Where corporate management acted with malice, oppression, or fraud, punitive damages under California Civil Code § 3294 can be awarded. Furthermore, California Government Code § 12965 requires the employer to pay all reasonable attorney fees and litigation costs. Call Atoyan Law at <a href="tel:8888070077">(888) 807-0077</a> or <a href="/contact/">contact us online</a> for a confidential, no-cost consultation with our <b>${resolvedCity} workplace harassment attorneys</b>.
+`.trim();
+
+  const faqs: AtoyanFaq[] = buildDavidAtoyanFaqs("workplace_harassment", resolvedCity, cleanTopic);
+  return {
+    keyword,
+    city: resolvedCity,
+    slug,
+    heroTitle,
+    servicesHeading,
+    servicesSubHeading,
+    servicesContent,
+    howDoHeading,
+    howDoContent,
+    compensationHeading,
+    compensationIntro,
+    accordionShortcode: shortcode,
+    faqs,
+    yoastTitle: `${resolvedCity} Workplace Harassment Lawyer | Atoyan Law`,
+    yoastMetaDesc: `Experienced ${resolvedCity} workplace harassment attorney fighting hostile work environment, supervisor bias, and retaliation under California FEHA. Call (888) 807-0077.`,
+    yoastFocusKw: `${resolvedCity} workplace harassment`,
+  };
+}
+
 function buildHarassmentContent(keyword: string, city: string, slug: string, shortcode: string): AtoyanLegalContent {
   const heroTitle = `${city} Sexual Harassment Employment Lawyers - Hostile Work Environment`;
   const servicesHeading = `What Constitutes Unlawful Sexual Harassment and Hostile Work Environment in California?`;
@@ -1357,9 +1575,7 @@ For decades, powerful corporate executives used secret non-disclosure agreements
 California ended this practice through the <strong>Silenced No More Act (Senate Bill 331)</strong>. Under California Code of Civil Procedure § 1001 and Government Code § 12964.5, employers are legally prohibited from enforcing non-disclosure or non-disparagement provisions that restrict an employee's right to speak out about factual information related to sexual harassment, sexual assault, gender discrimination, or workplace retaliation.
 
 
-${buildEvidentiaryDeepDive("Sexual Harassment and Hostile Work Environment", city)}
-
-${buildCorporateDefensePlaybook("Sexual Harassment and Hostile Work Environment", city)}
+${getTopicEnrichmentModules("sexual_harassment", "Sexual Harassment", city).join("\n\n")}
 
 ${buildDamagesAndRemediesAnalysis("Sexual Harassment and Hostile Work Environment", city)}
 
@@ -1887,7 +2103,7 @@ Wrongful termination inflicts immense emotional trauma and financial devastation
 
 export function buildIndustryScenarios(topicName: string, city: string): string {
   return `
-<h2 class="h2dav">Industry-Specific Scenarios Across ${city} Workplaces</h2>
+<h2 class="h2dav">How ${topicName} Manifests Across ${city} Industries</h2>
 
 Every industry throughout California possesses its own distinct workplace culture, operational tempo, management hierarchies, and regulatory pressures. In ${city}, unlawful workplace conduct rarely looks like a textbook violation. Instead, it takes nuanced, industry-specific forms designed to exploit workplace vulnerabilities:
 
@@ -1980,7 +2196,7 @@ Corporate employers occasionally attempt to intimidate whistleblowers by threate
 
 export function buildDamagesAndRemediesAnalysis(topicName: string, city: string): string {
   return `
-<h2 class="h2dav">Understanding Your Full Financial Recovery Under California Law</h2>
+<h2 class="h2dav">Recovering Full Financial Damages for ${topicName} Under California Law</h2>
 
 California employment statutes are deliberately designed to provide full financial restitution to harmed employees and impose substantial monetary consequences on corporate wrongdoers. In a successful ${topicName.toLowerCase()} claim in ${city}, potential recovery includes:
 
@@ -2006,7 +2222,7 @@ California employment statutes are deliberately designed to provide full financi
 
 export function buildAdministrativeRoadmap(topicName: string, city: string): string {
   return `
-<h2 class="h2dav">The Legal Roadmap: From Agency Filing to California Superior Court</h2>
+<h2 class="h2dav">The Legal Process: From CRD Administrative Filing to Superior Court Trial for ${topicName}</h2>
 
 Successfully prosecuting an employment lawsuit against an employer in ${city} requires strict compliance with statutory deadlines, administrative prerequisites, and California civil procedure:
 

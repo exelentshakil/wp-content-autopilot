@@ -515,6 +515,9 @@ export function buildTopicBannerPrompt(cleanTopic: string, city: string, topicKe
     case "wrongful_termination":
       return `Cinematic professional 35mm panoramic photography of an executive modern California corporate office in ${city} at dusk. On the right side, an empty executive boardroom with glass walls overlooking city skyline, polished dark mahogany conference table with scattered legal briefs and a discreet cardboard personal belongings box on a side credenza symbolizing an abrupt departure. The left half has generous empty space with moody atmospheric shadows. Warm amber interior glow, shallow depth of field. Clean photograph with zero text, no letters, no words, no signage. 16:9 wide landscape orientation.`;
 
+    case "workplace_harassment":
+      return `Cinematic professional 35mm panoramic photography of an open-plan contemporary California corporate workplace in ${city} after hours. On the right side, sleek glass partition walls, empty workstations with personal desks, and ambient architectural lighting casting long shadows across the floor, conveying the isolation of a hostile workplace and legal accountability. The left half features expansive, deep negative space with rich architectural depth. Moody, dignified ambiance, shallow depth of field. Zero text, no letters, no words, no signage. 16:9 wide landscape orientation.`;
+
     case "sexual_harassment":
       return `Cinematic professional 35mm panoramic photography of a high-end California corporate office suite in ${city} during late evening. On the center-right side, architectural glass partitions, warm architectural downlights illuminating an empty corridor between executive offices, expressing tension and legal gravity. The left portion features deep, soft, moody negative space with elegant dark wood paneling and soft ambient shadows. Dramatic warm lighting, clean architectural composition. Zero text, no letters, no words, no signage. 16:9 wide landscape orientation.`;
 
@@ -552,6 +555,9 @@ export function buildTopicServicesPrompt(cleanTopic: string, city: string, topic
   switch (topicKey) {
     case "wrongful_termination":
       return `Professional editorial corporate photograph of an employee in business attire seated across from an employment attorney at a conference table in ${city}, reviewing termination and severance paperwork with serious, focused expressions. Natural daylight pouring through office windows, clean modern background with glass and warm wood. Authentic editorial corporate photography, 3:2 landscape orientation. Zero text, no letters, no words, no overlays, no watermarks.`;
+
+    case "workplace_harassment":
+      return `Professional editorial corporate photograph of an employee meeting with an employment attorney in a conference room in ${city}, reviewing contemporaneous notes and documentation of hostile workplace conduct. Serious, focused expressions, modern corporate office setting with glass walls and warm natural lighting. Authentic editorial photography, 3:2 landscape orientation. Zero text, no letters, no words, no overlays, no watermarks.`;
 
     case "sexual_harassment":
       return `Professional editorial corporate photograph of an employee speaking confidentially with a supportive legal professional in a private, sunlit consultation room in ${city}. Empathetic and professional demeanor, safe legal consultation setting, subtle corporate glass backdrop. Dignified, authentic editorial photography, 3:2 landscape orientation. Zero text, no letters, no words, no overlays, no watermarks.`;

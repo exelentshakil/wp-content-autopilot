@@ -606,9 +606,13 @@ export function buildCompensationSection(
       harmText = "were fired or pressured into resigning, California law may require your employer to compensate you for lost income, emotional distress, and statutory penalties";
       lawText = "California's wrongful termination laws are designed to protect employees from unlawful retaliation and discrimination";
       claimText = "you were wrongfully terminated";
-    } else if (kw.includes("harass") || kw.includes("sexual") || kw.includes("hostile")) {
-      harmText = "endured unlawful harassment or a hostile work environment, California law holds employers accountable for misconduct and failure to take immediate corrective action";
-      lawText = "California's Fair Employment and Housing Act (FEHA) strictly protects employees from harassment and hostility";
+    } else if (kw.includes("sexual") || kw.includes("quid pro quo")) {
+      harmText = "experienced unwanted sexual advances, quid pro quo demands, or hostile sexual misconduct, California law holds employers strictly liable for supervisor misconduct and failure to protect workers";
+      lawText = "California's Fair Employment and Housing Act (FEHA § 12940(j)) and the Silenced No More Act strictly protect workers from sexual harassment";
+      claimText = "you experienced sexual harassment";
+    } else if (kw.includes("workplace harassment") || kw.includes("harass") || kw.includes("hostile")) {
+      harmText = "endured discriminatory hostility, offensive slurs, or an abusive work environment based on a protected category, California law holds employers accountable for failure to maintain a safe workplace";
+      lawText = "California's Fair Employment and Housing Act (FEHA § 12940(j) & (k)) strictly protects employees from unlawful harassment and hostility";
       claimText = "you experienced workplace harassment";
     } else if (kw.includes("retaliat") || kw.includes("whistleblow")) {
       harmText = "faced adverse action after asserting your rights or reporting misconduct, California law provides strong protections against retaliation";
@@ -620,7 +624,30 @@ export function buildCompensationSection(
       claimText = "your accommodation or medical leave rights were violated";
     }
 
-    cleanIntro = `<p>If you ${harmText}.</p>\r\n\r\n<p>Do not assume that an employer's payroll system is always correct. Do not assume that being salaried automatically means you are exempt. And do not assume that a manager's instruction to work off the clock makes the work unpaid.</p>\r\n\r\n<p>${lawText}.</p>\r\n\r\n<p>If you believe ${claimText} in ${city}, Atoyan Employment Law can help you understand your rights and evaluate your potential wage claim. <a href="/contact/">Contact</a> the firm to discuss what happened and learn what options may be available to you.</p>`;
+    let adviceText = "Do not assume that workplace mistreatment has to be accepted in silence. California employment laws provide extensive protections that hold employers legally and financially accountable.";
+    let claimType = "employment law claim";
+
+    if (kw.includes("overtime") || kw.includes("wage") || kw.includes("theft") || kw.includes("unpaid")) {
+      adviceText = "Do not assume that an employer's payroll system is always correct. Do not assume that being salaried automatically means you are exempt. And do not assume that a manager's instruction to work off the clock makes the work unpaid.";
+      claimType = "wage and hour claim";
+    } else if (kw.includes("sexual") || kw.includes("quid pro quo")) {
+      adviceText = "Do not assume that verbal conduct without physical contact is permissible under California law. Do not believe HR when they claim a supervisor's behavior was merely personal, and remember that non-disclosure agreements cannot silence your right to disclose sexual harassment under the Silenced No More Act.";
+      claimType = "sexual harassment claim";
+    } else if (kw.includes("workplace harassment") || kw.includes("harass") || kw.includes("hostile")) {
+      adviceText = "Do not assume that severe or pervasive hostility is just office politics. Do not accept management's excuse that offensive conduct was isolated, and know that California law strictly holds employers liable when they fail to take immediate and effective corrective action.";
+      claimType = "workplace harassment claim";
+    } else if (kw.includes("wrongful") || kw.includes("termination") || kw.includes("firing")) {
+      adviceText = "Do not assume that because California is an at-will state an employer can fire you for illegal reasons. Do not sign a severance agreement or release of claims before having an attorney review whether your termination was retaliatory or discriminatory.";
+      claimType = "wrongful termination claim";
+    } else if (kw.includes("retaliat") || kw.includes("whistleblow")) {
+      adviceText = "Do not assume that an employer can disguise retaliation as a restructuring, demotion, or bad performance review. California Labor Code § 1102.5 places the burden on employers to prove by clear and convincing evidence that adverse actions were not retaliatory.";
+      claimType = "retaliation claim";
+    } else if (kw.includes("disability") || kw.includes("medical") || kw.includes("leave")) {
+      adviceText = "Do not assume that an employer can reject accommodations without engaging in a timely, good-faith interactive process. Under FEHA and CFRA, employers must explore reasonable alternatives to preserve your employment.";
+      claimType = "disability discrimination claim";
+    }
+
+    cleanIntro = `<p>If you ${harmText}.</p>\r\n\r\n<p>${adviceText}</p>\r\n\r\n<p>${lawText}.</p>\r\n\r\n<p>If you believe ${claimText} in ${city}, Atoyan Employment Law can help you understand your rights and evaluate your potential ${claimType}. <a href="/contact/">Contact</a> the firm to discuss what happened and learn what options may be available to you.</p>`;
   } else if (!cleanIntro.includes('href="/contact/"') && !cleanIntro.includes('href="https://www.atoyanlaw.com/contact/"')) {
     cleanIntro = `${cleanIntro}\r\n\r\n<p>If you believe your rights were violated in ${city}, Atoyan Employment Law can help you understand your rights and evaluate your potential claim. <a href="/contact/">Contact</a> the firm to discuss what happened and learn what options may be available to you.</p>`;
   }

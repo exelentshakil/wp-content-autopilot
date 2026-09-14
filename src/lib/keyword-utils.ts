@@ -11,6 +11,7 @@ export interface DecomposedKeyword {
   lawyerTitle: string;
   topicKey:
     | "wrongful_termination"
+    | "workplace_harassment"
     | "sexual_harassment"
     | "race_discrimination"
     | "wage_theft"
@@ -271,8 +272,8 @@ export const PRACTICE_AREA_RULES: PracticeAreaRule[] = [
   { pattern: /\b(employment\s+discrimination|workplace\s+discrimination)\b/i, cleanTopic: "Employment Discrimination", subtopic: "Workplace Bias & FEHA Violations", slugSuffix: "employment-discrimination-lawyer", topicKey: "employment_law" },
   { pattern: /\b(whistleblower(\s+retaliation)?)\b/i, cleanTopic: "Whistleblower Retaliation", subtopic: "Reporting Violations & Worker Protections", slugSuffix: "whistleblower-lawyer", topicKey: "workplace_retaliation" },
   { pattern: /\b(retaliation|retaliatory)\b/i, cleanTopic: "Workplace Retaliation", subtopic: "Worker Rights & Retaliation Claims", slugSuffix: "retaliation-lawyer", topicKey: "workplace_retaliation" },
-  { pattern: /\b(hostile\s+work\s+environment)\b/i, cleanTopic: "Hostile Work Environment", subtopic: "Severe & Pervasive Harassment", slugSuffix: "hostile-work-environment-lawyer", topicKey: "sexual_harassment" },
-  { pattern: /\b(workplace\s+harassment)\b/i, cleanTopic: "Workplace Harassment", subtopic: "Workplace Hostility & Bullying", slugSuffix: "workplace-harassment-lawyer", topicKey: "sexual_harassment" },
+  { pattern: /\b(hostile\s+work\s+environment)\b/i, cleanTopic: "Hostile Work Environment", subtopic: "Severe & Pervasive Harassment", slugSuffix: "hostile-work-environment-lawyer", topicKey: "workplace_harassment" },
+  { pattern: /\b(workplace\s+harassment)\b/i, cleanTopic: "Workplace Harassment", subtopic: "Unlawful Workplace Conduct", slugSuffix: "workplace-harassment-lawyer", topicKey: "workplace_harassment" },
   { pattern: /\b(sexual\s+harassment|quid\s+pro\s+quo)\b/i, cleanTopic: "Sexual Harassment", subtopic: "Misconduct & Quid Pro Quo Defense", slugSuffix: "sexual-harassment-lawyer", topicKey: "sexual_harassment" },
   { pattern: /\b(unpaid\s+overtime|overtime\s+violations?)\b/i, cleanTopic: "Unpaid Overtime", subtopic: "Overtime Pay & Misclassification", slugSuffix: "unpaid-overtime-lawyer", topicKey: "wage_theft" },
   { pattern: /\b(unpaid\s+wages|wage\s+theft)\b/i, cleanTopic: "Unpaid Wages", subtopic: "Earned Compensation & Wage Theft", slugSuffix: "unpaid-wages-lawyer", topicKey: "wage_theft" },
